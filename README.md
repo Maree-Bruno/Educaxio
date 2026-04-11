@@ -7,7 +7,10 @@ L’application centralisera et simplifiera la gestion des **élèves, enseignan
 Elle cible les enseignants avec une interface **intuitive et responsive**.
 
 ---
+## Maquette
+https://www.figma.com/design/wsmcOKGNYPpmEnVJviH3ov/Design?node-id=0-1&t=xSjaS1uPGKR14ab9-1
 
+---
 ## Technologies
 
 - **Backend :** Laravel 12 (PHP 8.5)
