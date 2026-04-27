@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import { dashboard } from '@/routes';
-
+import Button from '../components/widgets/Button.vue';
+const name = ref('');
+const email = ref('john@example.com');
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -25,7 +29,36 @@ defineOptions({
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >
-                <PlaceholderPattern />
+                <form action="" method="get">
+                    <InputLabel
+                        v-model="name"
+                        label="name"
+                        placeholder="Placeholder"
+                    />
+                    <InputLabel
+                        v-model="email"
+                        label="Email"
+                        placeholder="Placeholder"
+                    />
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        label="Test"
+                        type="submit"
+                    />
+                    <Button
+                        variant="primary"
+                        size="md"
+                        label="Test"
+                        type="submit"
+                    />
+                    <Button
+                        variant="danger"
+                        size="lg"
+                        label="Test"
+                        type="submit"
+                    />
+                </form>
             </div>
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
