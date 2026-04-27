@@ -2,8 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Academic_year;
+use App\Models\Subject;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Factories\SubjectFactory;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,8 +16,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        Subject::factory(10)->create();
+        Academic_year::factory(10)->create();
         User::factory()->create([
             'name' => 'test',
             'email' => 'test@example.com',
