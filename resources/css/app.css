@@ -9,7 +9,7 @@
 
 @theme inline {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        'Manrope',Instrument Sans, ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
@@ -83,9 +83,12 @@
     body,
     html {
         --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+            'Manrope','Instrument Sans', ui-sans-serif, system-ui, sans-serif,
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-manrope), sans-serif;
     }
 }
 
@@ -169,4 +172,59 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+@theme inline {
+    --color-bg-primary: #F5F0EB;
+    --color-text-base: #303030;
+    --color-blue: #0891B2;
+    --color-blue-dark: #155E75;
+    --color-blue-hover: rgba(8 145 178 0.55);
+    --color-pink: #EC4899;
+    --color-pink-hover: rgba(221 62 141 0.55);
+    --color-orange: #F97316;
+    --color-orange-hover: rgba(249 115 22  0.55);
+    --color-gray: #475569;
+    --color-green: #22C55E;
+    --color-border-figma: #AFAFAF;
+    --color-white: #FFFFFF;
+    --radius-card: 16px;
+    --radius-modal: 24px;
+    --spacing-section: 32px;
+    --font-manrope: 'Manrope', sans-serif;
+}
+@font-face {
+    font-family: Manrope;
+    font-style: normal;
+    font-weight: 900;
+    src: url("/public/fonts/Manrope-ExtraBold.ttf");
+}
+@font-face {
+    font-family: Manrope;
+    font-style: normal;
+    font-weight: 700;
+    src: url("/public/fonts/Manrope-Bold.ttf");
+}
+@font-face {
+    font-family: Manrope;
+    font-style: normal;
+    font-weight: 600;
+    src: url("/public/fonts/Manrope-SemiBold.ttf");
+}
+@font-face {
+    font-family: Manrope;
+    font-style: normal;
+    font-weight: 500;
+    src: url("/public/fonts/Manrope-Medium.ttf");
+}
+@font-face {
+    font-family: Manrope;
+    font-style: normal;
+    font-weight: 400;
+    src: url("/public/fonts/Manrope-Regular.ttf");
+}
+@font-face {
+    font-family: Manrope;
+    font-style: normal;
+    font-weight: 300;
+    src: url("/public/fonts/Manrope-Light.ttf");
 }

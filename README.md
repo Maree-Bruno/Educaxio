@@ -3,7 +3,7 @@
 ## Introduction
 
 Le projet consiste à développer un **outil** pour simplifier la vie de l'enseignant.  
-L’application centralisera et simplifiera la gestion des **élèves, enseignants, notes, absences, emplois du temps**.  
+L’application centralisera et simplifiera la gestion des **élèves, notes, absences/présences, emplois du temps**.  
 Elle cible les enseignants avec une interface **intuitive et responsive**.
 
 ---
@@ -22,7 +22,7 @@ https://www.figma.com/design/wsmcOKGNYPpmEnVJviH3ov/Design?node-id=0-1&t=xSjaS1u
 
 ## Public cible
 
-- **Enseignants :** Suivi des notes, Moyenne par periode, présences/absences, consultations de leurs emploi du temps, ,
+- **Enseignants :** Suivi des notes, Moyenne par periode, présences/absences, consultations de leurs emploi du temps,
   journal de classe et programmation de devoir/interrogation.
 
 ---
