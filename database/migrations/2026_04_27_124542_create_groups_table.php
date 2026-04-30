@@ -7,15 +7,17 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('academic_years', function (Blueprint $table) {
+        Schema::create('groups', function (Blueprint $table) {
             $table->id();
-            $table->year('year');
+            $table->string('name');
+            $table->string('grade');
+            $table->foreignId('academic_year_id')->constrained('academic_years');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('academic_years');
+        Schema::dropIfExists('groups');
     }
 };

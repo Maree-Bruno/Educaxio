@@ -2,18 +2,20 @@
 
 namespace Database\Factories;
 
-use App\Models\Academic_year;
+use App\Models\Attendance;
+use App\Models\ClassSession;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
-class Academic_yearFactory extends Factory
+class AttendanceFactory extends Factory
 {
-    protected $model = Academic_year::class;
+    protected $model = Attendance::class;
 
     public function definition(): array
     {
         return [
-            'year' => $this->faker->year(),
+            'validated_at' => Carbon::now(),
+            'classsession_id' => ClassSession::factory(),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ];
