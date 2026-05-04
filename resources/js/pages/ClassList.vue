@@ -1,7 +1,9 @@
 <script setup lang="ts">
-  defineProps<{}>()
+defineOptions({
+    layout: {
+        title: 'Liste des classes',
+    },
+});
 </script>
 
-<template>
-
-</template>
+<template></template>
