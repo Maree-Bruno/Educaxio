@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { setPageTitle } from '@/composables/usePageTitle';
-setPageTitle('Dashboard');
+setPageTitle('Présences');
 </script>
 
 <template></template>
