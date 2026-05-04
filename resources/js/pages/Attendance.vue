@@ -1,15 +1,6 @@
 <script setup lang="ts">
-defineOptions({
-    layout: {
-        title:'Présences'
-    },
-});
+import { setPageTitle } from '@/composables/usePageTitle';
+setPageTitle('Présences');
 </script>
 
-<template>
-
-</template>
-
-<style scoped>
-
-</style>
+<template></template>

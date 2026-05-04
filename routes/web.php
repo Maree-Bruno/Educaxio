@@ -14,6 +14,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //Classlist
     Route::get('classlist', [ClassListController::class, 'index'])->name('classlist');
+    Route::post('classlist', [ClassListController::class, 'store'])->name('classlist.store');
+    Route::delete('classlist/{classlist}', [ClassListController::class, 'destroy'])->name('classlist.destroy');
     // attendances
     Route::get('attendances', [AttendanceController::class, 'index'])->name('attendances');
     Route::post('attendances', [AttendanceController::class, 'store'])->name('attendances.store');

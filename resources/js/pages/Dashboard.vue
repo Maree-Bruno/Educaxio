@@ -1,13 +1,6 @@
 <script setup lang="ts">
-defineOptions({
-    layout: {
-       title:'Dashboard'
-    },
-});
-
+import { setPageTitle } from '@/composables/usePageTitle';
+setPageTitle('Dashboard');
 </script>
 
-<template>
-
-
-</template>
+<template></template>

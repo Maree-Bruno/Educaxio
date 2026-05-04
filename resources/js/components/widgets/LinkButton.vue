@@ -1,37 +1,28 @@
 <script lang="ts" setup>
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
-type ButtonType = 'button' | 'submit' | 'reset';
+type Method = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 const props = withDefaults(
     defineProps<{
+        href: string;
         variant?: Variant;
         size?: Size;
         label?: string;
-        disabled?: boolean;
-        loading?: boolean;
         iconOnly?: boolean;
-        type?: ButtonType;
+        method?: Method;
     }>(),
     {
         variant: 'primary',
         size: 'md',
         label: '',
-        disabled: false,
-        loading: false,
         iconOnly: false,
-        type: 'button',
+        method: 'get',
     },
 );
-const emit = defineEmits(['click']);
-
-function handleClick(event: MouseEvent): void {
-    if (!props.disabled && !props.loading) {
-        emit('click', event);
-    }
-}
 
 const variantClasses = computed(
     () =>
@@ -43,6 +34,7 @@ const variantClasses = computed(
             danger: 'bg-pink text-white hover:opacity-85 focus-visible:ring-pink hover:bg-pink-hover',
         })[props.variant],
 );
+
 const sizeClasses = computed(
     () =>
         ({
@@ -61,47 +53,24 @@ const iconSizeClasses = computed(
         })[props.size],
 );
 </script>
+
 <template>
-    <button
-        :type="type"
-        :disabled="disabled || loading"
+    <Link
+        :href="href"
+        :method="method"
         v-bind="$attrs"
         :class="[
             'inline-flex items-center justify-center gap-2.5 rounded-xl font-manrope font-medium transition-all duration-300',
             'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-            'active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100',
+            'active:scale-[0.98]',
             variantClasses,
             sizeClasses,
         ]"
-        @click="handleClick"
     >
-        <svg
-            v-if="loading"
-            class="shrink-0 animate-spin"
-            :class="iconSizeClasses"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-        >
-            <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-            />
-            <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            />
-        </svg>
         <span
-            v-if="$slots.icon && !loading"
+            v-if="$slots.icon"
             :class="iconSizeClasses"
-            class="shrink-0"
+            class="flex shrink-0 items-center justify-center"
             aria-hidden="true"
         >
             <slot name="icon" />
@@ -110,12 +79,12 @@ const iconSizeClasses = computed(
             <slot>{{ label }}</slot>
         </span>
         <span
-            v-if="$slots.iconRight && !iconOnly && !loading"
+            v-if="$slots.iconRight && !iconOnly"
             :class="iconSizeClasses"
-            class="shrink-0"
+            class="flex shrink-0 items-center justify-center"
             aria-hidden="true"
         >
             <slot name="iconRight" />
         </span>
-    </button>
+    </Link>
 </template>
