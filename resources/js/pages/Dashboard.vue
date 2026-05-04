@@ -3,7 +3,9 @@ import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
-import { dashboard } from '@/routes';
+import NavItem from '@/components/widgets/nav/NavItem.vue';
+import ClassesList from '@/components/widgets/svg/ClassesList.vue';
+import { dashboard, classlist } from '@/routes';
 import Button from '../components/widgets/Button.vue';
 const name = ref('');
 const email = ref('john@example.com');
@@ -29,6 +31,11 @@ defineOptions({
             <div
                 class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >
+                <NavItem :href="classlist.url()" title="Liste des classes">
+                    <template #icon>
+                        <ClassesList :size="20" :stroke-width="2" />
+                    </template>
+                </NavItem>
                 <form action="" method="get">
                     <InputLabel
                         v-model="name"
