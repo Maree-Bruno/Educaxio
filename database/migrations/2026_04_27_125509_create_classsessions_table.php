@@ -13,7 +13,7 @@ return new class extends Migration
             $table->date('date');
             $table->integer('lesson_hour');
             $table->string('classroom');
-            $table->foreignId('lesson_id')->constrained('lessons');
+            $table->foreignId('lesson_id')->constrained('lessons')->cascadeOnDelete();
             $table->timestamps();
         });
     }

@@ -12,8 +12,8 @@ return new class extends Migration {
             $table->id();
             $table->enum('type', Attendance_type::values());
             $table->text('motive')->nullable();
-            $table->foreignId('student_id')->constrained('students');
-            $table->foreignId('attendance_id')->constrained('attendances');
+            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+            $table->foreignId('attendance_id')->constrained('attendances')->cascadeOnDelete();
             $table->timestamps();
         });
     }

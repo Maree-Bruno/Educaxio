@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('lastname');
             $table->string('firstname');
             $table->string('email')->nullable()->unique();
-            $table->foreignId('group_id')->constrained('groups');
+            $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
             $table->timestamps();
         });
     }

@@ -11,6 +11,7 @@ const props = withDefaults(
         href: string;
         variant?: Variant;
         size?: Size;
+        mobileSize?: Size;
         label?: string;
         iconOnly?: boolean;
         method?: Method;
@@ -18,6 +19,7 @@ const props = withDefaults(
     {
         variant: 'primary',
         size: 'md',
+        mobileSize: undefined,
         label: '',
         iconOnly: false,
         method: 'get',
@@ -35,23 +37,33 @@ const variantClasses = computed(
         })[props.variant],
 );
 
-const sizeClasses = computed(
-    () =>
-        ({
-            sm: 'px-4 py-2 text-base',
-            md: 'px-5 py-2.5 text-xl',
-            lg: 'px-7 py-3.5 text-2xl',
-        })[props.size],
-);
+const sizePaddingMap = {
+    sm: { base: 'px-4 py-2 text-base', lg: 'lg:px-4 lg:py-2 lg:text-base' },
+    md: { base: 'px-5 py-2.5 text-xl font-bold', lg: 'lg:px-5 lg:py-2.5 lg:text-xl lg:font-bold' },
+    lg: { base: 'px-7 py-3.5 text-2xl font-bold', lg: 'lg:px-7 lg:py-3.5 lg:text-2xl lg:font-bold' },
+};
 
-const iconSizeClasses = computed(
-    () =>
-        ({
-            sm: 'w-4 h-4',
-            md: 'w-5 h-5',
-            lg: 'w-6 h-6',
-        })[props.size],
-);
+const sizeClasses = computed(() => {
+    if (props.mobileSize && props.mobileSize !== props.size) {
+        return `${sizePaddingMap[props.mobileSize].base} ${sizePaddingMap[props.size].lg}`;
+    }
+
+    return sizePaddingMap[props.size].base;
+});
+
+const iconSizeMap = {
+    sm: { base: 'w-4 h-4', lg: 'lg:w-4 lg:h-4' },
+    md: { base: 'w-5 h-5', lg: 'lg:w-5 lg:h-5' },
+    lg: { base: 'w-6 h-6', lg: 'lg:w-6 lg:h-6' },
+};
+
+const iconSizeClasses = computed(() => {
+    if (props.mobileSize && props.mobileSize !== props.size) {
+        return `${iconSizeMap[props.mobileSize].base} ${iconSizeMap[props.size].lg}`;
+    }
+
+    return iconSizeMap[props.size].base;
+});
 </script>
 
 <template>

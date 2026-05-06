@@ -14,8 +14,22 @@ class Group extends Model
     protected $fillable = [
         'name',
         'grade',
+        'slug',
+        'school_id',
         'academic_year_id',
+        'subject_id',
+        'user_id',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
 
     public function academicYear(): BelongsTo
     {

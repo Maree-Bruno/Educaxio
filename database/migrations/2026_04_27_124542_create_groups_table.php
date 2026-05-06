@@ -11,6 +11,8 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('grade');
+            $table->string('slug')->unique();
+            $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignId('academic_year_id')->constrained('academic_years');
             $table->timestamps();
         });

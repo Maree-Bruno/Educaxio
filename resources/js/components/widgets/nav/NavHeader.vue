@@ -26,6 +26,7 @@ function isActive(href: string): boolean {
 
 <template>
     <nav>
+        <h3 class="sr-only">Liens de navigation</h3>
         <ul class="space-y-1">
             <NavItem
                 v-for="item in navItems"

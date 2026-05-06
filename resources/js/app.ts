@@ -12,7 +12,7 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => (title ? `${title} | ${appName}` : appName),
 
     // Fallback quand le layout de la page est un objet de props (ex: auth pages)
     layout: (name) => {
