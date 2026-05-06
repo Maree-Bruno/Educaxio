@@ -17,7 +17,7 @@ class LessonFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
+            'name' => $this->faker->word(),
             'group_id' => Group::factory(),
             'subject_id' => Subject::factory(),
             'user_id' => User::factory(),

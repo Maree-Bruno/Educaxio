@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { Head } from '@inertiajs/vue3';
+import { usePageTitle } from '@/composables/usePageTitle';
+import { useNavigationStore } from '@/stores/navigation';
 import AppHeader from '@/components/widgets/nav/AppHeader.vue';
 import TopBar from '@/components/widgets/nav/TopBar.vue';
-import { useNavigationStore } from '@/stores/navigation';
+
+const title = usePageTitle();
 
 defineOptions({ inheritAttrs: false });
 
@@ -14,10 +18,14 @@ const nav = useNavigationStore();
 
         <main
             class="flex-1 transition-all duration-300 ease-in-out"
-            :class="nav.isCollapsed ? 'ml-16' : 'ml-64'"
+            :class="nav.isCollapsed ? 'md:ml-16' : 'md:ml-64'"
         >
             <TopBar />
-            <slot />
+            <section class="flex flex-col gap-4 lg:p-section p-2">
+                <Head :title="title" />
+                <h2 class="sr-only">{{title}}</h2>
+                <slot />
+            </section>
         </main>
     </div>
 </template>

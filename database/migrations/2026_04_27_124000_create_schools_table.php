@@ -7,16 +7,16 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('attendances', function (Blueprint $table) {
+        Schema::create('schools', function (Blueprint $table) {
             $table->id();
-            $table->dateTime('validated_at');
-            $table->foreignId('classsession_id')->constrained('classsessions')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('slug')->unique();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('attendances');
+        Schema::dropIfExists('schools');
     }
 };

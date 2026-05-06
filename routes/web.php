@@ -14,8 +14,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //Classlist
     Route::get('classlist', [ClassListController::class, 'index'])->name('classlist');
+    Route::get('classlist/create', [ClassListController::class, 'create'])->name('classlist.create');
+    Route::get('classlist/{group}', [ClassListController::class, 'show'])->name('classlist.show');
     Route::post('classlist', [ClassListController::class, 'store'])->name('classlist.store');
-    Route::delete('classlist/{classlist}', [ClassListController::class, 'destroy'])->name('classlist.destroy');
+    Route::patch('classlist/{group}', [ClassListController::class, 'update'])->name('classlist.update');
+    Route::delete('classlist/{group}', [ClassListController::class, 'destroy'])->name('classlist.destroy');
     // attendances
     Route::get('attendances', [AttendanceController::class, 'index'])->name('attendances');
     Route::post('attendances', [AttendanceController::class, 'store'])->name('attendances.store');

@@ -27,7 +27,7 @@ const props = withDefaults(
             class="flex cursor-pointer items-center text-base gap-2.5 rounded-md px-4 py-2 font-bold transition-all hover:text-blue-dark hover:bg-hover-nav"
             :class="[
                 props.active ? 'text-blue-dark bg-hover-nav' : 'text-text-base',
-                props.collapsed ? 'justify-center px-2' : '',
+                props.collapsed ? 'md:justify-center md:px-2' : '',
             ]"
         >
             <div class="shrink-0">
@@ -37,7 +37,7 @@ const props = withDefaults(
             <span
                 class="overflow-hidden whitespace-nowrap transition-[opacity,max-width] ease-in-out"
                 :class="props.collapsed
-                    ? 'sr-only duration-150'
+                    ? 'md:sr-only duration-150'
                     : 'max-w-50 opacity-100 duration-200 delay-150'
                 "
             >{{ props.title }}</span>

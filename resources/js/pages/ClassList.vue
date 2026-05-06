@@ -1,157 +1,198 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import { useDebounceFn } from '@vueuse/core';
+import { computed, ref, watch, watchEffect } from 'vue';
+import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
+import FilterBar from '@/components/widgets/FilterBar.vue';
+import GroupCard from '@/components/widgets/GroupCard.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
-import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
-import Edit from '@/components/widgets/svg/Edit.vue';
-import Eye from '@/components/widgets/svg/Eye.vue';
+import SearchInput from '@/components/widgets/SearchInput.vue';
+import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
-import Trash from '@/components/widgets/svg/Trash.vue';
+import { useGroupsStore } from '@/stores/groups';
+import type { Group, School } from '@/types';
 
 setPageTitle('Liste des classes');
 
-interface AcademicYear {
-    id: number;
-    year: string;
-}
-
-interface Group {
-    id: number;
-    name: string;
-    grade: string;
-    academic_year_id: number;
-    academic_year: AcademicYear;
-    students_count: number;
-}
-
-defineProps<{
+const props = defineProps<{
     groups: Group[];
+    schools: Pick<School, 'id' | 'name'>[];
+    classes: Pick<Group, 'slug' | 'grade' | 'name' | 'school_id'>[];
+    filters: { school?: string; class?: string; search?: string; sort?: string };
 }>();
+
+const groupsStore = useGroupsStore();
+
+watchEffect(() => groupsStore.setGroups(props.groups));
+
+const pendingDelete = ref<{ id: number; slug: string; name: string } | null>(
+    null,
+);
+const deleteLoading = ref(false);
+
+function requestDelete(id: number, slug: string) {
+    const group = groupsStore.groups.find((g) => g.id === id);
+    pendingDelete.value = { id, slug, name: `${group?.grade}${group?.name}` };
+}
+
+function confirmDelete() {
+    if (!pendingDelete.value) {
+        return;
+    }
+
+    deleteLoading.value = true;
+    router.delete(`/classlist/${pendingDelete.value.slug}`, {
+        onSuccess: () => {
+            groupsStore.removeGroup(pendingDelete.value!.id);
+            pendingDelete.value = null;
+        },
+        onFinish: () => {
+            deleteLoading.value = false;
+        },
+    });
+}
+
+const filterSchool = ref<string | null>(props.filters.school ?? null);
+const filterClass = ref<string | null>(props.filters.class ?? null);
+const search = ref(props.filters.search ?? '');
+const sort = ref(props.filters.sort ?? '');
+
+const sortOptions = [
+    { value: 'grade', label: 'Par classe' },
+    { value: 'school', label: 'Par école' },
+    { value: 'students', label: 'Par nb d\'élèves' },
+    { value: 'subject', label: 'Par cours' },
+];
+
+const schoolOptions = props.schools.map((s) => ({
+    value: s.id,
+    label: s.name,
+}));
+const classOptions = computed(() => {
+    const filtered = filterSchool.value
+        ? props.classes.filter(
+              (c) => String(c.school_id) === String(filterSchool.value),
+          )
+        : props.classes;
+
+    return filtered.map((c) => ({
+        value: c.slug,
+        label: `${c.grade}${c.name}`,
+    }));
+});
+
+function applyFilters() {
+    router.get(
+        '/classlist',
+        {
+            school: filterSchool.value ?? undefined,
+            class: filterClass.value ?? undefined,
+            search: search.value || undefined,
+            sort: sort.value || undefined,
+        },
+        { preserveState: true, replace: true },
+    );
+}
+
+const applySearchDebounced = useDebounceFn(applyFilters, 300);
+
+const activeCount = computed(() => {
+    return [filterSchool.value, filterClass.value, search.value || null].filter(
+        Boolean,
+    ).length;
+});
+
+watch(filterSchool, () => {
+    const stillValid = classOptions.value.some(
+        (o) => o.value === filterClass.value,
+    );
+
+    if (!stillValid) {
+        filterClass.value = null;
+    }
+
+    applyFilters();
+});
+watch(filterClass, applyFilters);
+watch(search, applySearchDebounced);
+watch(sort, applyFilters);
 </script>
 
 <template>
-    <div class="p-section">
+    <FilterBar :active-count="activeCount">
+        <template #filters>
+            <SelectField
+                id="filter-school"
+                v-model="filterSchool"
+                label="École"
+                placeholder="Toutes les écoles"
+                :options="schoolOptions"
+                class="w-full lg:w-[22%]"
+            />
+            <SelectField
+                id="filter-class"
+                v-model="filterClass"
+                label="Classe"
+                placeholder="Toutes les classes"
+                :options="classOptions"
+                class="w-full lg:w-[22%]"
+            />
+            <SearchInput
+                id="filter-search"
+                v-model="search"
+                label="Rechercher"
+                placeholder="Rechercher"
+                class="w-full lg:w-[22%]"
+            />
+            <SelectField
+                id="filter-sort"
+                v-model="sort"
+                label="Trier par"
+                placeholder="Par défaut"
+                :options="sortOptions"
+                class="w-full lg:w-[22%]"
+            />
+        </template>
+        <template #action>
+            <LinkButton
+                href="/classlist/create"
+                variant="primary"
+                size="md"
+                mobile-size="sm"
+                label="Nouvelle classe"
+                class="w-full font-bold"
+            />
+        </template>
+    </FilterBar>
+
+    <ConfirmModal
+        :open="pendingDelete !== null"
+        :title="`Supprimer la classe ${pendingDelete?.name}`"
+        message="Toutes les données associées (élèves, cours, présences) seront supprimées définitivement."
+        :loading="deleteLoading"
+        @confirm="confirmDelete"
+        @cancel="pendingDelete = null"
+    />
+
+    <div>
         <p
-            v-if="groups.length === 0"
+            v-if="groupsStore.groups.length === 0"
             class="flex flex-col items-center justify-center gap-3 rounded-3xl bg-white py-20 text-center font-bold text-text-base"
         >
             Aucune classe pour le moment
         </p>
 
-        <ul v-else class="flex list-none flex-wrap gap-4">
-            <li
-                v-for="group in groups"
-                :key="group.id"
-                class="flex w-72 flex-col items-start justify-start gap-6 rounded-3xl bg-white px-8 py-6"
-            >
-                <!-- Infos principales -->
-                <dl class="flex flex-col gap-5 self-stretch">
-                    <div
-                        class="flex items-center justify-start gap-3 self-stretch"
-                    >
-                        <div class="flex flex-1 flex-col gap-1">
-                            <dt
-                                class="text-xs leading-5 font-bold text-border-figma uppercase"
-                            >
-                                Classe
-                            </dt>
-                            <dd
-                                class="line-clamp-1 text-base leading-5 font-bold text-text-base"
-                            >
-                                {{ group.grade }}{{ group.name }}
-                            </dd>
-                        </div>
-                        <div class="flex flex-1 flex-col gap-1">
-                            <dt
-                                class="text-xs leading-5 font-bold text-border-figma uppercase"
-                            >
-                                Établissement
-                            </dt>
-                            <dd
-                                class="text-base leading-5 font-bold text-text-base"
-                            >
-                                —
-                            </dd>
-                        </div>
-                    </div>
-                </dl>
-
-                <!-- Année + Effectifs -->
-                <dl class="flex items-center justify-start gap-3 self-stretch">
-                    <div class="flex flex-1 flex-col gap-1">
-                        <dt
-                            class="text-xs leading-5 font-bold text-border-figma uppercase"
-                        >
-                            Année
-                        </dt>
-                        <dd class="text-sm leading-5 font-bold text-text-base">
-                            {{ group.academic_year.year }}
-                        </dd>
-                    </div>
-                    <div class="flex flex-1 flex-col gap-1">
-                        <dt
-                            class="text-xs leading-5 font-bold text-border-figma uppercase"
-                        >
-                            Effectifs
-                        </dt>
-                        <dd class="text-sm leading-5 font-bold text-text-base">
-                            {{ group.students_count }}
-                        </dd>
-                    </div>
-                </dl>
-
-                <!-- Actions -->
-                <div
-                    class="flex items-center justify-between self-stretch"
-                    :aria-label="`Actions pour ${group.name}`"
-                >
-                    <LinkButton
-                        href="#"
-                        variant="primary"
-                        size="sm"
-                        :icon-only="true"
-                        label="Voir la classe"
-                        title="Voir la classe"
-                    >
-                        <template #icon>
-                            <Eye
-                                :size="16"
-                                :stroke-width="2"
-                                aria-hidden="true"
-                            />
-                        </template>
-                    </LinkButton>
-                    <LinkButton
-                        href="#"
-                        variant="secondary"
-                        size="sm"
-                        :icon-only="true"
-                        label="Cahier de côte"
-                        title="Présences"
-                    >
-                        <template #icon>
-                            <ClipboardCheck
-                                :size="16"
-                                :stroke-width="2"
-                                aria-hidden="true"
-                            />
-                        </template>
-                    </LinkButton>
-                    <LinkButton
-                        href="#"
-                        variant="danger"
-                        size="sm"
-                        :icon-only="true"
-                        label="Supprimer la classe"
-                        title="Supprimer la classe"
-                    >
-                        <template #icon>
-                            <Trash
-                                :size="16"
-                                :stroke-width="2"
-                                aria-hidden="true"
-                            />
-                        </template>
-                    </LinkButton>
-                </div>
+        <ul
+            v-else
+            class="grid list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
+            <li v-for="group in groupsStore.groups" :key="group.id">
+                <GroupCard
+                    v-bind="group"
+                    :view-href="`/classlist/${group.slug}`"
+                    :grades-href="`/classlist/${group.slug}/grades`"
+                    @delete="requestDelete"
+                />
             </li>
         </ul>
     </div>
