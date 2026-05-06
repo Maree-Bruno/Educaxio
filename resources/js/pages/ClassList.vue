@@ -18,7 +18,7 @@ const props = defineProps<{
     groups: Group[];
     schools: Pick<School, 'id' | 'name'>[];
     classes: Pick<Group, 'slug' | 'grade' | 'name' | 'school_id'>[];
-    filters: { school?: string; class?: string; search?: string };
+    filters: { school?: string; class?: string; search?: string; sort?: string };
 }>();
 
 const groupsStore = useGroupsStore();
@@ -55,6 +55,14 @@ function confirmDelete() {
 const filterSchool = ref<string | null>(props.filters.school ?? null);
 const filterClass = ref<string | null>(props.filters.class ?? null);
 const search = ref(props.filters.search ?? '');
+const sort = ref(props.filters.sort ?? '');
+
+const sortOptions = [
+    { value: 'grade', label: 'Par classe' },
+    { value: 'school', label: 'Par école' },
+    { value: 'students', label: 'Par nb d\'élèves' },
+    { value: 'subject', label: 'Par cours' },
+];
 
 const schoolOptions = props.schools.map((s) => ({
     value: s.id,
@@ -80,6 +88,7 @@ function applyFilters() {
             school: filterSchool.value ?? undefined,
             class: filterClass.value ?? undefined,
             search: search.value || undefined,
+            sort: sort.value || undefined,
         },
         { preserveState: true, replace: true },
     );
@@ -106,6 +115,7 @@ watch(filterSchool, () => {
 });
 watch(filterClass, applyFilters);
 watch(search, applySearchDebounced);
+watch(sort, applyFilters);
 </script>
 
 <template>
@@ -134,10 +144,18 @@ watch(search, applySearchDebounced);
                 placeholder="Rechercher"
                 class="w-full lg:w-[22%]"
             />
+            <SelectField
+                id="filter-sort"
+                v-model="sort"
+                label="Trier par"
+                placeholder="Par défaut"
+                :options="sortOptions"
+                class="w-full lg:w-[22%]"
+            />
         </template>
         <template #action>
             <LinkButton
-                href="#"
+                href="/classlist/create"
                 variant="primary"
                 size="md"
                 mobile-size="sm"

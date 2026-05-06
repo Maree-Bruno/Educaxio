@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //Classlist
     Route::get('classlist', [ClassListController::class, 'index'])->name('classlist');
+    Route::get('classlist/create', [ClassListController::class, 'create'])->name('classlist.create');
     Route::get('classlist/{group}', [ClassListController::class, 'show'])->name('classlist.show');
     Route::post('classlist', [ClassListController::class, 'store'])->name('classlist.store');
     Route::patch('classlist/{group}', [ClassListController::class, 'update'])->name('classlist.update');

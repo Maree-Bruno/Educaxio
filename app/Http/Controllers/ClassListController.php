@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Group;
+use App\Models\Lesson;
 use App\Models\School;
 use App\Models\Subject;
 use Illuminate\Http\Request;
@@ -14,7 +15,11 @@ class ClassListController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Group::with(['school', 'academicYear', 'lessons.subject', 'lessons.user'])
+        $query = Group::with([
+            'school:id,name',
+            'academicYear:id,year',
+            'lessons:id,name,group_id',
+        ])
             ->withCount('students');
 
         if ($request->filled('school')) {
@@ -26,26 +31,74 @@ class ClassListController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->string('search')->trim();
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('grade', 'like', "%{$search}%")
-                    ->orWhereHas('school', fn ($s) => $s->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('lessons', fn ($l) => $l->where('name', 'like', "%{$search}%"));
-            });
+            $search = $request->string('search')->trim()->toString();
+
+            if (preg_match('/^(\d+)\s*([a-zA-Z]*)$/', $search, $matches)) {
+                $query->where('grade', 'like', "%{$matches[1]}%");
+                if ($matches[2] !== '') {
+                    $query->where('name', 'like', "%{$matches[2]}%");
+                }
+            } else {
+                $query->where('name', 'like', "%{$search}%");
+            }
         }
+
+        match ($request->string('sort')->toString()) {
+            'school' => $query->orderBy(School::select('name')->whereColumn('schools.id', 'groups.school_id')),
+            'students' => $query->orderByDesc('students_count'),
+            'subject' => $query->orderBy(Lesson::select('name')->whereColumn('lessons.group_id', 'groups.id')->limit(1)),
+            default => $query->orderBy('grade')->orderBy('name'),
+        };
 
         return Inertia::render('ClassList', [
             'groups' => $query->get(),
             'schools' => School::orderBy('name')->get(['id', 'name']),
             'classes' => Group::orderBy('grade')->orderBy('name')->get(['slug', 'grade', 'name', 'school_id']),
-            'filters' => $request->only(['school', 'class', 'search']),
+            'filters' => $request->only(['school', 'class', 'search', 'sort']),
         ]);
     }
 
-    public function create(): void {}
+    public function create()
+    {
+        return Inertia::render('ClassListCreate', [
+            'schools' => School::orderBy('name')->get(['id', 'name']),
+            'academicYears' => AcademicYear::orderByDesc('year')->get(['id', 'year']),
+            'subjects' => Subject::orderBy('name')->get(['id', 'name']),
+        ]);
+    }
 
-    public function store(Request $request): void {}
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'grade' => ['required', 'string', 'max:20'],
+            'name' => ['required', 'string', 'max:10'],
+            'school_id' => ['nullable', 'exists:schools,id'],
+            'academic_year_id' => ['required', 'exists:academic_years,id'],
+            'subject_id' => ['required', 'exists:subjects,id'],
+        ]);
+
+        $school = School::find($validated['school_id']);
+
+        $group = Group::create([
+            'grade' => $validated['grade'],
+            'name' => $validated['name'],
+            'slug' => Str::slug("{$school->slug}-{$validated['grade']}-{$validated['name']}"),
+            'school_id' => $validated['school_id'],
+            'academic_year_id' => $validated['academic_year_id'],
+        ]);
+
+        if ($validated['subject_id']) {
+            $subject = Subject::find($validated['subject_id']);
+            $group->lessons()->create([
+                'name' => $subject->name,
+                'subject_id' => $validated['subject_id'],
+                'user_id' => auth()->id(),
+                'academic_year_id' => $validated['academic_year_id'],
+            ]);
+        }
+
+        return to_route('classlist.show', $group);
+    }
 
     public function show(Group $group)
     {
@@ -69,9 +122,9 @@ class ClassListController extends Controller
         $validated = $request->validate([
             'grade' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:10'],
-            'school_id' => ['required', 'exists:schools,id'],
+            'school_id' => ['nullable', 'exists:schools,id'],
             'academic_year_id' => ['required', 'exists:academic_years,id'],
-            'subject_id' => ['nullable', 'exists:subjects,id'],
+            'subject_id' => ['required', 'exists:subjects,id'],
         ]);
 
         $school = School::find($validated['school_id']);

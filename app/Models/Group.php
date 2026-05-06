@@ -17,8 +17,8 @@ class Group extends Model
         'slug',
         'school_id',
         'academic_year_id',
-        'subject_id',
         'user_id',
+        'subject_id',
     ];
 
     public function getRouteKeyName(): string

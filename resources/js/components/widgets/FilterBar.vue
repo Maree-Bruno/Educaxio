@@ -18,8 +18,8 @@ const isOpen = ref(false);
     >
         <div class="rounded-2xl bg-white p-6 outline-1 -outline-offset-1 outline-neutral-300/10">
 
-            <!-- Ligne toggle (mobile) + action (toujours visible) -->
-            <div class="flex items-center justify-between gap-4 lg:hidden">
+            <!-- Toggle + action -->
+            <div class="flex items-center justify-between gap-4">
                 <button
                     type="button"
                     class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-text-base transition-colors hover:bg-gray-50"
@@ -42,13 +42,12 @@ const isOpen = ref(false);
                     />
                 </button>
 
-                <!-- Action slot : visible sur mobile dans la barre de toggle -->
                 <div class="shrink-0">
                     <slot name="action" />
                 </div>
             </div>
 
-            <!-- Champs de filtre : collapsible sur mobile, toujours visible desktop -->
+            <!-- Champs de filtre collapsibles -->
             <Transition
                 enter-active-class="transition-all duration-200 ease-out"
                 enter-from-class="opacity-0 -translate-y-2"
@@ -59,23 +58,11 @@ const isOpen = ref(false);
             >
                 <div
                     v-show="isOpen"
-                    class="mt-4 flex flex-col gap-4 lg:hidden"
+                    class="mt-4 flex justify-between items-end gap-4"
                 >
                     <slot name="filters" />
                 </div>
             </Transition>
-
-            <!-- Desktop : ligne unique toujours visible -->
-            <div
-                class="hidden lg:flex lg:flex-row lg:flex-wrap lg:items-end lg:justify-between lg:gap-4"
-            >
-                <slot name="filters" />
-
-                <!-- Action slot : visible sur desktop dans la ligne des filtres -->
-                <div class="shrink-0">
-                    <slot name="action" />
-                </div>
-            </div>
         </div>
     </div>
 </template>
