@@ -1,3 +1,5 @@
+import type { User } from '@/types/auth';
+
 export interface School {
     id: number;
     name: string;
@@ -14,17 +16,14 @@ export interface Subject {
     name: string;
 }
 
-export interface User {
-    id: number;
-    name: string;
-}
-
 export interface Student {
     id: number;
     firstname: string;
     lastname: string;
-    email?: string;
-    group_id: number;
+    email?: string | null;
+    groups?: (Pick<Group, 'id' | 'grade' | 'name' | 'slug' | 'school_id'> & {
+        school: Pick<School, 'id' | 'name'>;
+    })[];
 }
 
 export interface Lesson {

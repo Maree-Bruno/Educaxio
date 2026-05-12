@@ -30,6 +30,10 @@ class ClassListController extends Controller
             $query->where('slug', $request->string('class'));
         }
 
+        if ($request->filled('year')) {
+            $query->where('academic_year_id', $request->integer('year'));
+        }
+
         if ($request->filled('search')) {
             $search = $request->string('search')->trim()->toString();
 
@@ -43,18 +47,21 @@ class ClassListController extends Controller
             }
         }
 
+        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
+
         match ($request->string('sort')->toString()) {
-            'school' => $query->orderBy(School::select('name')->whereColumn('schools.id', 'groups.school_id')),
-            'students' => $query->orderByDesc('students_count'),
-            'subject' => $query->orderBy(Lesson::select('name')->whereColumn('lessons.group_id', 'groups.id')->limit(1)),
-            default => $query->orderBy('grade')->orderBy('name'),
+            'school' => $query->orderBy(School::select('name')->whereColumn('schools.id', 'groups.school_id'), $dir),
+            'students' => $query->orderBy('students_count', $dir),
+            'subject' => $query->orderBy(Lesson::select('name')->whereColumn('lessons.group_id', 'groups.id')->limit(1), $dir),
+            default => $query->orderBy('grade', $dir)->orderBy('name', $dir),
         };
 
         return Inertia::render('ClassList', [
             'groups' => $query->get(),
             'schools' => School::orderBy('name')->get(['id', 'name']),
+            'academicYears' => AcademicYear::orderByDesc('year')->get(['id', 'year']),
             'classes' => Group::orderBy('grade')->orderBy('name')->get(['slug', 'grade', 'name', 'school_id']),
-            'filters' => $request->only(['school', 'class', 'search', 'sort']),
+            'filters' => $request->only(['school', 'class', 'year', 'search', 'sort', 'dir']),
         ]);
     }
 
@@ -100,10 +107,14 @@ class ClassListController extends Controller
         return to_route('classlist.show', $group);
     }
 
-    public function show(Group $group)
+    public function show(Group $group, Request $request)
     {
         $group->load(['school', 'academicYear', 'lessons']);
-        $students = $group->students()->paginate(10);
+        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
+        $sortCol = in_array($request->string('sort')->toString(), ['lastname', 'firstname'])
+            ? $request->string('sort')->toString()
+            : 'lastname';
+        $students = $group->students()->orderBy($sortCol, $dir)->paginate(10);
         $group->students_count = $students->total();
 
         return Inertia::render('ClassListShow', [
@@ -112,6 +123,7 @@ class ClassListController extends Controller
             'schools' => School::orderBy('name')->get(['id', 'name']),
             'academicYears' => AcademicYear::orderByDesc('year')->get(['id', 'year']),
             'subjects' => Subject::orderBy('name')->get(['id', 'name']),
+            'filters' => $request->only(['sort', 'dir']),
         ]);
     }
 

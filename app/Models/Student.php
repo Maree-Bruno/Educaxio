@@ -2,29 +2,30 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Student extends Model
 {
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = [
         'lastname',
         'firstname',
-        'group_id',
         'email',
+        'user_id',
     ];
 
-    public function group(): BelongsTo
+    public function groups(): BelongsToMany
     {
-        return $this->belongsTo(Group::class);
+        return $this->belongsToMany(Group::class);
     }
 
     public function attendanceStatuses(): HasMany
     {
-return $this->hasMany(StudentAttendanceStatus::class);
+        return $this->hasMany(StudentAttendanceStatus::class);
     }
 }

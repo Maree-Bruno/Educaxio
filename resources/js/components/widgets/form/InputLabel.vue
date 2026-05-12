@@ -12,6 +12,7 @@ const props = withDefaults(
         disabled?: boolean;
         type?: InputType;
         id?: string;
+        size?: 'sm' | 'md';
     }>(),
     {
         modelValue: '',
@@ -20,6 +21,7 @@ const props = withDefaults(
         error: '',
         disabled: false,
         type: 'text',
+        size: 'md',
     },
 );
 
@@ -33,13 +35,14 @@ const isFilled = computed(() => props.modelValue.length > 0);
 const hasError = computed(() => props.error.length > 0);
 
 const inputClasses = computed(() => [
-    'w-full rounded-2xl border bg-white px-3 py-3 font-manrope text-xl outline-none transition-all duration-150',
+    'w-full rounded-2xl border bg-white font-manrope outline-none transition-all duration-150',
     'placeholder:text-gray-400 placeholder:font-normal',
     'disabled:cursor-not-allowed disabled:opacity-50',
     hasError.value
         ? 'border-border-figma focus:border-pink focus:ring-2 focus:ring-pink/20'
         : 'border-border-figma focus:border-blue focus:ring-2 focus:ring-blue/20',
     isFilled.value ? 'font-semibold text-text-base' : 'font-normal',
+    props.size === 'sm' ? 'px-3 py-2.5 text-sm' : 'px-3 py-3 text-xl',
 ]);
 </script>
 
@@ -49,7 +52,7 @@ const inputClasses = computed(() => [
         <label
             v-if="label"
             :for="inputId"
-            class="font-manrope text-sm font-semibold uppercase tracking-widest text-gray-400"
+            class="font-manrope text-xs font-bold uppercase tracking-widest text-border-figma leading-4"
         >
             {{ label }}
         </label>

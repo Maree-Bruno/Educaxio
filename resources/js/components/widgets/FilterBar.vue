@@ -26,7 +26,7 @@ const isOpen = ref(false);
                     :aria-expanded="isOpen"
                     @click="isOpen = !isOpen"
                 >
-                    <span>Filtres</span>
+                    <span>Filtres & tri</span>
                     <span
                         v-if="activeCount"
                         class="flex h-5 w-5 items-center justify-center rounded-full bg-blue text-xs font-bold text-white"
@@ -58,7 +58,7 @@ const isOpen = ref(false);
             >
                 <div
                     v-show="isOpen"
-                    class="mt-4 flex justify-between items-end gap-4"
+                    class="mt-4 flex flex-col lg:flew-row justify-between items-end gap-4"
                 >
                     <slot name="filters" />
                 </div>
