@@ -5,11 +5,14 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import Button from '@/components/widgets/Button.vue';
 import Logout from '@/components/widgets/svg/Logout.vue';
 import Pin from '@/components/widgets/svg/Pin.vue';
+import { useUserHelpers } from '@/composables/useUserHelpers';
 import { logout } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
 import NavHeader from './NavHeader.vue';
+
+const { getUserImageUrl, getUserImageSrcset } = useUserHelpers();
 
 function handleLogout() {
     router.post(logout.url());
@@ -130,8 +133,10 @@ onUnmounted(() => {
                         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-dark text-sm font-semibold text-white shadow-sm"
                     >
                         <img
-                            v-if="auth.user.avatar"
-                            :src="auth.user.avatar"
+                            v-if="auth.user.picture"
+                            :src="getUserImageUrl(auth.user.picture, 'xs')"
+                            :srcset="getUserImageSrcset(auth.user.picture)"
+                            sizes="36px"
                             :alt="`Photo de ${auth.user.name}`"
                             class="h-full w-full rounded-full object-cover"
                         />
