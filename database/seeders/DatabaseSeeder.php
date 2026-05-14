@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $teacher = User::factory()->create([
-            'name' => 'Professeur Dupont',
+            'name' => 'John Doe',
             'email' => 'test@example.com',
             'password' => 'password',
         ]);

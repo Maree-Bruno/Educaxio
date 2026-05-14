@@ -13,7 +13,7 @@ https://www.figma.com/design/wsmcOKGNYPpmEnVJviH3ov/Design?node-id=0-1&t=xSjaS1u
 ---
 ## Technologies
 
-- **Backend :** Laravel 12 (PHP 8.5)
+- **Backend :** Laravel 13 (PHP 8.5)
 - **Surcouche :** Inertia
 - **Frontend :** Vue.js 3 + Tailwind CSS
 - **Base de données :** MySQL

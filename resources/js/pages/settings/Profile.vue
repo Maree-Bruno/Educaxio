@@ -138,21 +138,21 @@ function confirmDelete() {
         <section class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10">
             <h2 class="text-base font-bold text-text-base">Informations personnelles</h2>
 
-            <div class="flex gap-5">
+            <div class="flex flex-col gap-5 sm:flex-row">
                 <!-- Avatar -->
-                <div class="shrink-0">
+                <div class="shrink-0 self-start">
                     <div class="relative">
                         <img
                             v-if="hasImage"
                             :src="currentImageSrc"
                             :srcset="currentImageSrcset || undefined"
-                            sizes="(max-width: 640px) 128px, 176px"
-                            class="size-44 rounded-full object-cover"
+                            sizes="(max-width: 640px) 112px, 176px"
+                            class="size-28 rounded-full object-cover sm:size-44"
                             alt="Photo de profil"
                         />
                         <div
                             v-else
-                            class="flex size-44 items-center justify-center rounded-full bg-neutral-100 text-4xl font-bold text-neutral-400"
+                            class="flex size-28 items-center justify-center rounded-full bg-neutral-100 text-3xl font-bold text-neutral-400 sm:size-44 sm:text-4xl"
                         >
                             {{ user.name?.charAt(0).toUpperCase() }}
                         </div>
@@ -267,7 +267,7 @@ function confirmDelete() {
         </section>
 
         <!-- Ligne du bas -->
-        <div class="flex items-start gap-8">
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
 
             <!-- Changer de mot de passe -->
             <section class="flex flex-[3] flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10">
@@ -282,7 +282,7 @@ function confirmDelete() {
                         :error="passwordForm.errors.current_password"
                         class="w-full"
                     />
-                    <div class="flex w-full gap-5">
+                    <div class="flex w-full flex-col gap-5 sm:flex-row">
                         <InputLabel
                             v-model="passwordForm.password"
                             label="Nouveau mot de passe"
@@ -311,7 +311,7 @@ function confirmDelete() {
             </section>
 
             <!-- Supprimer le compte -->
-            <section class="flex flex-[2] flex-col justify-between gap-5 rounded-2xl bg-pink/10 p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10" style="min-height: 320px;">
+            <section class="flex flex-col justify-between gap-5 rounded-2xl bg-pink/10 p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10 lg:flex-[2] lg:min-h-80">
                 <div class="flex flex-col gap-5">
                     <h2 class="text-base font-bold text-text-base">Supprimer le compte</h2>
                     <p class="text-sm text-text-base">
