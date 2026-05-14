@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\School;
 use App\Models\Subject;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -19,20 +20,42 @@ class ClassListController extends Controller
         return auth()->user()->schools()->pluck('schools.id');
     }
 
+    private function scopedGroupQuery(Collection $adminSchoolIds, Collection $teacherSchoolIds): Builder
+    {
+        $userId = auth()->id();
+
+        return Group::query()->where(function ($q) use ($adminSchoolIds, $teacherSchoolIds, $userId) {
+            if ($adminSchoolIds->isNotEmpty()) {
+                $q->whereIn('school_id', $adminSchoolIds);
+            }
+
+            if ($teacherSchoolIds->isNotEmpty()) {
+                $q->orWhere(function ($sub) use ($teacherSchoolIds, $userId) {
+                    $sub->whereIn('school_id', $teacherSchoolIds)
+                        ->whereHas('lessons.users', fn ($u) => $u->where('users.id', $userId));
+                });
+            }
+        });
+    }
+
     public function index(Request $request)
     {
-        $schoolIds = $this->userSchoolIds();
+        $userSchools = auth()->user()->schools()->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
+        $adminSchoolIds = $userSchools->filter(fn ($s) => $s->pivot->role === 'admin')->pluck('id');
+        $teacherSchoolIds = $userSchools->filter(fn ($s) => $s->pivot->role === 'teacher')->pluck('id');
+        $schoolIds = $userSchools->pluck('id');
 
-        $query = Group::with([
+        $query = $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)->with([
             'school:id,name',
             'academicYear:id,year',
             'lessons:id,name,group_id',
-        ])
-            ->withCount('students')
-            ->whereIn('school_id', $schoolIds);
+        ])->withCount('students');
 
         if ($request->filled('school')) {
-            $query->where('school_id', $request->integer('school'));
+            $school = $userSchools->firstWhere('slug', $request->string('school')->toString());
+            if ($school) {
+                $query->where('school_id', $school->id);
+            }
         }
 
         if ($request->filled('class')) {
@@ -67,12 +90,12 @@ class ClassListController extends Controller
 
         return Inertia::render('ClassList', [
             'groups' => $query->get(),
-            'schools' => auth()->user()->schools()->orderBy('name')->get(['schools.id', 'schools.name']),
+            'schools' => $userSchools,
             'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderByDesc('year')->get(['id', 'year']),
-            'classes' => Group::whereIn('school_id', $schoolIds)
+            'classes' => $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)
                 ->orderBy('grade')->orderBy('name')->get(['slug', 'grade', 'name', 'school_id']),
-            'filters' => $request->only(['school', 'class', 'year', 'search', 'sort', 'dir']),
+            'filters' => (object) $request->only(['school', 'class', 'year', 'search', 'sort', 'dir']),
         ]);
     }
 

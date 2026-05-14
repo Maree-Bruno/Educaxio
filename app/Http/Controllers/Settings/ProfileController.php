@@ -5,47 +5,73 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Jobs\ProcessUploadedImage;
+use App\Models\Group;
+use App\Models\Lesson;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    /**
-     * Show the user's profile settings page.
-     */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $schoolIds = $user->schools()->pluck('schools.id');
+
         return Inertia::render('settings/Profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'userLessonIds' => $user->lessons()->pluck('lessons.id'),
+            'availableLessons' => Lesson::whereHas('group', fn ($q) => $q->whereIn('school_id', $schoolIds))
+                ->with([
+                    'group:id,slug,grade,name,school_id',
+                    'group.school:id,name',
+                    'subject:id,name',
+                ])
+                ->get(['id', 'name', 'group_id', 'subject_id']),
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->safe()->except('picture'));
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        if ($request->hasFile('picture')) {
+            $disk = config('images.disk');
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
+            if ($user->picture) {
+                Storage::disk($disk)->delete(config('images.original_path').'/'.$user->picture);
+            }
+
+            $filename = Str::uuid().'.webp';
+            $originalPath = Storage::disk($disk)->putFileAs(
+                config('images.original_path'),
+                $request->file('picture'),
+                $filename
+            );
+
+            if ($originalPath) {
+                $user->picture = $filename;
+                ProcessUploadedImage::dispatchSync($originalPath, $filename, 'images');
+            }
+        }
+
+        $user->save();
 
         return to_route('profile.edit');
     }
 
-    /**
-     * Delete the user's profile.
-     */
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
         $user = $request->user();

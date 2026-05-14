@@ -30,7 +30,16 @@ export interface Lesson {
     id: number;
     name: string;
     subject_id: number;
+    group_id: number;
     subject?: Subject;
+    group?: {
+        id: number;
+        grade: string;
+        name: string;
+        slug: string;
+        school_id: number;
+        school: Pick<School, 'id' | 'name'>;
+    };
 }
 
 export interface PaginationLink {

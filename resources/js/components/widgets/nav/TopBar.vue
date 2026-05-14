@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import Bell from '@/components/widgets/svg/Bell.vue';
 import Menu from '@/components/widgets/svg/Menu.vue';
 import { usePageTitle } from '@/composables/usePageTitle';
+import { useUserHelpers } from '@/composables/useUserHelpers';
 import { edit as profileEdit } from '@/routes/profile';
 import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
@@ -10,6 +11,7 @@ import { useNavigationStore } from '@/stores/navigation';
 const title = usePageTitle();
 const auth = useAuthStore();
 const nav = useNavigationStore();
+const { getUserImageUrl, getUserImageSrcset } = useUserHelpers();
 </script>
 
 <template>
@@ -56,8 +58,10 @@ const nav = useNavigationStore();
                     class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-dark text-sm font-semibold text-white shadow-sm transition-transform duration-200 group-hover:scale-105"
                 >
                     <img
-                        v-if="auth.user.avatar"
-                        :src="auth.user.avatar"
+                        v-if="auth.user.picture"
+                        :src="getUserImageUrl(auth.user.picture, 'xs')"
+                        :srcset="getUserImageSrcset(auth.user.picture)"
+                        sizes="36px"
                         :alt="`Photo de ${auth.user.name}`"
                         class="h-full w-full rounded-full object-cover"
                     />

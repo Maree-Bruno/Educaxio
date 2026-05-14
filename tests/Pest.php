@@ -2,6 +2,7 @@
 
 use App\Models\AcademicYear;
 use App\Models\Group;
+use App\Models\Lesson;
 use App\Models\School;
 use App\Models\Subject;
 use App\Models\User;
@@ -19,7 +20,8 @@ expect()->extend('toBeOne', function () {
 function createUserWithSchool(string $role = 'admin'): array
 {
     $user = User::factory()->create();
-    $school = School::create(['name' => 'École Test', 'slug' => 'ecole-test']);
+    $id = uniqid();
+    $school = School::create(['name' => "École Test {$id}", 'slug' => "ecole-test-{$id}"]);
     $school->users()->attach($user->id, ['role' => $role]);
 
     return [$user, $school];
@@ -27,8 +29,8 @@ function createUserWithSchool(string $role = 'admin'): array
 
 function attachAcademicYear(School $school, string $year = '2025-2026'): AcademicYear
 {
-    $academicYear = AcademicYear::create(['year' => $year]);
-    $school->academicYears()->attach($academicYear->id);
+    $academicYear = AcademicYear::firstOrCreate(['year' => $year]);
+    $school->academicYears()->syncWithoutDetaching([$academicYear->id]);
 
     return $academicYear;
 }

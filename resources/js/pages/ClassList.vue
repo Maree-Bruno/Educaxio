@@ -17,7 +17,7 @@ setPageTitle('Liste des classes');
 
 const props = defineProps<{
     groups: Group[];
-    schools: Pick<School, 'id' | 'name'>[];
+    schools: Pick<School, 'id' | 'name' | 'slug'>[];
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     classes: Pick<Group, 'slug' | 'grade' | 'name' | 'school_id'>[];
     filters: {
@@ -76,7 +76,7 @@ const sortOptions = [
 ];
 
 const schoolOptions = props.schools.map((s) => ({
-    value: s.id,
+    value: s.slug,
     label: s.name,
 }));
 const yearOptions = props.academicYears.map((y) => ({
@@ -84,10 +84,11 @@ const yearOptions = props.academicYears.map((y) => ({
     label: String(y.year),
 }));
 const classOptions = computed(() => {
-    const filtered = filterSchool.value
-        ? props.classes.filter(
-              (c) => String(c.school_id) === String(filterSchool.value),
-          )
+    const schoolId = filterSchool.value
+        ? props.schools.find((s) => s.slug === filterSchool.value)?.id
+        : null;
+    const filtered = schoolId
+        ? props.classes.filter((c) => c.school_id === schoolId)
         : props.classes;
 
     return filtered.map((c) => ({

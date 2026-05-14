@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'picture'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -30,5 +30,10 @@ class User extends Authenticatable
     public function schools(): BelongsToMany
     {
         return $this->belongsToMany(School::class)->withPivot('role');
+    }
+
+    public function lessons(): BelongsToMany
+    {
+        return $this->belongsToMany(Lesson::class);
     }
 }

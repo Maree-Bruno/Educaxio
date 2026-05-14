@@ -19,8 +19,20 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $adminSaintJoseph = User::factory()->create([
+            'name' => 'Admin Saint-Joseph',
+            'email' => 'admin.sj@example.com',
+            'password' => 'password',
+        ]);
+
+        $adminAthenee = User::factory()->create([
+            'name' => 'Admin Athénée',
+            'email' => 'admin.ar@example.com',
+            'password' => 'password',
+        ]);
+
         $teacher = User::factory()->create([
-            'name' => 'test',
+            'name' => 'Professeur Dupont',
             'email' => 'test@example.com',
             'password' => 'password',
         ]);
@@ -32,7 +44,13 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Athénée Royal de Bruxelles', 'slug' => 'athenee-royal-bruxelles'],
         ])->map(fn ($data) => School::create($data));
 
-        $schools->each(fn (School $school) => $school->users()->attach($teacher->id, ['role' => 'admin']));
+        $saintJoseph = $schools->firstWhere('slug', 'saint-joseph');
+        $athenee = $schools->firstWhere('slug', 'athenee-royal-bruxelles');
+
+        $saintJoseph->users()->attach($adminSaintJoseph->id, ['role' => 'admin']);
+        $athenee->users()->attach($adminAthenee->id, ['role' => 'admin']);
+
+        $schools->each(fn (School $school) => $school->users()->attach($teacher->id, ['role' => 'teacher']));
 
         $subjectNames = [
             'Anglais', 'Néerlandais', 'Mathématiques', 'Sciences',
