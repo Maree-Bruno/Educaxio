@@ -10,7 +10,6 @@ return new class extends Migration {
     {
         Schema::create('student_attendance_statuses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->enum('type', Attendance_type::values());
             $table->text('motive')->nullable();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();

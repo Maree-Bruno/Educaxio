@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ClassSession extends Model
 {
-    use HasFactory, BelongsToUser;
+    use HasFactory;
 
     protected $table = 'classsessions';
 
@@ -19,7 +18,6 @@ class ClassSession extends Model
         'lesson_hour',
         'lesson_id',
         'classroom',
-        'user_id',
     ];
 
     public function lesson(): BelongsTo

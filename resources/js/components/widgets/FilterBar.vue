@@ -58,7 +58,7 @@ const isOpen = ref(false);
             >
                 <div
                     v-show="isOpen"
-                    class="mt-4 flex flex-col lg:flew-row justify-between items-end gap-4"
+                    class="mt-4 flex flex-col lg:flex-row justify-between items-end gap-4"
                 >
                     <slot name="filters" />
                 </div>

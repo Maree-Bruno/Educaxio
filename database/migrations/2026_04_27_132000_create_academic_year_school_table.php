@@ -7,19 +7,15 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('students', function (Blueprint $table) {
-            $table->id();
+        Schema::create('academic_year_school', function (Blueprint $table) {
+            $table->foreignId('academic_year_id')->constrained('academic_years')->cascadeOnDelete();
             $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
-            $table->string('lastname');
-            $table->string('firstname');
-            $table->string('email')->nullable();
-            $table->unique(['school_id', 'email']);
-            $table->timestamps();
+            $table->primary(['academic_year_id', 'school_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('students');
+        Schema::dropIfExists('academic_year_school');
     }
 };

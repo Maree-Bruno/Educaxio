@@ -29,7 +29,7 @@ function navigate(url: string | null) {
     >
         <button
             :disabled="!prevLink.url"
-            class="flex h-7 w-7 items-center justify-center rounded-2xl outline outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex h-7 w-7 items-center justify-center rounded-2xl outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
             :aria-label="`Page précédente`"
             @click="navigate(prevLink.url)"
         >
@@ -47,7 +47,7 @@ function navigate(url: string | null) {
                 :aria-current="link.active ? 'page' : undefined"
                 :class="link.active
                     ? 'bg-blue text-white'
-                    : 'text-text-base outline outline-1 -outline-offset-1 outline-blue hover:bg-blue/10'"
+                    : 'text-text-base outline-1 -outline-offset-1 outline-blue hover:bg-blue/10'"
                 class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors"
                 @click="navigate(link.url)"
             >
@@ -60,7 +60,7 @@ function navigate(url: string | null) {
 
         <button
             :disabled="!nextLink.url"
-            class="flex h-7 w-7 items-center justify-center rounded-2xl outline outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex h-7 w-7 items-center justify-center rounded-2xl outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
             :aria-label="`Page suivante`"
             @click="navigate(nextLink.url)"
         >

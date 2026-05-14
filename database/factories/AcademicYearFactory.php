@@ -2,10 +2,8 @@
 
 namespace Database\Factories;
 
-
 use App\Models\AcademicYear;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Carbon;
 
 class AcademicYearFactory extends Factory
 {
@@ -13,10 +11,10 @@ class AcademicYearFactory extends Factory
 
     public function definition(): array
     {
+        $start = $this->faker->numberBetween(2020, 2030);
+
         return [
-            'year' => $this->faker->year(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
+            'year' => "{$start}-".($start + 1),
         ];
     }
 }

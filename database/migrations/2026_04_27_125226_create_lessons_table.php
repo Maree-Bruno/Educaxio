@@ -12,11 +12,8 @@ return new class extends Migration {
             $table->string('name');
             $table->foreignId('group_id')->constrained('groups')->cascadeOnDelete();
             $table->foreignId('subject_id')->constrained('subjects');
-            $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('academic_year_id')->constrained('academic_years');
-            $table->timestamps();
-
             $table->unique(['group_id', 'subject_id']);
+            $table->timestamps();
         });
     }
 

@@ -79,14 +79,14 @@ function cancel() {
                     v-model="form.grade"
                     type="text"
                     placeholder="Ex: 3"
-                    class="w-20 shrink-0 rounded-2xl bg-white px-3 py-3 font-manrope text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma transition-colors focus:outline-2 focus:outline-border-figma focus-visible:outline-none"
+                    class="w-20 shrink-0 rounded-2xl bg-white px-3 py-3 font-manrope text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma transition-colors focus:outline-2 focus:outline-border-figma"
                 />
                 <input
                     id="name"
                     v-model="form.name"
                     type="text"
                     placeholder="Ex: A"
-                    class="min-w-0 flex-1 rounded-2xl bg-white px-3 py-3 font-manrope text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma transition-colors focus:outline-2 focus:outline-border-figma focus-visible:outline-none"
+                    class="min-w-0 flex-1 rounded-2xl bg-white px-3 py-3 font-manrope text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma transition-colors focus:outline-2 focus:outline-border-figma"
                 />
             </div>
             <p v-if="form.errors.grade || form.errors.name" class="text-xs text-pink">
