@@ -10,7 +10,9 @@ const props = defineProps<{
     student: Student;
 }>();
 
-const fullName = computed(() => `${props.student.lastname} ${props.student.firstname}`);
+const fullName = computed(
+    () => `${props.student.lastname} ${props.student.firstname}`,
+);
 
 setPageTitle(fullName.value);
 
@@ -37,9 +39,7 @@ const breadcrumbItems = computed(() => {
 <template>
     <Breadcrumb :items="breadcrumbItems" />
 
-    <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
-
-        <!-- Infos élève -->
+    <section class="flex flex-col gap-6 xl:flex-row xl:items-start">
         <div class="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white">
             <div class="border-b border-neutral-300/10 px-6 py-5">
                 <h2 class="text-xl font-bold text-text-base">{{ fullName }}</h2>
@@ -47,15 +47,31 @@ const breadcrumbItems = computed(() => {
 
             <dl class="divide-y divide-neutral-100 px-6">
                 <div class="flex items-center justify-between py-4">
-                    <dt class="text-xs font-bold uppercase tracking-wider text-stone-500">Nom</dt>
-                    <dd class="text-sm font-medium text-text-base">{{ student.lastname }}</dd>
+                    <dt
+                        class="text-xs font-bold tracking-wider text-stone-500 uppercase"
+                    >
+                        Nom
+                    </dt>
+                    <dd class="text-sm font-medium text-text-base">
+                        {{ student.lastname }}
+                    </dd>
                 </div>
                 <div class="flex items-center justify-between py-4">
-                    <dt class="text-xs font-bold uppercase tracking-wider text-stone-500">Prénom</dt>
-                    <dd class="text-sm font-medium text-text-base">{{ student.firstname }}</dd>
+                    <dt
+                        class="text-xs font-bold tracking-wider text-stone-500 uppercase"
+                    >
+                        Prénom
+                    </dt>
+                    <dd class="text-sm font-medium text-text-base">
+                        {{ student.firstname }}
+                    </dd>
                 </div>
                 <div class="flex items-center justify-between py-4">
-                    <dt class="text-xs font-bold uppercase tracking-wider text-stone-500">Email</dt>
+                    <dt
+                        class="text-xs font-bold tracking-wider text-stone-500 uppercase"
+                    >
+                        Email
+                    </dt>
                     <dd class="text-sm text-text-base">
                         <a
                             v-if="student.email"
@@ -69,9 +85,7 @@ const breadcrumbItems = computed(() => {
                 </div>
             </dl>
         </div>
-
-        <!-- Classes de l'élève -->
-        <div class="flex w-full shrink-0 flex-col gap-4 xl:w-80">
+        <section class="flex w-full shrink-0 flex-col gap-4 xl:w-80">
             <div class="rounded-2xl bg-white">
                 <div class="border-b border-neutral-300/10 px-6 py-5">
                     <h3 class="text-base font-bold text-text-base">Classes</h3>
@@ -87,7 +101,9 @@ const breadcrumbItems = computed(() => {
                             <p class="text-sm font-semibold text-text-base">
                                 {{ group.grade }}{{ group.name }}
                             </p>
-                            <p class="text-xs text-stone-500">{{ group.school.name }}</p>
+                            <p class="text-xs text-stone-500">
+                                {{ group.school.name }}
+                            </p>
                         </div>
                         <LinkButton
                             :href="`/classlist/${group.slug}`"
@@ -97,7 +113,11 @@ const breadcrumbItems = computed(() => {
                             title="Voir la classe"
                         >
                             <template #icon>
-                                <Eye :size="16" :stroke-width="2" aria-hidden="true" />
+                                <Eye
+                                    :size="16"
+                                    :stroke-width="2"
+                                    aria-hidden="true"
+                                />
                             </template>
                         </LinkButton>
                     </li>
@@ -110,6 +130,11 @@ const breadcrumbItems = computed(() => {
                     </li>
                 </ul>
             </div>
+        </section>
+    </section>
+    <div class="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white">
+        <div class="border-b border-neutral-300/10 px-6 py-5">
+            <h3 class="text-xl font-bold text-text-base">Evaluations</h3>
         </div>
     </div>
 </template>

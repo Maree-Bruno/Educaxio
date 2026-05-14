@@ -5,16 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 class StudentController extends Controller
 {
+    private function userSchoolIds(): Collection
+    {
+        return auth()->user()->schools()->pluck('schools.id');
+    }
+
     public function index() {}
 
     public function create(Request $request)
     {
         return Inertia::render('StudentCreate', [
             'groups' => Group::with('school:id,name')
+                ->whereIn('school_id', $this->userSchoolIds())
                 ->orderBy('grade')
                 ->orderBy('name')
                 ->get(['id', 'slug', 'grade', 'name', 'school_id']),
@@ -29,17 +36,25 @@ class StudentController extends Controller
             'firstname' => ['required', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:255'],
             'group_id' => ['nullable', 'exists:groups,id'],
+            'school_id' => ['required_without:group_id', 'nullable', 'exists:schools,id'],
         ]);
+
+        $groupId = $validated['group_id'] ?? null;
+
+        $schoolId = $groupId
+            ? Group::findOrFail($groupId)->school_id
+            : ($validated['school_id'] ?? null);
 
         $student = Student::create([
             'lastname' => $validated['lastname'],
             'firstname' => $validated['firstname'],
-            'email' => $validated['email'] ?: null,
+            'email' => $validated['email'] ?? null,
+            'school_id' => $schoolId,
         ]);
 
-        if ($validated['group_id']) {
-            $student->groups()->attach($validated['group_id']);
-            $group = Group::find($validated['group_id']);
+        if ($groupId) {
+            $student->groups()->attach($groupId);
+            $group = Group::find($groupId);
 
             return to_route('classlist.show', $group);
         }
@@ -61,9 +76,7 @@ class StudentController extends Controller
 
     public function edit($id) {}
 
-    public function update(Request $request, $id) {
-
-    }
+    public function update(Request $request, $id) {}
 
     public function destroy($id) {}
 }

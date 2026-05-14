@@ -2,22 +2,27 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Student extends Model
 {
-    use BelongsToUser, HasFactory;
+    use HasFactory;
 
     protected $fillable = [
         'lastname',
         'firstname',
         'email',
-        'user_id',
+        'school_id',
     ];
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
 
     public function groups(): BelongsToMany
     {

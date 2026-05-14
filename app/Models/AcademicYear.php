@@ -2,27 +2,26 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AcademicYear extends Model
 {
-    use HasFactory, BelongsToUser;
+    use HasFactory;
 
     protected $fillable = [
         'year',
-        'user_id',
     ];
+
+    public function schools(): BelongsToMany
+    {
+        return $this->belongsToMany(School::class);
+    }
 
     public function groups(): HasMany
     {
         return $this->hasMany(Group::class);
-    }
-
-    public function lessons(): HasMany
-    {
-        return $this->hasMany(Lesson::class);
     }
 }

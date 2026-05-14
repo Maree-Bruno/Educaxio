@@ -1,5 +1,3 @@
-import type { User } from '@/types/auth';
-
 export interface School {
     id: number;
     name: string;
@@ -18,6 +16,8 @@ export interface Subject {
 
 export interface Student {
     id: number;
+    school_id: number;
+    school?: Pick<School, 'id' | 'name'>;
     firstname: string;
     lastname: string;
     email?: string | null;
@@ -31,7 +31,6 @@ export interface Lesson {
     name: string;
     subject_id: number;
     subject?: Subject;
-    user?: User;
 }
 
 export interface PaginationLink {
