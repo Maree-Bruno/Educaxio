@@ -93,7 +93,7 @@ const emit = defineEmits<{
                 <dt
                     class="text-xs leading-5 font-bold text-border-figma uppercase"
                 >
-                    Effectifs
+                    Nombre d'élèves
                 </dt>
                 <dd class="text-sm leading-5 font-bold text-text-base">
                     {{ students_count }}
