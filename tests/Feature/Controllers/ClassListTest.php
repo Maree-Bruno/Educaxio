@@ -18,6 +18,43 @@ it('shows the classlist page to authenticated users', function () {
     $this->get(route('classlist'))->assertOk();
 });
 
+it('shows all groups to an admin regardless of lesson assignments', function () {
+    $group = createGroup($this->school, $this->year);
+
+    $this->get(route('classlist'))
+        ->assertInertia(fn ($page) => $page->has('groups', 1)->where('groups.0.id', $group->id));
+});
+
+it('shows no groups to a teacher with no assigned lessons', function () {
+    [$teacher, $school] = createUserWithSchool('teacher');
+    $year = attachAcademicYear($school);
+    createGroup($school, $year);
+    $this->actingAs($teacher);
+
+    $this->get(route('classlist'))
+        ->assertInertia(fn ($page) => $page->has('groups', 0));
+});
+
+it('shows only groups with an assigned lesson to a teacher', function () {
+    [$teacher, $school] = createUserWithSchool('teacher');
+    $year = attachAcademicYear($school);
+    $subject = attachSubject($school);
+
+    $assignedGroup = createGroup($school, $year);
+    $otherGroup = createGroup($school, $year, '4', 'B');
+
+    $lesson = Lesson::create(['name' => $subject->name, 'group_id' => $assignedGroup->id, 'subject_id' => $subject->id]);
+    $teacher->lessons()->attach($lesson->id);
+
+    $this->actingAs($teacher);
+
+    $this->get(route('classlist'))
+        ->assertInertia(fn ($page) => $page
+            ->has('groups', 1)
+            ->where('groups.0.id', $assignedGroup->id)
+        );
+});
+
 it('shows only groups from the user\'s schools', function () {
     $myGroup = createGroup($this->school, $this->year);
 
