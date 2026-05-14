@@ -42,7 +42,7 @@ const inputClasses = computed(() => [
         ? 'border-border-figma focus:border-pink focus:ring-2 focus:ring-pink/20'
         : 'border-border-figma focus:border-blue focus:ring-2 focus:ring-blue/20',
     isFilled.value ? 'font-semibold text-text-base' : 'font-normal',
-    props.size === 'sm' ? 'px-3 py-2.5 text-sm' : 'px-3 py-3 text-xl',
+    props.size === 'sm' ? 'px-3 py-2.5 text-sm' : 'px-3 py-3 text-base',
 ]);
 </script>
 
@@ -74,7 +74,7 @@ const inputClasses = computed(() => [
         <p
             v-if="hasError"
             :id="`${inputId}-error`"
-            class="font-manrope text-base font-medium text-pink"
+            class="font-manrope text-sm font-medium text-pink sm:text-base"
         >
             {{ error }}
         </p>
