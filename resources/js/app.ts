@@ -16,9 +16,18 @@ createInertiaApp({
 
     // Fallback quand le layout de la page est un objet de props (ex: auth pages)
     layout: (name) => {
-        if (name === 'Welcome') return null;
-        if (name.startsWith('auth/')) return AuthLayout;
-        if (name.startsWith('settings/')) return [AppLayout, SettingsLayout];
+        if (name === 'Welcome') {
+            return null;
+        }
+
+        if (name.startsWith('auth/')) {
+            return AuthLayout;
+        }
+
+        if (name.startsWith('settings/')) {
+            return [AppLayout, SettingsLayout];
+        }
+
         return AppLayout;
     },
 
@@ -29,7 +38,7 @@ createInertiaApp({
         );
 
         // Pour les pages sans layout défini (pas d'objet de props), on assigne directement
-        if (!page.default.layout) {
+        if (page.default.layout === undefined) {
             if (name.startsWith('auth/')) {
                 page.default.layout = AuthLayout;
             } else if (name.startsWith('settings/')) {
