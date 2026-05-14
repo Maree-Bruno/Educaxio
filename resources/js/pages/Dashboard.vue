@@ -3,4 +3,5 @@ import { setPageTitle } from '@/composables/usePageTitle';
 setPageTitle('Dashboard');
 </script>
 
-<template></template>
+<template>
+</template>

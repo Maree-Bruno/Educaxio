@@ -39,20 +39,22 @@ class StudentController extends Controller
             'school_id' => ['required_without:group_id', 'nullable', 'exists:schools,id'],
         ]);
 
-        $schoolId = $validated['group_id']
-            ? Group::findOrFail($validated['group_id'])->school_id
-            : $validated['school_id'];
+        $groupId = $validated['group_id'] ?? null;
+
+        $schoolId = $groupId
+            ? Group::findOrFail($groupId)->school_id
+            : ($validated['school_id'] ?? null);
 
         $student = Student::create([
             'lastname' => $validated['lastname'],
             'firstname' => $validated['firstname'],
-            'email' => $validated['email'] ?: null,
+            'email' => $validated['email'] ?? null,
             'school_id' => $schoolId,
         ]);
 
-        if ($validated['group_id']) {
-            $student->groups()->attach($validated['group_id']);
-            $group = Group::find($validated['group_id']);
+        if ($groupId) {
+            $student->groups()->attach($groupId);
+            $group = Group::find($groupId);
 
             return to_route('classlist.show', $group);
         }

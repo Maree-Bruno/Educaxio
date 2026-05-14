@@ -1,50 +1,53 @@
 <?php
 
+use App\Models\AcademicYear;
+use App\Models\Group;
+use App\Models\School;
+use App\Models\Subject;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-
-/*
-|--------------------------------------------------------------------------
-| Test Case
-|--------------------------------------------------------------------------
-|
-| The closure you provide to your test functions is always bound to a specific PHPUnit test
-| case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind different classes or traits.
-|
-*/
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
-
 expect()->extend('toBeOne', function () {
     return $this->toBe(1);
 });
 
-/*
-|--------------------------------------------------------------------------
-| Functions
-|--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
-*/
-
-function something()
+function createUserWithSchool(string $role = 'admin'): array
 {
-    // ..
+    $user = User::factory()->create();
+    $school = School::create(['name' => 'École Test', 'slug' => 'ecole-test']);
+    $school->users()->attach($user->id, ['role' => $role]);
+
+    return [$user, $school];
+}
+
+function attachAcademicYear(School $school, string $year = '2025-2026'): AcademicYear
+{
+    $academicYear = AcademicYear::create(['year' => $year]);
+    $school->academicYears()->attach($academicYear->id);
+
+    return $academicYear;
+}
+
+function attachSubject(School $school, string $name = 'Mathématiques'): Subject
+{
+    $subject = Subject::firstOrCreate(['name' => $name]);
+    $school->subjects()->attach($subject->id);
+
+    return $subject;
+}
+
+function createGroup(School $school, AcademicYear $year, string $grade = '3', string $name = 'A'): Group
+{
+    return Group::create([
+        'grade' => $grade,
+        'name' => $name,
+        'slug' => "{$school->slug}-{$grade}-{$name}",
+        'school_id' => $school->id,
+        'academic_year_id' => $year->id,
+    ]);
 }
