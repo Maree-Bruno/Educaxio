@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import { home } from '@/routes';
 
 withDefaults(
     defineProps<{
@@ -12,6 +14,12 @@ withDefaults(
 
 <template>
     <div class="min-h-screen bg-bg-primary flex items-center justify-center px-6 py-12">
+        <Link
+            :href="home.url()"
+            class="absolute top-5 left-6 flex items-center gap-1.5 text-sm font-medium text-text-base opacity-60 transition-opacity hover:opacity-100"
+        >
+            ← Retour à l'accueil
+        </Link>
         <div class="flex items-center gap-12">
 
             <div class="hidden lg:flex w-147 flex-col gap-10">
