@@ -9,9 +9,11 @@ return new class extends Migration {
     {
         Schema::create('groups', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('grade');
-            $table->string('slug')->unique();
+            $table->string('slug');
+            $table->unique(['user_id', 'slug']);
             $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignId('academic_year_id')->constrained('academic_years');
             $table->timestamps();

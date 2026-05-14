@@ -8,17 +8,26 @@ import GroupCard from '@/components/widgets/GroupCard.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
+import ArrowUpDown from '@/components/widgets/svg/ArrowUpDown.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useGroupsStore } from '@/stores/groups';
-import type { Group, School } from '@/types';
+import type { AcademicYear, Group, School } from '@/types';
 
 setPageTitle('Liste des classes');
 
 const props = defineProps<{
     groups: Group[];
     schools: Pick<School, 'id' | 'name'>[];
+    academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     classes: Pick<Group, 'slug' | 'grade' | 'name' | 'school_id'>[];
-    filters: { school?: string; class?: string; search?: string; sort?: string };
+    filters: {
+        school?: string;
+        class?: string;
+        year?: string;
+        search?: string;
+        sort?: string;
+        dir?: 'asc' | 'desc';
+    };
 }>();
 
 const groupsStore = useGroupsStore();
@@ -54,19 +63,25 @@ function confirmDelete() {
 
 const filterSchool = ref<string | null>(props.filters.school ?? null);
 const filterClass = ref<string | null>(props.filters.class ?? null);
+const filterYear = ref<string | null>(props.filters.year ?? null);
 const search = ref(props.filters.search ?? '');
-const sort = ref(props.filters.sort ?? '');
+const sortBy = ref(props.filters.sort ?? '');
+const sortDir = ref<'asc' | 'desc'>(props.filters.dir ?? 'asc');
 
 const sortOptions = [
     { value: 'grade', label: 'Par classe' },
     { value: 'school', label: 'Par école' },
-    { value: 'students', label: 'Par nb d\'élèves' },
+    { value: 'students', label: "Par nb d'élèves" },
     { value: 'subject', label: 'Par cours' },
 ];
 
 const schoolOptions = props.schools.map((s) => ({
     value: s.id,
     label: s.name,
+}));
+const yearOptions = props.academicYears.map((y) => ({
+    value: y.id,
+    label: String(y.year),
 }));
 const classOptions = computed(() => {
     const filtered = filterSchool.value
@@ -87,8 +102,10 @@ function applyFilters() {
         {
             school: filterSchool.value ?? undefined,
             class: filterClass.value ?? undefined,
+            year: filterYear.value ?? undefined,
             search: search.value || undefined,
-            sort: sort.value || undefined,
+            sort: sortBy.value || undefined,
+            dir: sortBy.value && sortDir.value === 'desc' ? 'desc' : undefined,
         },
         { preserveState: true, replace: true },
     );
@@ -97,7 +114,7 @@ function applyFilters() {
 const applySearchDebounced = useDebounceFn(applyFilters, 300);
 
 const activeCount = computed(() => {
-    return [filterSchool.value, filterClass.value, search.value || null].filter(
+    return [filterSchool.value, filterClass.value, filterYear.value, search.value || null].filter(
         Boolean,
     ).length;
 });
@@ -114,8 +131,10 @@ watch(filterSchool, () => {
     applyFilters();
 });
 watch(filterClass, applyFilters);
+watch(filterYear, applyFilters);
 watch(search, applySearchDebounced);
-watch(sort, applyFilters);
+watch(sortBy, applyFilters);
+watch(sortDir, applyFilters);
 </script>
 
 <template>
@@ -137,6 +156,14 @@ watch(sort, applyFilters);
                 :options="classOptions"
                 class="w-full lg:w-[22%]"
             />
+            <SelectField
+                id="filter-year"
+                v-model="filterYear"
+                label="Année scolaire"
+                placeholder="Toutes les années"
+                :options="yearOptions"
+                class="w-full lg:w-[22%]"
+            />
             <SearchInput
                 id="filter-search"
                 v-model="search"
@@ -144,14 +171,32 @@ watch(sort, applyFilters);
                 placeholder="Rechercher"
                 class="w-full lg:w-[22%]"
             />
-            <SelectField
-                id="filter-sort"
-                v-model="sort"
-                label="Trier par"
-                placeholder="Par défaut"
-                :options="sortOptions"
-                class="w-full lg:w-[22%]"
-            />
+            <div class="flex items-end gap-1 w-full lg:w-[22%]">
+                <SelectField
+                    id="filter-sort"
+                    v-model="sortBy"
+                    label="Trier par"
+                    placeholder="Par défaut"
+                    :options="sortOptions"
+                    class="flex-1"
+                />
+                <button
+                    type="button"
+                    :disabled="!sortBy"
+                    class="flex h-[46px] w-10 shrink-0 items-center justify-center rounded-2xl bg-white outline outline-1 -outline-offset-1 outline-border-figma transition-all hover:bg-gray-50"
+                    :class="sortBy ? 'text-text-base' : 'pointer-events-none opacity-30'"
+                    :title="sortDir === 'asc' ? 'Ordre ascendant' : 'Ordre descendant'"
+                    @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
+                >
+                    <ArrowUpDown
+                        :size="16"
+                        :stroke-width="2"
+                        class="transition-transform duration-200"
+                        :class="{ 'rotate-180': sortDir === 'desc' }"
+                        aria-hidden="true"
+                    />
+                </button>
+            </div>
         </template>
         <template #action>
             <LinkButton

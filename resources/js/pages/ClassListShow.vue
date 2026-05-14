@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { computed, watch } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import Button from '@/components/widgets/Button.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
-import ChevronDown from '@/components/widgets/svg/ChevronDown.vue';
+import ArrowUpDown from '@/components/widgets/svg/ArrowUpDown.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
@@ -18,6 +19,7 @@ const props = defineProps<{
     schools: Pick<School, 'id' | 'name'>[];
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
+    filters: { sort?: string; dir?: 'asc' | 'desc' };
 }>();
 
 const className = computed(() => `${props.group.grade}${props.group.name}`);
@@ -35,27 +37,36 @@ const formData = computed(() => ({
     academic_year_id: props.group.academic_year_id,
     subject_id: props.group.lessons[0]?.subject_id ?? null,
 }));
+
+const sortCol = ref(props.filters.sort ?? 'lastname');
+const sortDir = ref<'asc' | 'desc'>(props.filters.dir ?? 'asc');
+
+function sortBy(col: string) {
+    if (sortCol.value === col) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortCol.value = col;
+        sortDir.value = 'asc';
+    }
+
+    router.get(
+        `/classlist/${props.group.slug}`,
+        {
+            sort: sortCol.value,
+            dir: sortDir.value === 'desc' ? 'desc' : undefined,
+        },
+        { preserveState: true, replace: true },
+    );
+}
 </script>
 
 <template>
-    <!-- Fil d'ariane -->
-    <nav class="mb-6 flex items-center gap-3" aria-label="Fil d'ariane">
-        <Link
-            href="/classlist"
-            class="text-base font-bold text-text-base hover:text-blue transition-colors"
-        >
-            Liste de classe
-        </Link>
-        <ChevronDown
-            :size="16"
-            :stroke-width="2"
-            class="-rotate-90 text-text-base shrink-0"
-            aria-hidden="true"
-        />
-        <span class="text-base font-bold text-blue">
-            {{ className }} — {{ group.school.name }}
-        </span>
-    </nav>
+    <Breadcrumb
+        :items="[
+            { label: 'Liste de classe', href: '/classlist' },
+            { label: `${className} — ${group.school.name}` },
+        ]"
+    />
 
     <!-- Layout principal -->
     <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
@@ -72,7 +83,12 @@ const formData = computed(() => ({
                     <span class="text-border-figma">({{ group.students_count }})</span>
                 </h2>
                 <div class="flex items-center gap-3">
-                    <Button variant="secondary" size="sm" label="Ajouter" />
+                    <LinkButton
+                        :href="`/students/create?group=${group.id}`"
+                        variant="secondary"
+                        size="sm"
+                        label="Ajouter"
+                    />
                     <LinkButton
                         :href="`/classlist/${group.slug}/grades`"
                         variant="primary"
@@ -96,10 +112,24 @@ const formData = computed(() => ({
                             >
                                 N°
                             </th>
-                            <th
-                                class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500"
-                            >
-                                Nom de l'élève
+                            <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">
+                                <button
+                                    type="button"
+                                    class="flex items-center gap-1.5 transition-colors hover:text-text-base"
+                                    @click="sortBy('lastname')"
+                                >
+                                    Nom de l'élève
+                                    <ArrowUpDown
+                                        :size="13"
+                                        :stroke-width="2.5"
+                                        class="transition-transform duration-200"
+                                        :class="{
+                                            'rotate-180': sortCol === 'lastname' && sortDir === 'desc',
+                                            'opacity-30': sortCol !== 'lastname',
+                                        }"
+                                        aria-hidden="true"
+                                    />
+                                </button>
                             </th>
                             <th
                                 class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500"
@@ -121,11 +151,15 @@ const formData = computed(() => ({
                     <tbody class="divide-y divide-neutral-100">
                         <tr
                             v-for="(student, index) in students.data"
-                            :key="student.id"
+                            :key="`${sortCol}-${sortDir}-${student.id}`"
                             class="transition-colors hover:bg-gray-50"
                         >
                             <td class="px-6 py-5 text-sm text-stone-400">
-                                {{ String((students.from ?? 0) + index).padStart(2, '0') }}
+                                {{
+                                    sortDir === 'desc'
+                                        ? String(students.total - (students.current_page - 1) * students.per_page - index).padStart(2, '0')
+                                        : String((students.current_page - 1) * students.per_page + index + 1).padStart(2, '0')
+                                }}
                             </td>
                             <td class="px-6 py-5">
                                 <span class="text-base font-medium text-text-base">

@@ -50,7 +50,7 @@ function onChange(event: Event) {
                 class="w-full cursor-pointer appearance-none rounded-2xl bg-white px-3 py-3 font-manrope text-sm leading-5 font-bold outline-1 -outline-offset-1 outline-border-figma transition-colors focus:ring-0 focus:outline-2 focus:outline-border-figma focus-visible:outline-none"
                 @change="onChange"
             >
-                <option value="">{{ placeholder }}</option>
+                <option value="" selected>{{ placeholder }}</option>
                 <option
                     v-for="option in options"
                     :key="option.value"

@@ -19,12 +19,18 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $academicYear = AcademicYear::factory()->create(['year' => 2025]);
+        $teacher = User::factory()->create([
+            'name' => 'test',
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ]);
+
+        $academicYear = AcademicYear::factory()->create(['year' => 2025, 'user_id' => $teacher->id]);
 
         $schools = collect([
             ['name' => 'Institut Saint-Joseph', 'slug' => 'saint-joseph'],
             ['name' => 'Athénée Royal de Bruxelles', 'slug' => 'athenee-royal-bruxelles'],
-        ])->map(fn ($data) => School::create($data));
+        ])->map(fn ($data) => School::create([...$data, 'user_id' => $teacher->id]));
 
         $subjectNames = [
             'Anglais', 'Néerlandais', 'Mathématiques', 'Sciences',
@@ -32,13 +38,7 @@ class DatabaseSeeder extends Seeder
             'Éducation physique', 'Arts', 'Français', 'Histoire',
             'Géographie', 'Morale',
         ];
-        $subjects = collect($subjectNames)->map(fn ($name) => Subject::create(['name' => $name]));
-
-        $teacher = User::factory()->create([
-            'name' => 'test',
-            'email' => 'test@example.com',
-            'password' => 'password',
-        ]);
+        $subjects = collect($subjectNames)->map(fn ($name) => Subject::create(['name' => $name, 'user_id' => $teacher->id]));
 
         $groupData = [
             ['name' => 'A', 'grade' => '3', 'school' => 'saint-joseph'],
@@ -60,9 +60,11 @@ class DatabaseSeeder extends Seeder
                 'slug' => Str::slug("{$school->slug}-{$data['grade']}-{$data['name']}"),
                 'school_id' => $school->id,
                 'academic_year_id' => $academicYear->id,
+                'user_id' => $teacher->id,
             ]);
 
-            $students = Student::factory(15)->create(['group_id' => $group->id]);
+            $students = Student::factory(15)->create(['user_id' => $teacher->id]);
+            $group->students()->attach($students->pluck('id'));
 
             $subject = $subjects->random();
             $lesson = Lesson::factory()->create([
@@ -73,14 +75,15 @@ class DatabaseSeeder extends Seeder
                 'academic_year_id' => $academicYear->id,
             ]);
 
-            ClassSession::factory(5)->create(['lesson_id' => $lesson->id])
-                ->each(function (ClassSession $session) use ($students) {
-                    $attendance = Attendance::factory()->create(['classsession_id' => $session->id]);
+            ClassSession::factory(5)->create(['lesson_id' => $lesson->id, 'user_id' => $teacher->id])
+                ->each(function (ClassSession $session) use ($students, $teacher) {
+                    $attendance = Attendance::factory()->create(['classsession_id' => $session->id, 'user_id' => $teacher->id]);
 
-                    $students->random(3)->each(function (Student $student) use ($attendance) {
+                    $students->random(3)->each(function (Student $student) use ($attendance, $teacher) {
                         StudentAttendanceStatus::factory()->create([
                             'student_id' => $student->id,
                             'attendance_id' => $attendance->id,
+                            'user_id' => $teacher->id,
                         ]);
                     });
                 });
