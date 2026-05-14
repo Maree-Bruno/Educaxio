@@ -1,21 +1,15 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
-import InputError from '@/components/InputError.vue';
-import PasswordInput from '@/components/PasswordInput.vue';
-import TextLink from '@/components/TextLink.vue';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import Button from '@/components/widgets/Button.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
-import { request } from '@/routes/password';
+import { request as forgotPassword } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Log in to your account',
-        description: 'Enter your email and password below to log in',
+        title: 'Bon retour.',
+        description: 'Connectez-vous à votre espace de travail.',
     },
 });
 
@@ -24,88 +18,76 @@ defineProps<{
     canResetPassword: boolean;
     canRegister: boolean;
 }>();
+
+const form = useForm({
+    email: '',
+    password: '',
+    remember: false,
+});
+
+function submit() {
+    form.post(store.url(), {
+        onFinish: () => form.reset('password'),
+    });
+}
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head title="Connexion" />
 
-    <div
-        v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
-    >
+    <div v-if="status" class="text-sm font-medium text-green-600 text-center">
         {{ status }}
     </div>
 
-    <Form
-        v-bind="store.form()"
-        :reset-on-success="['password']"
-        v-slot="{ errors, processing }"
-        class="flex flex-col gap-6"
-    >
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">Email address</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    required
-                    autofocus
-                    :tabindex="1"
-                    autocomplete="email"
-                    placeholder="email@example.com"
-                />
-                <InputError :message="errors.email" />
-            </div>
+    <form class="flex flex-col gap-5" @submit.prevent="submit">
+        <InputLabel
+            v-model="form.email"
+            label="Adresse email"
+            type="email"
+            placeholder="email@exemple.com"
+            :error="form.errors.email"
+        />
 
-            <div class="grid gap-2">
-                <div class="flex items-center justify-between">
-                    <Label for="password">Password</Label>
-                    <TextLink
-                        v-if="canResetPassword"
-                        :href="request()"
-                        class="text-sm"
-                        :tabindex="5"
-                    >
-                        Forgot password?
-                    </TextLink>
-                </div>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    required
-                    :tabindex="2"
-                    autocomplete="current-password"
-                    placeholder="Password"
-                />
-                <InputError :message="errors.password" />
-            </div>
-
-            <div class="flex items-center justify-between">
-                <Label for="remember" class="flex items-center space-x-3">
-                    <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <span>Remember me</span>
-                </Label>
-            </div>
-
-            <Button
-                type="submit"
-                class="mt-4 w-full"
-                :tabindex="4"
-                :disabled="processing"
-                data-test="login-button"
+        <div class="flex flex-col gap-1">
+            <InputLabel
+                v-model="form.password"
+                label="Mot de passe"
+                type="password"
+                placeholder="••••••••••"
+                :error="form.errors.password"
+            />
+            <Link
+                v-if="canResetPassword"
+                :href="forgotPassword.url()"
+                class="self-start text-sm text-blue hover:underline"
             >
-                <Spinner v-if="processing" />
-                Log in
-            </Button>
+                Mot de passe oublié ?
+            </Link>
         </div>
 
-        <div
-            class="text-center text-sm text-muted-foreground"
-            v-if="canRegister"
-        >
-            Don't have an account?
-            <TextLink :href="register()" :tabindex="5">Sign up</TextLink>
-        </div>
-    </Form>
+        <label class="flex cursor-pointer items-center gap-1.5">
+            <input
+                v-model="form.remember"
+                type="checkbox"
+                class="size-3.5 accent-blue"
+            />
+            <span class="text-sm text-text-base">Se souvenir de moi</span>
+        </label>
+
+        <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            label="Se connecter"
+            :loading="form.processing"
+            class="w-full"
+        />
+
+        <p v-if="canRegister" class="text-center text-sm">
+            <span class="text-neutral-500">Pas de compte ? </span>
+            <Link :href="register.url()" class="font-medium text-pink hover:underline">
+                Créez un compte gratuitement
+            </Link>
+        </p>
+    </form>
 </template>

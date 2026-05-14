@@ -13,7 +13,7 @@ defineProps<Props>();
 </script>
 
 <template>
-    <div class="flex items-center justify-center gap-1">
+    <div class="flex items-center gap-1">
         <div
             class="inline-flex h-9 w-9 items-center justify-center gap-2.5 rounded-2xl bg-blue p-2.5"
         >
