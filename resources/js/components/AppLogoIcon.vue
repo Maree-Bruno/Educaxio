@@ -40,7 +40,7 @@ defineProps<Props>();
                 />
             </svg>
         </div>
-        <span class="text-4xl font-black tracking-[-2px] text-text-base">
+        <span class="text-xl lg:text-4xl font-black tracking-[-2px] text-text-base">
             Educaxio
         </span>
     </div>
