@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
 import { Menu, X } from 'lucide-vue-next';
-import { type Component, computed, ref } from 'vue';
+import {  computed, ref } from 'vue';
+import type {Component} from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import FeatureCard from '@/components/widgets/FeatureCard.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';

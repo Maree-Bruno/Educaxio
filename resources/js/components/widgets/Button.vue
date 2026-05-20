@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 
 type Variant = 'primary' | 'secondary' | 'danger';
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg' | 'xs';
 type ButtonType = 'button' | 'submit' | 'reset';
 
 const props = withDefaults(
@@ -46,15 +46,17 @@ const variantClasses = computed(
 const sizeClasses = computed(
     () =>
         ({
-            sm: 'px-4 py-2 text-base',
-            md: 'px-5 py-2.5 text-xl',
-            lg: 'px-7 py-3.5 text-2xl',
+            xs: 'px-2 py-1 text-xs',
+            sm: 'px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base',
+            md: 'px-4 py-2 text-base sm:px-5 sm:py-2.5 sm:text-xl',
+            lg: 'px-5 py-2.5 text-lg sm:px-7 sm:py-3.5 sm:text-2xl',
         })[props.size],
 );
 
 const iconSizeClasses = computed(
     () =>
         ({
+            xs: 'w-3 h-3',
             sm: 'w-4 h-4',
             md: 'w-5 h-5',
             lg: 'w-6 h-6',

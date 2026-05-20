@@ -59,6 +59,27 @@ export interface Paginator<T> {
     links: PaginationLink[];
 }
 
+export interface Schedule {
+    id: number;
+    user_id: number;
+    school_id: number;
+    academic_year_id: number;
+    name: string | null;
+    school?: Pick<School, 'id' | 'name'>;
+    academic_year?: AcademicYear;
+    slots?: ScheduleSlot[];
+    slots_count?: number;
+}
+
+export interface ScheduleSlot {
+    id: number;
+    schedule_id: number;
+    position: number;
+    label: string;
+    classroom: string | null;
+    type: 'slot' | 'lunch';
+}
+
 export interface Group {
     id: number;
     name: string;
