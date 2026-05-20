@@ -15,14 +15,19 @@ class ClassSession extends Model
 
     protected $fillable = [
         'date',
-        'lesson_hour',
         'lesson_id',
         'classroom',
+        'schedule_slot_id',
     ];
 
     public function lesson(): BelongsTo
     {
         return $this->belongsTo(Lesson::class);
+    }
+
+    public function scheduleSlot(): BelongsTo
+    {
+        return $this->belongsTo(ScheduleSlot::class);
     }
 
     public function attendance(): HasOne

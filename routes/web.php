@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassListController;
+use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\ScheduleEntryController;
+use App\Http\Controllers\ScheduleSlotController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -29,11 +32,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('students/{student}', [StudentController::class, 'update'])->name('students.update');
     Route::delete('students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
 
+    // Schedules
+    Route::get('schedules', [ScheduleController::class, 'index'])->name('schedules');
 
-    // attendances
+    // Schedule slots
+    Route::patch('schedule-slots-type', [ScheduleSlotController::class, 'updateType'])->name('schedule-slots.update-type');
+
+    // Schedule entries (recurring weekly template)
+    Route::post('schedule-entries', [ScheduleEntryController::class, 'store'])->name('schedule-entries.store');
+    Route::delete('schedule-entries/{scheduleEntry}', [ScheduleEntryController::class, 'destroy'])->name('schedule-entries.destroy');
+
+    // Attendances
     Route::get('attendances', [AttendanceController::class, 'index'])->name('attendances');
     Route::post('attendances', [AttendanceController::class, 'store'])->name('attendances.store');
     Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy');
-
 });
+
 require __DIR__.'/settings.php';

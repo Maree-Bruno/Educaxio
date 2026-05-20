@@ -15,9 +15,9 @@ class ClassSessionFactory extends Factory
     {
         return [
             'date' => Carbon::now(),
-            'lesson_hour' => $this->faker->numberBetween(1, 10),
-            'classroom' => $this->faker->word(),
+            'classroom' => $this->faker->bothify('Salle ##?'),
             'lesson_id' => Lesson::factory(),
+            'schedule_slot_id' => null,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ];
