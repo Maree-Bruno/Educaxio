@@ -23,7 +23,7 @@ class StudentController extends Controller
             : 'lastname';
 
         $query = Student::where('school_id', $school->id)
-            ->with('groups:id,grade,name')
+            ->with('groups:id,grade,name,slug')
             ->orderBy($sort, $dir)
             ->orderBy($sort === 'lastname' ? 'firstname' : 'lastname');
 

@@ -14,7 +14,7 @@ import { setPageTitle } from '@/composables/usePageTitle';
 import type { Paginator } from '@/types';
 
 interface School  { id: number; name: string; slug: string }
-interface Group   { id: number; grade: string; name: string }
+interface Group   { id: number; grade: string; name: string; slug: string }
 interface Student { id: number; lastname: string; firstname: string; email: string | null; school_id: number; groups: Group[] }
 
 const props = defineProps<{
@@ -72,9 +72,11 @@ const availableGroups = computed(() =>
 
 function addGroup(e: Event) {
     const id = (e.target as HTMLSelectElement).value;
+
     if (id && !form.value.group_ids.includes(id)) {
         form.value.group_ids.push(id);
     }
+
     (e.target as HTMLSelectElement).value = '';
 }
 
@@ -204,13 +206,14 @@ function confirmDelete() {
                             {{ student.lastname }} {{ student.firstname }}
                         </span>
                         <div class="flex flex-wrap gap-1">
-                            <span
+                            <a
                                 v-for="g in student.groups"
                                 :key="g.id"
-                                class="rounded-md bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue"
+                                :href="`/classlist/${g.slug}`"
+                                class="rounded-md bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue hover:bg-blue/20"
                             >
                                 {{ g.grade }}{{ g.name }}
-                            </span>
+                            </a>
                         </div>
                         <span v-if="student.email" class="truncate text-xs text-stone-400">{{ student.email }}</span>
                     </div>
@@ -305,13 +308,14 @@ function confirmDelete() {
                         </td>
                         <td class="px-6 py-5">
                             <div class="flex flex-wrap gap-1">
-                                <span
+                                <a
                                     v-for="g in student.groups"
                                     :key="g.id"
-                                    class="rounded-md bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue"
+                                    :href="`/classlist/${g.slug}`"
+                                    class="rounded-md bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue hover:bg-blue/20"
                                 >
                                     {{ g.grade }}{{ g.name }}
-                                </span>
+                                </a>
                                 <span v-if="student.groups.length === 0" class="text-sm text-border-figma">—</span>
                             </div>
                         </td>
@@ -371,7 +375,7 @@ function confirmDelete() {
                     type="text"
                     placeholder="Dupont"
                     maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
                 />
             </div>
 
@@ -382,7 +386,7 @@ function confirmDelete() {
                     type="text"
                     placeholder="Marie"
                     maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
                 />
             </div>
 
@@ -395,7 +399,7 @@ function confirmDelete() {
                     type="email"
                     placeholder="marie@exemple.be"
                     maxlength="255"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
                 />
             </div>
 
@@ -419,7 +423,7 @@ function confirmDelete() {
                 </div>
                 <select
                     v-if="availableGroups.length"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm text-text-base outline -outline-offset-1 outline-border-figma"
                     @change="addGroup"
                 >
                     <option value="">Ajouter un groupe…</option>
