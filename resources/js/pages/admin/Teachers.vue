@@ -2,9 +2,10 @@
 import { router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { ref, watch } from 'vue';
+import Badge from '@/components/widgets/Badge.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
-import ArrowUpDown from '@/components/widgets/svg/ArrowUpDown.vue';
+import SortTh from '@/components/widgets/SortTh.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import type { Paginator } from '@/types';
 
@@ -39,7 +40,7 @@ const applyFiltersDebounced = useDebounceFn(applyFilters, 300);
 
 watch(search, applyFiltersDebounced);
 
-function sortBy(col: 'name' | 'email') {
+function sortBy(col: string) {
     if (sortCol.value === col) {
         sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
     } else {
@@ -61,11 +62,7 @@ function sortBy(col: 'name' | 'email') {
                 <span class="text-border-figma">({{ teachers.total }})</span>
             </h2>
             <div class="w-full sm:w-64">
-                <SearchInput
-                    id="teacher-search"
-                    v-model="search"
-                    placeholder="Rechercher…"
-                />
+                <SearchInput id="teacher-search" v-model="search" placeholder="Rechercher…" />
             </div>
         </div>
 
@@ -84,13 +81,9 @@ function sortBy(col: 'name' | 'email') {
                 </div>
                 <span v-if="teacher.email" class="pl-7 text-xs text-stone-400">{{ teacher.email }}</span>
                 <div class="flex flex-wrap gap-1.5 pl-7">
-                    <span
-                        v-for="lesson in teacher.lessons"
-                        :key="lesson.id"
-                        class="rounded-lg bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue"
-                    >
+                    <Badge v-for="lesson in teacher.lessons" :key="lesson.id">
                         {{ lesson.group.grade }}{{ lesson.group.name }} — {{ lesson.subject.name }}
-                    </span>
+                    </Badge>
                     <span v-if="teacher.lessons.length === 0" class="text-xs text-border-figma">Aucun cours attribué</span>
                 </div>
             </li>
@@ -105,47 +98,9 @@ function sortBy(col: 'name' | 'email') {
                 <thead>
                     <tr class="bg-gray-100">
                         <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">
-                            <button
-                                type="button"
-                                class="flex items-center gap-1.5 transition-colors hover:text-text-base"
-                                @click="sortBy('name')"
-                            >
-                                Nom
-                                <ArrowUpDown
-                                    :size="13"
-                                    :stroke-width="2.5"
-                                    class="transition-transform duration-200"
-                                    :class="{
-                                        'rotate-180': sortCol === 'name' && sortDir === 'desc',
-                                        'opacity-30': sortCol !== 'name',
-                                    }"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">
-                            <button
-                                type="button"
-                                class="flex items-center gap-1.5 transition-colors hover:text-text-base"
-                                @click="sortBy('email')"
-                            >
-                                Email
-                                <ArrowUpDown
-                                    :size="13"
-                                    :stroke-width="2.5"
-                                    class="transition-transform duration-200"
-                                    :class="{
-                                        'rotate-180': sortCol === 'email' && sortDir === 'desc',
-                                        'opacity-30': sortCol !== 'email',
-                                    }"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">
-                            Cours attribués
-                        </th>
+                        <SortTh col="name" :current-col="sortCol" :current-dir="sortDir" label="Nom" @sort="sortBy" />
+                        <SortTh col="email" :current-col="sortCol" :current-dir="sortDir" label="Email" @sort="sortBy" />
+                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Cours attribués</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-neutral-100">
@@ -160,18 +115,12 @@ function sortBy(col: 'name' | 'email') {
                         <td class="px-6 py-5">
                             <span class="text-base font-medium text-text-base">{{ teacher.name }}</span>
                         </td>
-                        <td class="px-6 py-5 text-sm text-stone-400">
-                            {{ teacher.email || '—' }}
-                        </td>
+                        <td class="px-6 py-5 text-sm text-stone-400">{{ teacher.email || '—' }}</td>
                         <td class="px-6 py-5">
                             <div class="flex flex-wrap gap-1.5">
-                                <span
-                                    v-for="lesson in teacher.lessons"
-                                    :key="lesson.id"
-                                    class="rounded-lg bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue"
-                                >
+                                <Badge v-for="lesson in teacher.lessons" :key="lesson.id" variant="neutral">
                                     {{ lesson.group.grade }}{{ lesson.group.name }} — {{ lesson.subject.name }}
-                                </span>
+                                </Badge>
                                 <span v-if="teacher.lessons.length === 0" class="text-sm text-border-figma">—</span>
                             </div>
                         </td>
@@ -187,11 +136,7 @@ function sortBy(col: 'name' | 'email') {
 
         <!-- Pied : pagination -->
         <div class="rounded-b-2xl bg-gray-100 px-4 sm:px-6 py-4">
-            <Pagination
-                :links="teachers.links"
-                :current-page="teachers.current_page"
-                :last-page="teachers.last_page"
-            />
+            <Pagination :links="teachers.links" :current-page="teachers.current_page" :last-page="teachers.last_page" />
         </div>
     </div>
 </template>

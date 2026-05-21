@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Group;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -17,50 +16,7 @@ class StudentController extends Controller
 
     public function index() {}
 
-    public function create(Request $request)
-    {
-        return Inertia::render('StudentCreate', [
-            'groups' => Group::with('school:id,name')
-                ->whereIn('school_id', $this->userSchoolIds())
-                ->orderBy('grade')
-                ->orderBy('name')
-                ->get(['id', 'slug', 'grade', 'name', 'school_id']),
-            'preselectedGroup' => $request->integer('group') ?: null,
-        ]);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'lastname' => ['required', 'string', 'max:100'],
-            'firstname' => ['required', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'group_id' => ['nullable', 'exists:groups,id'],
-            'school_id' => ['required_without:group_id', 'nullable', 'exists:schools,id'],
-        ]);
-
-        $groupId = $validated['group_id'] ?? null;
-
-        $schoolId = $groupId
-            ? Group::findOrFail($groupId)->school_id
-            : ($validated['school_id'] ?? null);
-
-        $student = Student::create([
-            'lastname' => $validated['lastname'],
-            'firstname' => $validated['firstname'],
-            'email' => $validated['email'] ?? null,
-            'school_id' => $schoolId,
-        ]);
-
-        if ($groupId) {
-            $student->groups()->attach($groupId);
-            $group = Group::find($groupId);
-
-            return to_route('classlist.show', $group);
-        }
-
-        return to_route('classlist');
-    }
+    public function store() {}
 
     public function show(Student $student)
     {
@@ -76,7 +32,20 @@ class StudentController extends Controller
 
     public function edit($id) {}
 
-    public function update(Request $request, $id) {}
+    public function update(Request $request, Student $student)
+    {
+        abort_unless($this->userSchoolIds()->contains($student->school_id), 403);
+
+        $validated = $request->validate([
+            'lastname'  => ['required', 'string', 'max:100'],
+            'firstname' => ['required', 'string', 'max:100'],
+            'email'     => ['nullable', 'email', 'max:255'],
+        ]);
+
+        $student->update($validated);
+
+        return back();
+    }
 
     public function destroy($id) {}
 }

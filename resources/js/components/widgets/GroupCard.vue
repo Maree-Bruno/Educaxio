@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
@@ -41,10 +42,8 @@ const emit = defineEmits<{
                     >
                         Classe
                     </dt>
-                    <dd
-                        class="line-clamp-1 text-base leading-5 font-bold text-text-base"
-                    >
-                        {{ grade }}{{ name }}
+                    <dd>
+                        <Badge variant="blue" size="md">{{ grade }}{{ name }}</Badge>
                     </dd>
                 </div>
                 <div class="flex flex-1 flex-col gap-1">

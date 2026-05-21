@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed, nextTick, ref, watch } from 'vue';
+import Badge from '@/components/widgets/Badge.vue';
+import BaseModal from '@/components/widgets/BaseModal.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import Button from '@/components/widgets/Button.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
-import ArrowUpDown from '@/components/widgets/svg/ArrowUpDown.vue';
+import SortTh from '@/components/widgets/SortTh.vue';
+import Attendance from '@/components/widgets/svg/Attendance.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
+import Edit from '@/components/widgets/svg/Edit.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
@@ -63,7 +67,7 @@ function sortBy(col: string) {
 }
 
 // --- Add student modal ---
-const addDialogRef = ref<HTMLDialogElement | null>(null);
+const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const addTab = ref<'new' | 'existing'>('new');
 const addForm = ref({ lastname: '', firstname: '', email: '' });
 const studentSearch = ref('');
@@ -74,7 +78,7 @@ function openAddModal() {
     addForm.value = { lastname: '', firstname: '', email: '' };
     studentSearch.value = '';
     selectedStudentIds.value = [];
-    nextTick(() => addDialogRef.value?.showModal());
+    nextTick(() => addModalRef.value?.open());
 }
 
 watch(addTab, () => {
@@ -83,13 +87,7 @@ watch(addTab, () => {
 });
 
 function closeAddModal() {
-    addDialogRef.value?.close();
-}
-
-function onAddBackdrop(e: MouseEvent) {
-    if (e.target === addDialogRef.value) {
-        closeAddModal();
-    }
+    addModalRef.value?.close();
 }
 
 const filteredSchoolStudents = computed(() => {
@@ -119,6 +117,33 @@ function attachSelected() {
     router.post(`/classlist/${props.group.slug}/students`, {
         student_ids: selectedStudentIds.value,
     }, { preserveScroll: true, onSuccess: closeAddModal });
+}
+
+// --- Edit student modal ---
+const editModalRef   = ref<InstanceType<typeof BaseModal> | null>(null);
+const editingStudent = ref<Student | null>(null);
+const editForm       = ref({ lastname: '', firstname: '', email: '' });
+
+function openEdit(student: Student) {
+    editingStudent.value = student;
+    editForm.value = { lastname: student.lastname, firstname: student.firstname, email: student.email ?? '' };
+    nextTick(() => editModalRef.value?.open());
+}
+
+function closeEditModal() {
+    editModalRef.value?.close();
+}
+
+function saveEdit() {
+    if (!editingStudent.value) {
+        return;
+    }
+
+    router.patch(`/students/${editingStudent.value.id}`, {
+        lastname:  editForm.value.lastname,
+        firstname: editForm.value.firstname,
+        email:     editForm.value.email || null,
+    }, { preserveScroll: true, onSuccess: closeEditModal });
 }
 </script>
 
@@ -170,6 +195,17 @@ function attachSelected() {
                             <ClipboardCheck :size="16" :stroke-width="2" aria-hidden="true" />
                         </template>
                     </LinkButton>
+                    <LinkButton
+                        v-if="isTeacher"
+                        :href="`/attendances?group=${group.slug}`"
+                        variant="secondary"
+                        size="sm"
+                        label="Présence"
+                    >
+                        <template #icon>
+                            <Attendance :size="16" :stroke-width="2" aria-hidden="true" />
+                        </template>
+                    </LinkButton>
                 </div>
             </div>
 
@@ -193,7 +229,20 @@ function attachSelected() {
                         </span>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
+                        <Button
+                            v-if="canManage"
+                            variant="secondary"
+                            size="sm"
+                            :icon-only="true"
+                            title="Modifier l'élève"
+                            @click="openEdit(student)"
+                        >
+                            <template #icon>
+                                <Edit :size="16" :stroke-width="2" aria-hidden="true" />
+                            </template>
+                        </Button>
                         <LinkButton
+                            v-else
                             :href="`/students/${student.id}`"
                             variant="secondary"
                             size="sm"
@@ -234,25 +283,7 @@ function attachSelected() {
                             >
                                 N°
                             </th>
-                            <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">
-                                <button
-                                    type="button"
-                                    class="flex items-center gap-1.5 transition-colors hover:text-text-base"
-                                    @click="sortBy('lastname')"
-                                >
-                                    Nom de l'élève
-                                    <ArrowUpDown
-                                        :size="13"
-                                        :stroke-width="2.5"
-                                        class="transition-transform duration-200"
-                                        :class="{
-                                            'rotate-180': sortCol === 'lastname' && sortDir === 'desc',
-                                            'opacity-30': sortCol !== 'lastname',
-                                        }"
-                                        aria-hidden="true"
-                                    />
-                                </button>
-                            </th>
+                            <SortTh col="lastname" label="Nom de l'élève" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                             <th
                                 class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500"
                             >
@@ -288,15 +319,28 @@ function attachSelected() {
                                     {{ student.lastname }} {{ student.firstname }}
                                 </span>
                             </td>
-                            <td class="px-6 py-5 text-center text-base text-text-base">
-                                {{ className }}
+                            <td class="px-6 py-5 text-center">
+                                <Badge variant="neutral">{{ className }}</Badge>
                             </td>
                             <td class="px-6 py-5 text-center text-base text-text-base">
                                 —
                             </td>
                             <td class="px-6 py-5">
                                 <div class="flex items-center justify-center gap-2">
+                                    <Button
+                                        v-if="canManage"
+                                        variant="secondary"
+                                        size="sm"
+                                        :icon-only="true"
+                                        title="Modifier l'élève"
+                                        @click="openEdit(student)"
+                                    >
+                                        <template #icon>
+                                            <Edit :size="16" :stroke-width="2" aria-hidden="true" />
+                                        </template>
+                                    </Button>
                                     <LinkButton
+                                        v-else
                                         :href="`/students/${student.id}`"
                                         variant="secondary"
                                         size="sm"
@@ -366,13 +410,37 @@ function attachSelected() {
         </div>
     </div>
 
+    <!-- Modal : Modifier un élève -->
+    <BaseModal ref="editModalRef">
+        <div v-if="editingStudent" class="flex flex-col gap-5">
+            <h2 class="text-xl font-bold text-black">Modifier l'élève</h2>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Nom</label>
+                <input v-model="editForm.lastname" type="text" maxlength="100"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Prénom</label>
+                <input v-model="editForm.firstname" type="text" maxlength="100"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
+                    Email <span class="normal-case font-normal">(optionnel)</span>
+                </label>
+                <input v-model="editForm.email" type="email" maxlength="255"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
+            </div>
+            <div class="flex gap-3">
+                <Button variant="primary" size="sm" label="Enregistrer" class="flex-1"
+                    :disabled="!editForm.lastname || !editForm.firstname" @click="saveEdit" />
+                <Button variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeEditModal" />
+            </div>
+        </div>
+    </BaseModal>
+
     <!-- Modal : Ajouter un élève -->
-    <dialog
-        ref="addDialogRef"
-        class="w-[90vw] max-w-md overflow-hidden rounded-2xl bg-bg-primary p-4 sm:p-6"
-        @click="onAddBackdrop"
-        @cancel.prevent="closeAddModal"
-    >
+    <BaseModal ref="addModalRef">
         <div class="flex flex-col gap-5">
             <h2 class="text-xl font-bold text-black">Ajouter un élève</h2>
 
@@ -443,13 +511,9 @@ function attachSelected() {
                         <div class="flex min-w-0 flex-col gap-0.5">
                             <span class="text-sm font-medium text-text-base">{{ s.lastname }} {{ s.firstname }}</span>
                             <div v-if="s.groups.length" class="flex flex-wrap gap-1">
-                                <span
-                                    v-for="g in s.groups"
-                                    :key="g.id"
-                                    class="rounded-md bg-neutral-100 px-1.5 py-0.5 text-xs text-stone-500"
-                                >
+                                <Badge v-for="g in s.groups" :key="g.id" variant="neutral">
                                     {{ g.grade }}{{ g.name }}
-                                </span>
+                                </Badge>
                             </div>
                         </div>
                     </label>
@@ -467,13 +531,5 @@ function attachSelected() {
                 </div>
             </div>
         </div>
-    </dialog>
+    </BaseModal>
 </template>
-
-<style scoped>
-dialog { margin: auto; }
-dialog::backdrop {
-    background-color: rgb(0 0 0 / 0.4);
-    backdrop-filter: blur(4px);
-}
-</style>

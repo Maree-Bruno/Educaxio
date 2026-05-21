@@ -2,6 +2,8 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed, nextTick, ref } from 'vue';
+import Badge from '@/components/widgets/Badge.vue';
+import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import FilterBar from '@/components/widgets/FilterBar.vue';
@@ -114,18 +116,18 @@ function isGroupOpen(id: number): boolean {
 }
 
 // ── Modal : gérer les profs d'un cours ───────────────────────────────────
-const teacherDialogRef = ref<HTMLDialogElement | null>(null);
+const teacherModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const editingLesson = ref<Lesson | null>(null);
 const selectedTeacherIds = ref<number[]>([]);
 
 function openTeachers(lesson: Lesson) {
     editingLesson.value = lesson;
     selectedTeacherIds.value = lesson.users.map((u) => u.id);
-    nextTick(() => teacherDialogRef.value?.showModal());
+    nextTick(() => teacherModalRef.value?.open());
 }
 
 function closeTeachers() {
-    teacherDialogRef.value?.close();
+    teacherModalRef.value?.close();
 }
 
 function toggleTeacher(id: number) {
@@ -145,15 +147,13 @@ function syncTeachers() {
 
     router.put(
         `${base}/${editingLesson.value.id}/teachers`,
-        {
-            teacher_ids: selectedTeacherIds.value,
-        },
+        { teacher_ids: selectedTeacherIds.value },
         { preserveScroll: true, onSuccess: closeTeachers },
     );
 }
 
 // ── Modal : ajouter une matière à un groupe ───────────────────────────────
-const addDialogRef = ref<HTMLDialogElement | null>(null);
+const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const addingToGroup = ref<Group | null>(null);
 const addForm = ref({ subject_id: '', teacher_ids: [] as number[] });
 
@@ -168,11 +168,11 @@ function availableSubjects(group: Group) {
 function openAdd(group: Group) {
     addingToGroup.value = group;
     addForm.value = { subject_id: '', teacher_ids: [] };
-    nextTick(() => addDialogRef.value?.showModal());
+    nextTick(() => addModalRef.value?.open());
 }
 
 function closeAdd() {
-    addDialogRef.value?.close();
+    addModalRef.value?.close();
 }
 
 function toggleAddTeacher(id: number) {
@@ -220,16 +220,6 @@ function confirmDelete() {
             deleteLoading.value = false;
         },
     });
-}
-
-function onBackdrop(
-    dialogEl: HTMLDialogElement | null,
-    e: MouseEvent,
-    close: () => void,
-) {
-    if (e.target === dialogEl) {
-        close();
-    }
 }
 </script>
 
@@ -320,7 +310,6 @@ function onBackdrop(
             <!-- Contenu déroulant -->
             <div v-if="isGroupOpen(group.id)">
                 <div class="border-t border-neutral-100">
-                    <!-- Ligne vide -->
                     <p
                         v-if="lessons.length === 0"
                         class="px-6 py-4 text-sm text-border-figma italic"
@@ -328,77 +317,39 @@ function onBackdrop(
                         Aucun cours attribué
                     </p>
 
-                    <!-- Liste des cours -->
                     <div
                         v-for="lesson in lessons"
                         :key="lesson.id"
                         class="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-neutral-100 px-4 sm:px-6 py-3 last:border-b-0 hover:bg-gray-50"
                     >
-                        <!-- Matière -->
-                        <span
-                            class="w-full text-sm font-bold text-text-base sm:w-40 sm:shrink-0"
-                        >
+                        <span class="w-full text-sm font-bold text-text-base sm:w-40 sm:shrink-0">
                             {{ lesson.subject.name }}
                         </span>
 
-                        <!-- Profs assignés -->
                         <div class="flex min-w-0 flex-1 flex-wrap gap-1.5">
-                            <span
-                                v-for="teacher in lesson.users"
-                                :key="teacher.id"
-                                class="rounded-md bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue"
-                            >
+                            <Badge v-for="teacher in lesson.users" :key="teacher.id">
                                 {{ teacher.name }}
-                            </span>
-                            <span
-                                v-if="lesson.users.length === 0"
-                                class="text-xs text-border-figma italic"
-                            >
+                            </Badge>
+                            <span v-if="lesson.users.length === 0" class="text-xs text-border-figma italic">
                                 Aucun prof
                             </span>
                         </div>
 
-                        <!-- Actions -->
                         <div class="flex shrink-0 items-center gap-2">
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                :icon-only="true"
-                                title="Gérer les profs"
-                                @click="openTeachers(lesson)"
-                            >
-                                <template #icon>
-                                    <Edit
-                                        :size="16"
-                                        :stroke-width="2"
-                                        aria-hidden="true"
-                                    />
-                                </template>
+                            <Button variant="secondary" size="sm" :icon-only="true" title="Gérer les profs" @click="openTeachers(lesson)">
+                                <template #icon><Edit :size="16" :stroke-width="2" aria-hidden="true" /></template>
                             </Button>
-                            <Button
-                                variant="danger"
-                                size="sm"
-                                :icon-only="true"
-                                title="Supprimer"
-                                @click="pendingDelete = lesson"
-                            >
-                                <template #icon>
-                                    <Trash
-                                        :size="16"
-                                        :stroke-width="2"
-                                        aria-hidden="true"
-                                    />
-                                </template>
+                            <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = lesson">
+                                <template #icon><Trash :size="16" :stroke-width="2" aria-hidden="true" /></template>
                             </Button>
                         </div>
                     </div>
 
-                    <!-- Ajouter une matière -->
                     <div class="px-4 sm:px-6 py-3">
                         <Button
                             variant="secondary"
                             size="sm"
-                            :label="`+ Ajouter une matière`"
+                            label="+ Ajouter une matière"
                             :disabled="availableSubjects(group).length === 0"
                             @click="openAdd(group)"
                         />
@@ -416,19 +367,12 @@ function onBackdrop(
     </div>
 
     <!-- Modal : gérer les profs d'un cours -->
-    <dialog
-        ref="teacherDialogRef"
-        class="w-[90vw] max-w-md overflow-hidden rounded-2xl bg-bg-primary p-4 sm:p-6"
-        @click="onBackdrop(teacherDialogRef, $event, closeTeachers)"
-        @cancel.prevent="closeTeachers"
-    >
+    <BaseModal ref="teacherModalRef">
         <div v-if="editingLesson" class="flex flex-col gap-5">
             <div>
                 <h2 class="text-xl font-bold text-black">Profs assignés</h2>
                 <p class="mt-1 text-sm font-bold text-border-figma">
-                    {{ editingLesson.subject.name }} ·
-                    {{ editingLesson.group.grade
-                    }}{{ editingLesson.group.name }}
+                    {{ editingLesson.subject.name }} · {{ editingLesson.group.grade }}{{ editingLesson.group.name }}
                 </p>
             </div>
 
@@ -437,11 +381,7 @@ function onBackdrop(
                     v-for="teacher in teachers"
                     :key="teacher.id"
                     class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
-                    :class="
-                        selectedTeacherIds.includes(teacher.id)
-                            ? 'outline-blue'
-                            : 'outline-border-figma'
-                    "
+                    :class="selectedTeacherIds.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
                 >
                     <input
                         type="checkbox"
@@ -449,91 +389,53 @@ function onBackdrop(
                         :checked="selectedTeacherIds.includes(teacher.id)"
                         @change="toggleTeacher(teacher.id)"
                     />
-                    <span class="text-sm font-bold text-text-base">{{
-                        teacher.name
-                    }}</span>
+                    <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
                 </label>
-                <p
-                    v-if="teachers.length === 0"
-                    class="text-xs text-border-figma italic"
-                >
+                <p v-if="teachers.length === 0" class="text-xs text-border-figma italic">
                     Aucun prof dans cette école
                 </p>
             </div>
 
             <div class="flex gap-3">
-                <Button
-                    variant="primary"
-                    size="sm"
-                    label="Enregistrer"
-                    class="flex-1"
-                    @click="syncTeachers"
-                />
-                <Button
-                    variant="danger"
-                    size="sm"
-                    label="Annuler"
-                    class="flex-1"
-                    @click="closeTeachers"
-                />
+                <Button variant="primary" size="sm" label="Enregistrer" class="flex-1" @click="syncTeachers" />
+                <Button variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeTeachers" />
             </div>
         </div>
-    </dialog>
+    </BaseModal>
 
     <!-- Modal : ajouter une matière à un groupe -->
-    <dialog
-        ref="addDialogRef"
-        class="w-[90vw] max-w-md overflow-hidden rounded-2xl bg-bg-primary p-4 sm:p-6"
-        @click="onBackdrop(addDialogRef, $event, closeAdd)"
-        @cancel.prevent="closeAdd"
-    >
+    <BaseModal ref="addModalRef">
         <div v-if="addingToGroup" class="flex flex-col gap-5">
             <div>
-                <h2 class="text-xl font-bold text-black">
-                    Ajouter une matière
-                </h2>
+                <h2 class="text-xl font-bold text-black">Ajouter une matière</h2>
                 <p class="mt-1 text-sm font-bold text-border-figma">
                     {{ addingToGroup.grade }}{{ addingToGroup.name }}
                 </p>
             </div>
 
             <div class="flex flex-col gap-2">
-                <label
-                    class="text-xs font-bold tracking-wider text-border-figma uppercase"
-                    >Matière</label
-                >
+                <label class="text-xs font-bold tracking-wider text-border-figma uppercase">Matière</label>
                 <select
                     v-model="addForm.subject_id"
                     class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
                 >
                     <option value="">Choisir une matière</option>
-                    <option
-                        v-for="s in availableSubjects(addingToGroup)"
-                        :key="s.id"
-                        :value="String(s.id)"
-                    >
+                    <option v-for="s in availableSubjects(addingToGroup)" :key="s.id" :value="String(s.id)">
                         {{ s.name }}
                     </option>
                 </select>
             </div>
 
             <div class="flex flex-col gap-2">
-                <label
-                    class="text-xs font-bold tracking-wider text-border-figma uppercase"
-                >
-                    Profs
-                    <span class="font-normal normal-case">(optionnel)</span>
+                <label class="text-xs font-bold tracking-wider text-border-figma uppercase">
+                    Profs <span class="font-normal normal-case">(optionnel)</span>
                 </label>
                 <div class="flex flex-col gap-1.5">
                     <label
                         v-for="teacher in teachers"
                         :key="teacher.id"
                         class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
-                        :class="
-                            addForm.teacher_ids.includes(teacher.id)
-                                ? 'outline-blue'
-                                : 'outline-border-figma'
-                        "
+                        :class="addForm.teacher_ids.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
                     >
                         <input
                             type="checkbox"
@@ -541,46 +443,18 @@ function onBackdrop(
                             :checked="addForm.teacher_ids.includes(teacher.id)"
                             @change="toggleAddTeacher(teacher.id)"
                         />
-                        <span class="text-sm font-bold text-text-base">{{
-                            teacher.name
-                        }}</span>
+                        <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
                     </label>
-                    <p
-                        v-if="teachers.length === 0"
-                        class="text-xs text-border-figma italic"
-                    >
+                    <p v-if="teachers.length === 0" class="text-xs text-border-figma italic">
                         Aucun prof dans cette école
                     </p>
                 </div>
             </div>
 
             <div class="flex gap-3">
-                <Button
-                    variant="primary"
-                    size="sm"
-                    label="Enregistrer"
-                    class="flex-1"
-                    :disabled="!addForm.subject_id"
-                    @click="submitAdd"
-                />
-                <Button
-                    variant="danger"
-                    size="sm"
-                    label="Annuler"
-                    class="flex-1"
-                    @click="closeAdd"
-                />
+                <Button variant="primary" size="sm" label="Enregistrer" class="flex-1" :disabled="!addForm.subject_id" @click="submitAdd" />
+                <Button variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeAdd" />
             </div>
         </div>
-    </dialog>
+    </BaseModal>
 </template>
-
-<style scoped>
-dialog {
-    margin: auto;
-}
-dialog::backdrop {
-    background-color: rgb(0 0 0 / 0.4);
-    backdrop-filter: blur(4px);
-}
-</style>
