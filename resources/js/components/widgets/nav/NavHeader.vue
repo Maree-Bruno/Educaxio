@@ -7,6 +7,7 @@ import ClassesList from '@/components/widgets/svg/ClassesList.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
 import Home from '@/components/widgets/svg/Home.vue';
 import Schedule from '@/components/widgets/svg/Schedule.vue';
+import SchoolAgenda from '@/components/widgets/svg/SchoolAgenda.vue';
 import { useAuthStore } from '@/stores/auth';
 import { dashboard, classlist, attendances, schedules } from '@/routes';
 import NavItem from './NavItem.vue';
@@ -68,6 +69,16 @@ function isActive(href: string): boolean {
                     >
                         <template #icon>
                             <Attendance :size="20" :stroke-width="2" />
+                        </template>
+                    </NavItem>
+                    <NavItem
+                        :href="`/schools/${school.slug}/teachers`"
+                        title="Professeurs"
+                        :active="isActive(`/schools/${school.slug}/teachers`)"
+                        :collapsed="collapsed"
+                    >
+                        <template #icon>
+                            <SchoolAgenda :size="20" :stroke-width="2" />
                         </template>
                     </NavItem>
                     <NavItem

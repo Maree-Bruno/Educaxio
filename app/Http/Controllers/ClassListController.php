@@ -214,6 +214,7 @@ class ClassListController extends Controller
         $schoolStudents = $canManage
             ? \App\Models\Student::where('school_id', $group->school_id)
                 ->whereNotIn('id', $group->students()->pluck('students.id'))
+                ->with('groups:id,grade,name')
                 ->orderBy('lastname')
                 ->get(['id', 'lastname', 'firstname'])
             : [];

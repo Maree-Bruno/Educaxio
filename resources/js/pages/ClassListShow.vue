@@ -22,7 +22,7 @@ const props = defineProps<{
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
     filters: { sort?: string; dir?: 'asc' | 'desc' };
-    schoolStudents: { id: number; lastname: string; firstname: string }[];
+    schoolStudents: { id: number; lastname: string; firstname: string; groups: { id: number; grade: string; name: string }[] }[];
 }>();
 
 const className = computed(() => `${props.group.grade}${props.group.name}`);
@@ -432,15 +432,26 @@ function attachSelected() {
                     <label
                         v-for="s in filteredSchoolStudents"
                         :key="s.id"
-                        class="flex cursor-pointer items-center gap-3 px-4 py-3 text-sm font-medium text-text-base transition-colors hover:bg-gray-50"
+                        class="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
                     >
                         <input
                             type="checkbox"
                             :value="s.id"
                             v-model="selectedStudentIds"
-                            class="h-4 w-4 rounded accent-blue"
+                            class="h-4 w-4 shrink-0 rounded accent-blue"
                         />
-                        {{ s.lastname }} {{ s.firstname }}
+                        <div class="flex min-w-0 flex-col gap-0.5">
+                            <span class="text-sm font-medium text-text-base">{{ s.lastname }} {{ s.firstname }}</span>
+                            <div v-if="s.groups.length" class="flex flex-wrap gap-1">
+                                <span
+                                    v-for="g in s.groups"
+                                    :key="g.id"
+                                    class="rounded-md bg-neutral-100 px-1.5 py-0.5 text-xs text-stone-500"
+                                >
+                                    {{ g.grade }}{{ g.name }}
+                                </span>
+                            </div>
+                        </div>
                     </label>
                 </div>
                 <div class="flex gap-3">

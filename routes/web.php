@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassListController;
 use App\Http\Controllers\ScheduleController;
@@ -59,6 +60,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('students', [AdminStudentController::class, 'store'])->name('students.store');
             Route::patch('students/{student}', [AdminStudentController::class, 'update'])->name('students.update');
             Route::delete('students/{student}', [AdminStudentController::class, 'destroy'])->name('students.destroy');
+
+            Route::get('teachers', [AdminTeacherController::class, 'index'])->name('teachers.index');
 
             Route::get('lessons', [AdminLessonController::class, 'index'])->name('lessons.index');
             Route::post('lessons', [AdminLessonController::class, 'store'])->name('lessons.store');
