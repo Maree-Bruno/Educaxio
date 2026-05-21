@@ -41,6 +41,12 @@ function navigate(url: string | null) {
             />
         </button>
 
+        <!-- Mobile: compact page indicator -->
+        <span class="sm:hidden px-2 text-xs font-medium text-text-base">
+            {{ currentPage }} / {{ lastPage }}
+        </span>
+
+        <!-- Desktop: full page links -->
         <template v-for="link in pageLinks" :key="link.label">
             <button
                 v-if="link.label !== '...'"
@@ -48,12 +54,12 @@ function navigate(url: string | null) {
                 :class="link.active
                     ? 'bg-blue text-white'
                     : 'text-text-base outline-1 -outline-offset-1 outline-blue hover:bg-blue/10'"
-                class="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors"
+                class="hidden sm:flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors"
                 @click="navigate(link.url)"
             >
                 {{ link.label }}
             </button>
-            <span v-else class="flex h-7 w-7 items-center justify-center text-xs text-border-figma">
+            <span v-else class="hidden sm:flex h-7 w-7 items-center justify-center text-xs text-border-figma">
                 …
             </span>
         </template>

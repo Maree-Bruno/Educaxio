@@ -94,12 +94,13 @@ function cancel() {
             </p>
         </div>
 
-        <!-- Établissement -->
-        <div class="flex flex-col gap-1">
+
+        <!-- École (création seulement) -->
+        <div v-if="mode === 'create'" class="flex flex-col gap-1">
             <SelectField
                 id="school"
                 v-model="form.school_id"
-                label="Établissement"
+                label="École"
                 :options="schoolOptions"
             />
             <p v-if="form.errors.school_id" class="text-xs text-pink">
@@ -119,21 +120,6 @@ function cancel() {
                 {{ form.errors.academic_year_id }}
             </p>
         </div>
-
-        <!-- Cours -->
-        <div class="flex flex-col gap-1">
-            <SelectField
-                id="subject"
-                v-model="form.subject_id"
-                label="Cours"
-                placeholder="Aucun cours"
-                :options="subjectOptions"
-            />
-            <p v-if="form.errors.subject_id" class="text-xs text-pink">
-                {{ form.errors.subject_id }}
-            </p>
-        </div>
-
         <!-- Actions -->
         <Button
             type="submit"

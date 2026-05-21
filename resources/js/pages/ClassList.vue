@@ -10,8 +10,9 @@ import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import ArrowUpDown from '@/components/widgets/svg/ArrowUpDown.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { useAuthStore } from '@/stores/auth';
 import { useGroupsStore } from '@/stores/groups';
-import type { AcademicYear, Group, School } from '@/types';
+import type { AcademicYear, Group, Lesson, School } from '@/types';
 
 setPageTitle('Liste des classes');
 
@@ -31,8 +32,29 @@ const props = defineProps<{
 }>();
 
 const groupsStore = useGroupsStore();
+const auth = useAuthStore();
+
+const canCreate = computed(() => auth.adminSchools.length > 0);
+
+function canDeleteGroup(schoolId: number): boolean {
+    return auth.adminSchools.some((s) => s.id === schoolId);
+}
 
 watchEffect(() => groupsStore.setGroups(props.groups));
+
+type GroupLesson = { group: Group; lesson: Lesson | null };
+
+const flatItems = computed<GroupLesson[]>(() =>
+    groupsStore.groups.flatMap((group): GroupLesson[] => {
+        if (auth.isPureAdmin || group.lessons.length === 0) return [{ group, lesson: null }];
+        return group.lessons.map((lesson) => ({ group, lesson }));
+    }),
+);
+
+function groupProps(group: Group) {
+    const { lessons: _l, ...rest } = group;
+    return rest;
+}
 
 const pendingDelete = ref<{ id: number; slug: string; name: string } | null>(
     null,
@@ -199,12 +221,11 @@ watch(sortDir, applyFilters);
                 </button>
             </div>
         </template>
-        <template #action>
+        <template v-if="canCreate" #action>
             <LinkButton
                 href="/classlist/create"
                 variant="primary"
-                size="md"
-                mobile-size="sm"
+                size="sm"
                 label="Nouvelle classe"
                 class="w-full font-bold"
             />
@@ -222,7 +243,7 @@ watch(sortDir, applyFilters);
 
     <div>
         <p
-            v-if="groupsStore.groups.length === 0"
+            v-if="flatItems.length === 0"
             class="flex flex-col items-center justify-center gap-3 rounded-3xl bg-white py-20 text-center font-bold text-text-base"
         >
             Aucune classe pour le moment
@@ -232,11 +253,13 @@ watch(sortDir, applyFilters);
             v-else
             class="grid list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
-            <li v-for="group in groupsStore.groups" :key="group.id">
+            <li v-for="{ group, lesson } in flatItems" :key="`${group.id}-${lesson?.id ?? 0}`">
                 <GroupCard
-                    v-bind="group"
+                    v-bind="groupProps(group)"
+                    :lesson="lesson"
+                    :can-delete="canDeleteGroup(group.school_id)"
                     :view-href="`/classlist/${group.slug}`"
-                    :grades-href="`/classlist/${group.slug}/grades`"
+                    :grades-href="lesson ? `/classlist/${group.slug}/lessons/${lesson.id}/grades` : undefined"
                     @delete="requestDelete"
                 />
             </li>

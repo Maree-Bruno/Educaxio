@@ -16,10 +16,10 @@ const isOpen = ref(false);
     <div
         class="sticky top-16 z-20 -mx-2 -mt-2 bg-bg-primary px-2 py-6 shadow-[0px_1px_2px_0px_rgba(48,48,48,0.05)] lg:-mx-8 lg:-mt-8 lg:px-8"
     >
-        <div class="rounded-2xl bg-white p-6 outline-1 -outline-offset-1 outline-neutral-300/10">
+        <div class="rounded-2xl bg-white p-4 sm:p-6 outline-1 -outline-offset-1 outline-neutral-300/10">
 
             <!-- Toggle + action -->
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center justify-between gap-2">
                 <button
                     type="button"
                     class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-text-base transition-colors hover:bg-gray-50"
@@ -58,7 +58,7 @@ const isOpen = ref(false);
             >
                 <div
                     v-show="isOpen"
-                    class="mt-4 flex flex-col lg:flex-row justify-between items-end gap-4"
+                    class="mt-4 flex flex-col lg:flex-row items-end gap-4"
                 >
                     <slot name="filters" />
                 </div>

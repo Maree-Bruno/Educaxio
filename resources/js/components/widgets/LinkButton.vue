@@ -39,7 +39,7 @@ const variantClasses = computed(
 
 const sizePaddingMap = {
     xs: { base: 'px-2 py-1 text-xs', lg: 'lg:px-4 lg:py-2 lg:text-base' },
-    sm: { base: 'px-4 py-2 text-base', lg: 'lg:px-4 lg:py-2 lg:text-base' },
+    sm: { base: 'px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base', lg: 'lg:px-4 lg:py-2 lg:text-base' },
     md: {
         base: 'px-5 py-2.5 text-xl font-bold',
         lg: 'lg:px-5 lg:py-2.5 lg:text-xl lg:font-bold',

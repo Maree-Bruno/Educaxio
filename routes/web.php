@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\LessonController as AdminLessonController;
+use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassListController;
 use App\Http\Controllers\ScheduleController;
@@ -46,6 +48,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('attendances', [AttendanceController::class, 'index'])->name('attendances');
     Route::post('attendances', [AttendanceController::class, 'store'])->name('attendances.store');
     Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy');
+
+    // Admin — school-scoped
+    Route::prefix('schools/{school:slug}')
+        ->middleware('school.admin')
+        ->name('admin.')
+        ->group(function () {
+            Route::get('students', [AdminStudentController::class, 'index'])->name('students.index');
+            Route::post('students', [AdminStudentController::class, 'store'])->name('students.store');
+            Route::patch('students/{student}', [AdminStudentController::class, 'update'])->name('students.update');
+            Route::delete('students/{student}', [AdminStudentController::class, 'destroy'])->name('students.destroy');
+
+            Route::get('lessons', [AdminLessonController::class, 'index'])->name('lessons.index');
+            Route::post('lessons', [AdminLessonController::class, 'store'])->name('lessons.store');
+            Route::put('lessons/{lesson}/teachers', [AdminLessonController::class, 'syncTeachers'])->name('lessons.teachers.sync');
+            Route::delete('lessons/{lesson}', [AdminLessonController::class, 'destroy'])->name('lessons.destroy');
+        });
 });
 
 require __DIR__.'/settings.php';

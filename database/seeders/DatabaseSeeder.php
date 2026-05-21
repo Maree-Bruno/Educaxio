@@ -33,11 +33,32 @@ class DatabaseSeeder extends Seeder
             'password' => 'password',
         ]);
 
-        $teacher = User::factory()->create([
+        // Teachers — chacun a une ou deux matières
+        $profAnglais = User::factory()->create([
             'name' => 'John Doe',
             'email' => 'test@example.com',
             'password' => 'password',
         ]);
+
+        $profMaths = User::factory()->create([
+            'name' => 'Marie Dupont',
+            'email' => 'prof.maths@example.com',
+            'password' => 'password',
+        ]);
+
+        $profFrancais = User::factory()->create([
+            'name' => 'Pierre Martin',
+            'email' => 'prof.francais@example.com',
+            'password' => 'password',
+        ]);
+
+        $profNl = User::factory()->create([
+            'name' => 'Sophie Leclercq',
+            'email' => 'prof.nl@example.com',
+            'password' => 'password',
+        ]);
+
+        $teachers = collect([$profAnglais, $profMaths, $profFrancais, $profNl]);
 
         // ── Academic year ────────────────────────────────────────────────────
         $academicYear = AcademicYear::create(['year' => '2025-2026']);
@@ -53,18 +74,34 @@ class DatabaseSeeder extends Seeder
 
         $saintJoseph->users()->attach($adminSaintJoseph->id, ['role' => 'admin']);
         $athenee->users()->attach($adminAthenee->id, ['role' => 'admin']);
-        $schools->each(fn (School $s) => $s->users()->attach($teacher->id, ['role' => 'teacher']));
+        $schools->each(fn (School $s) => $teachers->each(
+            fn (User $t) => $s->users()->attach($t->id, ['role' => 'teacher'])
+        ));
 
         // ── Subjects ─────────────────────────────────────────────────────────
         $subjects = collect([
-            'Anglais', 'Néerlandais', 'Mathématiques', 'Sciences',
+            'Anglais', 'Néerlandais', 'Mathématiques', 'Français', 'Sciences',
             'Biologie', 'Physique', 'Chimie', 'Sciences humaines',
-            'Éducation physique', 'Arts', 'Français', 'Histoire',
-            'Géographie', 'Morale',
+            'Éducation physique', 'Arts', 'Histoire', 'Géographie', 'Morale',
         ])->map(fn ($name) => Subject::create(['name' => $name]));
 
         $schools->each(fn (School $s) => $s->subjects()->attach($subjects->pluck('id')));
         $schools->each(fn (School $s) => $s->academicYears()->attach($academicYear->id));
+
+        // ── Matières enseignées par chaque prof ───────────────────────────────
+        $anglais = $subjects->firstWhere('name', 'Anglais');
+        $neerlandais = $subjects->firstWhere('name', 'Néerlandais');
+        $maths = $subjects->firstWhere('name', 'Mathématiques');
+        $francais = $subjects->firstWhere('name', 'Français');
+        $sciences = $subjects->firstWhere('name', 'Sciences');
+
+        // prof → matières qu'il enseigne
+        $teacherSubjects = [
+            $profAnglais->id => [$anglais],
+            $profNl->id => [$neerlandais],
+            $profMaths->id => [$maths, $sciences],
+            $profFrancais->id => [$francais],
+        ];
 
         // ── Schedules + slots ─────────────────────────────────────────────────
         $slotLabels = [
@@ -72,25 +109,29 @@ class DatabaseSeeder extends Seeder
             '6e heure',   '7e heure', '8e heure', '9e heure', '10e heure',
         ];
 
-        $schedulesBySchool = $schools->mapWithKeys(function (School $school) use ($teacher, $academicYear, $slotLabels) {
-            $schedule = Schedule::create([
-                'user_id' => $teacher->id,
-                'school_id' => $school->id,
-                'academic_year_id' => $academicYear->id,
-            ]);
+        // schedule[teacher_id][school_id] = Schedule
+        $schedulesByTeacherSchool = [];
 
-            foreach ($slotLabels as $i => $label) {
-                $schedule->slots()->create([
-                    'position' => $i + 1,
-                    'label' => $label,
-                    'type' => 'slot',
+        foreach ($teachers as $teacher) {
+            foreach ($schools as $school) {
+                $schedule = Schedule::create([
+                    'user_id' => $teacher->id,
+                    'school_id' => $school->id,
+                    'academic_year_id' => $academicYear->id,
                 ]);
+
+                foreach ($slotLabels as $i => $label) {
+                    $schedule->slots()->create([
+                        'position' => $i + 1,
+                        'label' => $label,
+                        'type' => 'slot',
+                    ]);
+                }
+
+                $schedule->load('slots');
+                $schedulesByTeacherSchool[$teacher->id][$school->id] = $schedule;
             }
-
-            $schedule->load('slots');
-
-            return [$school->id => $schedule];
-        });
+        }
 
         // ── Groups & students ─────────────────────────────────────────────────
         $makeGroup = function (string $grade, string $name, School $school) use ($academicYear) {
@@ -118,55 +159,60 @@ class DatabaseSeeder extends Seeder
         $ar1B = $makeGroup('1', 'B', $athenee);
         $ar2C = $makeGroup('2', 'C', $athenee);
         $ar1D = $makeGroup('1', 'D', $athenee);
-        // ── Lessons (langues) ─────────────────────────────────────────────────
-        $anglais = $subjects->firstWhere('name', 'Anglais');
-        $neerlandais = $subjects->firstWhere('name', 'Néerlandais');
 
-        $makeLesson = function (Group $group, Subject $subject) use ($teacher) {
-            $lesson = Lesson::create([
-                'name' => $subject->name,
-                'group_id' => $group->id,
-                'subject_id' => $subject->id,
-            ]);
-            $lesson->users()->attach($teacher->id);
+        // ── Lessons : (groupe, matière) → prof responsable ────────────────────
+        // Chaque groupe a les 5 matières de base ; chaque prof prend ses matières
+        $sjGroups = collect([$sj3A, $sj3B, $sj4A, $sj2A]);
+        $arGroups = collect([$ar3A, $ar1B, $ar2C, $ar1D]);
 
-            return $lesson;
-        };
+        $lessonData = [];
 
-        $lessonData = [
-            // Anglais — 4 classes (3 à Saint-Joseph, 1 à l'Athénée)
-            ['lesson' => $makeLesson($sj3A, $anglais), 'school_id' => $saintJoseph->id],
-            ['lesson' => $makeLesson($sj3B, $anglais), 'school_id' => $saintJoseph->id],
-            ['lesson' => $makeLesson($sj4A, $anglais), 'school_id' => $saintJoseph->id],
-            ['lesson' => $makeLesson($ar3A, $anglais), 'school_id' => $athenee->id],
-            // Néerlandais — 4 classes (1 à Saint-Joseph, 3 à l'Athénée)
-            ['lesson' => $makeLesson($sj2A, $neerlandais), 'school_id' => $saintJoseph->id],
-            ['lesson' => $makeLesson($ar1B, $neerlandais), 'school_id' => $athenee->id],
-            ['lesson' => $makeLesson($ar2C, $neerlandais), 'school_id' => $athenee->id],
-            ['lesson' => $makeLesson($ar1D, $neerlandais), 'school_id' => $athenee->id],
-        ];
+        foreach ([$saintJoseph->id => $sjGroups, $athenee->id => $arGroups] as $schoolId => $groups) {
+            foreach ($groups as $group) {
+                foreach ($teacherSubjects as $teacherId => $subjectList) {
+                    $teacher = $teachers->firstWhere('id', $teacherId);
 
-        // ── Schedule entries — 4h par semaine par cours ───────────────────────
-        $usedSlotDays = [];
+                    foreach ($subjectList as $subject) {
+                        $lesson = Lesson::create([
+                            'name' => $subject->name,
+                            'group_id' => $group->id,
+                            'subject_id' => $subject->id,
+                        ]);
+                        $lesson->users()->attach($teacherId);
+
+                        $lessonData[] = [
+                            'lesson' => $lesson,
+                            'teacher' => $teacher,
+                            'school_id' => $schoolId,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // ── Schedule entries — 3 créneaux par leçon ───────────────────────────
+        // Chaque prof a son propre schedule ; on évite les conflits slot+jour par prof
+        $usedSlotDays = []; // [teacher_id][slot_id][day] = true
 
         foreach ($lessonData as $data) {
             $lesson = $data['lesson'];
-            $schedule = $schedulesBySchool[$data['school_id']];
+            $teacher = $data['teacher'];
+            $schedule = $schedulesByTeacherSchool[$teacher->id][$data['school_id']];
             $slots = $schedule->slots;
 
             $assigned = 0;
             $attempts = 0;
 
-            while ($assigned < 4 && $attempts < 50) {
+            while ($assigned < 3 && $attempts < 60) {
                 $attempts++;
                 $slot = $slots->random();
                 $day = fake()->numberBetween(1, 5);
 
-                if (isset($usedSlotDays[$slot->id][$day])) {
+                if (isset($usedSlotDays[$teacher->id][$slot->id][$day])) {
                     continue;
                 }
 
-                $usedSlotDays[$slot->id][$day] = true;
+                $usedSlotDays[$teacher->id][$slot->id][$day] = true;
 
                 ScheduleEntry::create([
                     'schedule_slot_id' => $slot->id,

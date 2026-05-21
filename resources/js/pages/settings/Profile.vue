@@ -8,6 +8,7 @@ import { useImagePreview } from '@/composables/useImagePreview';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useUserHelpers } from '@/composables/useUserHelpers';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useAuthStore } from '@/stores/auth';
 import type { Lesson } from '@/types';
 
 defineOptions({ layout: AppLayout });
@@ -17,13 +18,13 @@ setPageTitle('Profil');
 type Props = {
     mustVerifyEmail: boolean;
     status?: string;
-    userLessonIds: number[];
-    availableLessons: Lesson[];
+    assignedLessons: Lesson[];
 };
 const props = defineProps<Props>();
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
+const auth = useAuthStore();
 
 const { previewUrl, handleSingleImage, removeSinglePreview } = useImagePreview();
 const { getUserImageUrl, getUserImageSrcset } = useUserHelpers();
@@ -92,28 +93,10 @@ function submitPassword() {
     });
 }
 
-const lessonsForm = useForm({
-    lesson_ids: [...props.userLessonIds],
-});
-
-function toggleLesson(id: number) {
-    const idx = lessonsForm.lesson_ids.indexOf(id);
-
-    if (idx === -1) {
-        lessonsForm.lesson_ids.push(id);
-    } else {
-        lessonsForm.lesson_ids.splice(idx, 1);
-    }
-}
-
-function submitLessons() {
-    lessonsForm.put('/settings/lessons', { preserveScroll: true });
-}
-
 const lessonsBySchool = computed(() => {
     const map = new Map<string, Lesson[]>();
 
-    for (const lesson of props.availableLessons) {
+    for (const lesson of props.assignedLessons) {
         const schoolName = lesson.group!.school.name;
         const entry = map.get(schoolName) ?? [];
         entry.push(lesson);
@@ -211,12 +194,15 @@ function confirmDelete() {
             </div>
         </section>
 
-        <!-- Mes cours -->
-        <section class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10">
+        <!-- Mes cours (profs uniquement) -->
+        <section
+            v-if="auth.isTeacher"
+            class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10"
+        >
             <h2 class="text-base font-bold text-text-base">Mes cours</h2>
 
-            <div v-if="availableLessons.length === 0" class="py-4 text-sm text-border-figma">
-                Aucun cours disponible dans vos établissements.
+            <div v-if="assignedLessons.length === 0" class="py-4 text-sm text-border-figma">
+                Aucun cours ne vous a encore été attribué.
             </div>
 
             <div v-else class="flex flex-col gap-6">
@@ -225,22 +211,15 @@ function confirmDelete() {
                     :key="group.school"
                     class="flex flex-col gap-3"
                 >
-                    <p class="text-xs font-bold tracking-wider text-stone-500 uppercase">
+                    <p class="text-xs font-bold uppercase tracking-wider text-stone-500">
                         {{ group.school }}
                     </p>
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        <label
+                        <div
                             v-for="lesson in group.lessons"
                             :key="lesson.id"
-                            class="flex cursor-pointer items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 transition-colors hover:bg-gray-50"
-                            :class="{ 'border-blue bg-blue/5': lessonsForm.lesson_ids.includes(lesson.id) }"
+                            class="flex items-center gap-3 rounded-xl border border-blue bg-blue/5 px-4 py-3"
                         >
-                            <input
-                                type="checkbox"
-                                class="size-4 shrink-0 accent-blue"
-                                :checked="lessonsForm.lesson_ids.includes(lesson.id)"
-                                @change="toggleLesson(lesson.id)"
-                            />
                             <span class="min-w-0">
                                 <span class="block truncate text-sm font-semibold text-text-base">
                                     {{ lesson.subject?.name ?? lesson.name }}
@@ -249,20 +228,9 @@ function confirmDelete() {
                                     {{ lesson.group!.grade }}{{ lesson.group!.name }}
                                 </span>
                             </span>
-                        </label>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="flex justify-end">
-                <Button
-                    variant="primary"
-                    size="sm"
-                    label="Enregistrer"
-                    :loading="lessonsForm.processing"
-                    :disabled="availableLessons.length === 0"
-                    @click="submitLessons"
-                />
             </div>
         </section>
 

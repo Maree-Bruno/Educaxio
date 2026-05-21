@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Jobs\ProcessUploadedImage;
-use App\Models\Group;
-use App\Models\Lesson;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,19 +20,17 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         $user = $request->user();
-        $schoolIds = $user->schools()->pluck('schools.id');
 
         return Inertia::render('settings/Profile', [
-            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
-            'status' => $request->session()->get('status'),
-            'userLessonIds' => $user->lessons()->pluck('lessons.id'),
-            'availableLessons' => Lesson::whereHas('group', fn ($q) => $q->whereIn('school_id', $schoolIds))
+            'mustVerifyEmail'  => $user instanceof MustVerifyEmail,
+            'status'           => $request->session()->get('status'),
+            'assignedLessons'  => $user->lessons()
                 ->with([
                     'group:id,slug,grade,name,school_id',
                     'group.school:id,name',
                     'subject:id,name',
                 ])
-                ->get(['id', 'name', 'group_id', 'subject_id']),
+                ->get(['lessons.id', 'lessons.name', 'lessons.group_id', 'lessons.subject_id']),
         ]);
     }
 

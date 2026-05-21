@@ -9,8 +9,16 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type SchoolRole = {
+    id: number;
+    name: string;
+    slug: string;
+    role: 'admin' | 'teacher';
+};
+
 export type Auth = {
     user: User;
+    schoolRoles: SchoolRole[] | null;
 };
 
 export type TwoFactorConfigContent = {

@@ -16,6 +16,8 @@ import type { AcademicYear, Group, Paginator, School, Student, Subject } from '@
 const props = defineProps<{
     group: Group;
     students: Paginator<Student>;
+    canManage: boolean;
+    isTeacher: boolean;
     schools: Pick<School, 'id' | 'name'>[];
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
@@ -76,7 +78,7 @@ function sortBy(col: string) {
 
             <!-- En-tête du tableau -->
             <div
-                class="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-300/10 bg-white px-6 py-5"
+                class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-300/10 bg-white px-4 sm:px-6 py-4 sm:py-5"
             >
                 <h2 class="text-xl font-bold text-text-base">
                     Liste des élèves
@@ -84,12 +86,14 @@ function sortBy(col: string) {
                 </h2>
                 <div class="flex items-center gap-3">
                     <LinkButton
+                        v-if="canManage"
                         :href="`/students/create?group=${group.id}`"
                         variant="secondary"
                         size="sm"
                         label="Ajouter"
                     />
                     <LinkButton
+                        v-if="isTeacher"
                         :href="`/classlist/${group.slug}/grades`"
                         variant="primary"
                         size="sm"
@@ -102,8 +106,59 @@ function sortBy(col: string) {
                 </div>
             </div>
 
-            <!-- Table -->
-            <div class="overflow-x-auto bg-white">
+            <!-- Mobile : liste de cartes -->
+            <ul class="sm:hidden divide-y divide-neutral-100 bg-white">
+                <li
+                    v-for="(student, index) in students.data"
+                    :key="student.id"
+                    class="flex items-center justify-between gap-3 px-4 py-4"
+                >
+                    <div class="flex min-w-0 items-center gap-3">
+                        <span class="w-5 shrink-0 text-xs text-stone-400">
+                            {{
+                                sortDir === 'desc'
+                                    ? String(students.total - (students.current_page - 1) * students.per_page - index).padStart(2, '0')
+                                    : String((students.current_page - 1) * students.per_page + index + 1).padStart(2, '0')
+                            }}
+                        </span>
+                        <span class="truncate text-base font-medium text-text-base">
+                            {{ student.lastname }} {{ student.firstname }}
+                        </span>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <LinkButton
+                            :href="`/students/${student.id}`"
+                            variant="secondary"
+                            size="sm"
+                            :icon-only="true"
+                            title="Voir l'élève"
+                        >
+                            <template #icon>
+                                <Eye :size="16" :stroke-width="2" aria-hidden="true" />
+                            </template>
+                        </LinkButton>
+                        <LinkButton
+                            v-if="canManage"
+                            :href="`/students/${student.id}`"
+                            method="delete"
+                            variant="danger"
+                            size="sm"
+                            :icon-only="true"
+                            title="Supprimer l'élève"
+                        >
+                            <template #icon>
+                                <Trash :size="16" :stroke-width="2" aria-hidden="true" />
+                            </template>
+                        </LinkButton>
+                    </div>
+                </li>
+                <li v-if="students.total === 0" class="px-4 py-16 text-center text-sm font-bold text-border-figma">
+                    Aucun élève dans cette classe
+                </li>
+            </ul>
+
+            <!-- Desktop : tableau -->
+            <div class="hidden sm:block overflow-x-auto bg-white">
                 <table class="w-full border-collapse text-left">
                     <thead>
                         <tr class="bg-gray-100">
@@ -186,6 +241,7 @@ function sortBy(col: string) {
                                         </template>
                                     </LinkButton>
                                     <LinkButton
+                                        v-if="canManage"
                                         :href="`/students/${student.id}`"
                                         method="delete"
                                         variant="danger"
@@ -215,7 +271,7 @@ function sortBy(col: string) {
             </div>
 
             <!-- Pied : pagination -->
-            <div class="rounded-b-2xl bg-gray-100 px-6 py-4">
+            <div class="rounded-b-2xl bg-gray-100 px-4 sm:px-6 py-4">
                 <Pagination
                     :links="students.links"
                     :current-page="students.current_page"
@@ -224,8 +280,8 @@ function sortBy(col: string) {
             </div>
         </div>
 
-        <!-- Sidebar droite -->
-        <div class="flex w-full shrink-0 flex-col gap-4 xl:w-80 sticky top-20">
+        <!-- Sidebar droite — admin seulement -->
+        <div v-if="canManage" class="flex w-full shrink-0 flex-col gap-4 xl:w-80 sticky top-20">
 
             <!-- Import / Export -->
             <div class="flex gap-2.5">
