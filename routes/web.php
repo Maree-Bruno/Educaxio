@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('classlist', [ClassListController::class, 'store'])->name('classlist.store');
     Route::patch('classlist/{group}', [ClassListController::class, 'update'])->name('classlist.update');
     Route::delete('classlist/{group}', [ClassListController::class, 'destroy'])->name('classlist.destroy');
+    Route::post('classlist/{group}/students', [ClassListController::class, 'attachStudent'])->name('classlist.students.attach');
 
     // Students
     Route::get('students/create', [StudentController::class, 'create'])->name('students.create');

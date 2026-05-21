@@ -23,7 +23,7 @@ class LessonController extends Controller
         $groups = $school->groups()
             ->orderBy('grade')
             ->orderBy('name')
-            ->get(['id', 'grade', 'name']);
+            ->get(['id', 'grade', 'name', 'slug']);
 
         $subjects = $school->subjects()
             ->orderBy('name')

@@ -113,21 +113,48 @@ class ClassListController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         abort_if(
             ! auth()->user()->schools()->wherePivot('role', 'admin')->exists(),
             403,
         );
 
-        $schoolIds = $this->userSchoolIds();
+        $adminSchools   = auth()->user()->schools()->wherePivot('role', 'admin')->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
+        $adminSchoolIds = $adminSchools->pluck('id');
+        $academicYears  = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
+            ->orderByDesc('year')->get(['id', 'year']);
+
+        $defaultSchoolId = null;
+        $schoolSlug      = $request->string('school')->toString();
+        if ($request->filled('school')) {
+            $defaultSchoolId = $adminSchools->firstWhere('slug', $schoolSlug)?->id;
+        }
+        if (! $defaultSchoolId && $adminSchools->count() === 1) {
+            $defaultSchoolId = $adminSchools->first()->id;
+            $schoolSlug      = $adminSchools->first()->slug;
+        }
+
+        $breadcrumb = match ($request->string('from')->toString()) {
+            'lessons' => [
+                ['label' => 'Attribution des cours', 'href' => "/schools/{$schoolSlug}/lessons"],
+                ['label' => 'Nouvelle classe'],
+            ],
+            default => [
+                ['label' => 'Liste de classe', 'href' => '/classlist'],
+                ['label' => 'Nouvelle classe'],
+            ],
+        };
 
         return Inertia::render('ClassListCreate', [
-            'schools' => auth()->user()->schools()->orderBy('name')->get(['schools.id', 'schools.name']),
-            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-                ->orderByDesc('year')->get(['id', 'year']),
-            'subjects' => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'academicYears' => $academicYears,
+            'subjects'      => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
                 ->orderBy('name')->get(['id', 'name']),
+            'defaults'      => [
+                'school_id'        => $defaultSchoolId,
+                'academic_year_id' => $academicYears->first()?->id,
+            ],
+            'breadcrumb'    => $breadcrumb,
         ]);
     }
 
@@ -184,18 +211,61 @@ class ClassListController extends Controller
         $students = $group->students()->orderBy($sortCol, $dir)->paginate(10);
         $group->students_count = $students->total();
 
+        $schoolStudents = $canManage
+            ? \App\Models\Student::where('school_id', $group->school_id)
+                ->whereNotIn('id', $group->students()->pluck('students.id'))
+                ->orderBy('lastname')
+                ->get(['id', 'lastname', 'firstname'])
+            : [];
+
         return Inertia::render('ClassListShow', [
-            'group'        => $group,
-            'students'     => $students,
-            'canManage'    => $canManage,
-            'isTeacher'    => $isTeacher,
-            'schools'      => $userSchools->sortBy('name')->map->only('id', 'name')->values(),
-            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'group'          => $group,
+            'students'       => $students,
+            'canManage'      => $canManage,
+            'isTeacher'      => $isTeacher,
+            'academicYears'  => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderByDesc('year')->get(['id', 'year']),
-            'subjects'     => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'subjects'       => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderBy('name')->get(['id', 'name']),
-            'filters'      => $request->only(['sort', 'dir']),
+            'filters'        => $request->only(['sort', 'dir']),
+            'schoolStudents' => $schoolStudents,
         ]);
+    }
+
+    public function attachStudent(Request $request, Group $group)
+    {
+        $userSchools = auth()->user()->loadMissing('schools')->schools;
+        abort_unless(
+            $userSchools->contains(fn ($s) => $s->id === $group->school_id && $s->pivot->role === 'admin'),
+            403,
+        );
+
+        if ($request->filled('student_ids')) {
+            $validated = $request->validate([
+                'student_ids'   => ['required', 'array'],
+                'student_ids.*' => ['integer', 'exists:students,id'],
+            ]);
+            $ids = \App\Models\Student::whereIn('id', $validated['student_ids'])
+                ->where('school_id', $group->school_id)
+                ->pluck('id');
+            $group->students()->syncWithoutDetaching($ids->all());
+        } else {
+            // Create new student and attach
+            $validated = $request->validate([
+                'lastname'  => ['required', 'string', 'max:100'],
+                'firstname' => ['required', 'string', 'max:100'],
+                'email'     => ['nullable', 'email', 'max:255'],
+            ]);
+            $student = \App\Models\Student::create([
+                'lastname'  => $validated['lastname'],
+                'firstname' => $validated['firstname'],
+                'email'     => $validated['email'] ?? null,
+                'school_id' => $group->school_id,
+            ]);
+            $group->students()->attach($student->id);
+        }
+
+        return back();
     }
 
     public function edit(Group $group): void {}

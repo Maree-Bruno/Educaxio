@@ -20,13 +20,13 @@ defineProps<{
             <Link
                 v-if="item.href"
                 :href="item.href"
-                class="text-base font-bold text-text-base transition-colors hover:text-blue"
+                class="text-xs sm:text-base font-bold text-text-base transition-colors hover:text-blue"
             >
                 {{ item.label }}
             </Link>
             <span
                 v-else
-                class="text-base font-bold text-blue"
+                class="text-xs sm:text-base font-bold text-blue"
             >
                 {{ item.label }}
             </span>

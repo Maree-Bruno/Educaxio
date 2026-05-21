@@ -3,10 +3,9 @@ import { router, useForm } from '@inertiajs/vue3';
 import { watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
-import type { AcademicYear, School, Subject } from '@/types';
+import type { AcademicYear, Subject } from '@/types';
 
 const props = defineProps<{
-    schools: Pick<School, 'id' | 'name'>[];
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
     initialData?: {
@@ -20,7 +19,6 @@ const props = defineProps<{
     action: string;
 }>();
 
-const schoolOptions = props.schools.map((s) => ({ value: s.id, label: s.name }));
 const yearOptions = props.academicYears.map((y) => ({ value: y.id, label: String(y.year) }));
 const subjectOptions = props.subjects.map((s) => ({ value: s.id, label: s.name }));
 
@@ -91,20 +89,6 @@ function cancel() {
             </div>
             <p v-if="form.errors.grade || form.errors.name" class="text-xs text-pink">
                 {{ form.errors.grade || form.errors.name }}
-            </p>
-        </div>
-
-
-        <!-- École (création seulement) -->
-        <div v-if="mode === 'create'" class="flex flex-col gap-1">
-            <SelectField
-                id="school"
-                v-model="form.school_id"
-                label="École"
-                :options="schoolOptions"
-            />
-            <p v-if="form.errors.school_id" class="text-xs text-pink">
-                {{ form.errors.school_id }}
             </p>
         </div>
 

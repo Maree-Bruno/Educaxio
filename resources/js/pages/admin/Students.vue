@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
@@ -64,11 +64,27 @@ function sortBy(col: 'lastname' | 'firstname') {
 // ── Modal create / edit ───────────────────────────────────────────────────
 const dialogRef      = ref<HTMLDialogElement | null>(null);
 const editingStudent = ref<Student | null>(null);
-const form = ref({ lastname: '', firstname: '', email: '', group_id: '' });
+const form = ref({ lastname: '', firstname: '', email: '', group_ids: [] as string[] });
+
+const availableGroups = computed(() =>
+    props.groups.filter((g) => !form.value.group_ids.includes(String(g.id))),
+);
+
+function addGroup(e: Event) {
+    const id = (e.target as HTMLSelectElement).value;
+    if (id && !form.value.group_ids.includes(id)) {
+        form.value.group_ids.push(id);
+    }
+    (e.target as HTMLSelectElement).value = '';
+}
+
+function removeGroup(id: string) {
+    form.value.group_ids = form.value.group_ids.filter((gid) => gid !== id);
+}
 
 function openCreate() {
     editingStudent.value = null;
-    form.value = { lastname: '', firstname: '', email: '', group_id: '' };
+    form.value = { lastname: '', firstname: '', email: '', group_ids: [] };
     nextTick(() => dialogRef.value?.showModal());
 }
 
@@ -78,7 +94,7 @@ function openEdit(student: Student) {
         lastname:  student.lastname,
         firstname: student.firstname,
         email:     student.email ?? '',
-        group_id:  student.groups[0] ? String(student.groups[0].id) : '',
+        group_ids: student.groups.map((g) => String(g.id)),
     };
     nextTick(() => dialogRef.value?.showModal());
 }
@@ -94,20 +110,17 @@ function onBackdropClick(e: MouseEvent) {
 }
 
 function save() {
+    const payload = {
+        lastname:  form.value.lastname,
+        firstname: form.value.firstname,
+        email:     form.value.email || null,
+        group_ids: form.value.group_ids.map(Number),
+    };
+
     if (editingStudent.value) {
-        router.patch(`${base}/${editingStudent.value.id}`, {
-            lastname:  form.value.lastname,
-            firstname: form.value.firstname,
-            email:     form.value.email || null,
-            group_id:  form.value.group_id || null,
-        }, { preserveScroll: true, onSuccess: closeModal });
+        router.patch(`${base}/${editingStudent.value.id}`, payload, { preserveScroll: true, onSuccess: closeModal });
     } else {
-        router.post(base, {
-            lastname:  form.value.lastname,
-            firstname: form.value.firstname,
-            email:     form.value.email || null,
-            group_id:  form.value.group_id || null,
-        }, { preserveScroll: true, onSuccess: closeModal });
+        router.post(base, payload, { preserveScroll: true, onSuccess: closeModal });
     }
 }
 
@@ -388,17 +401,35 @@ function confirmDelete() {
 
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
-                    Groupe <span class="normal-case font-normal">(optionnel)</span>
+                    Groupes <span class="normal-case font-normal">(optionnel)</span>
                 </label>
+                <div v-if="form.group_ids.length" class="flex flex-wrap gap-1.5">
+                    <span
+                        v-for="id in form.group_ids"
+                        :key="id"
+                        class="flex items-center gap-1 rounded-lg bg-blue/10 px-2 py-1 text-xs font-bold text-blue"
+                    >
+                        {{ groups.find((g) => String(g.id) === id)?.grade }}{{ groups.find((g) => String(g.id) === id)?.name }}
+                        <button
+                            type="button"
+                            class="ml-0.5 leading-none opacity-60 hover:opacity-100"
+                            @click="removeGroup(id)"
+                        >×</button>
+                    </span>
+                </div>
                 <select
-                    v-model="form.group_id"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
+                    v-if="availableGroups.length"
+                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
+                    @change="addGroup"
                 >
-                    <option value="">Aucun groupe</option>
-                    <option v-for="g in groups" :key="g.id" :value="String(g.id)">
+                    <option value="">Ajouter un groupe…</option>
+                    <option v-for="g in availableGroups" :key="g.id" :value="String(g.id)">
                         {{ g.grade }}{{ g.name }}
                     </option>
                 </select>
+                <span v-else-if="groups.length && !availableGroups.length" class="text-xs text-border-figma">
+                    Tous les groupes sont assignés.
+                </span>
             </div>
 
             <div class="flex gap-3">

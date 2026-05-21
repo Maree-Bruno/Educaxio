@@ -17,7 +17,7 @@ const nav = useNavigationStore();
         <AppHeader />
 
         <main
-            class="flex-1 transition-all duration-300 ease-in-out"
+            class="min-w-0 flex-1 transition-all duration-300 ease-in-out"
             :class="nav.isCollapsed ? 'md:ml-16' : 'md:ml-64'"
         >
             <TopBar />

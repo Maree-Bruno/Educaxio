@@ -22,6 +22,7 @@ interface Group {
     id: number;
     grade: string;
     name: string;
+    slug: string;
 }
 interface Subject {
     id: number;
@@ -270,7 +271,7 @@ function onBackdrop(
         </template>
         <template #action>
             <LinkButton
-                href="/classlist/create"
+                :href="`/classlist/create?school=${school.slug}&from=lessons`"
                 variant="primary"
                 size="sm"
                 label="Nouvelle classe"
@@ -284,27 +285,37 @@ function onBackdrop(
             :key="group.id"
             class="overflow-hidden rounded-2xl bg-white"
         >
-            <!-- En-tête de la classe (cliquable) -->
-            <button
-                type="button"
-                class="flex w-full items-center justify-between px-4 sm:px-6 py-4 text-left transition-colors hover:bg-gray-50"
-                @click="toggleGroup(group.id)"
-            >
-                <div class="flex items-center gap-3">
+            <!-- En-tête de la classe -->
+            <div class="flex items-center justify-between px-4 sm:px-6 py-4">
+                <button
+                    type="button"
+                    class="flex flex-1 items-center gap-3 text-left transition-colors"
+                    @click="toggleGroup(group.id)"
+                >
                     <span class="text-base font-bold text-text-base">
                         {{ group.grade }}{{ group.name }}
                     </span>
                     <span class="text-sm text-border-figma">
                         {{ lessons.length }} cours
                     </span>
+                </button>
+                <div class="flex shrink-0 items-center gap-2">
+                    <LinkButton
+                        :href="`/classlist/${group.slug}`"
+                        variant="secondary"
+                        size="sm"
+                        label="Modifier la classe"
+                        mobile-size="xs"
+                    />
+                    <ChevronDown
+                        :size="18"
+                        :stroke-width="2"
+                        class="shrink-0 text-border-figma transition-transform duration-200 cursor-pointer"
+                        :class="{ 'rotate-180': isGroupOpen(group.id) }"
+                        @click="toggleGroup(group.id)"
+                    />
                 </div>
-                <ChevronDown
-                    :size="18"
-                    :stroke-width="2"
-                    class="shrink-0 text-border-figma transition-transform duration-200"
-                    :class="{ 'rotate-180': isGroupOpen(group.id) }"
-                />
-            </button>
+            </div>
 
             <!-- Contenu déroulant -->
             <div v-if="isGroupOpen(group.id)">
