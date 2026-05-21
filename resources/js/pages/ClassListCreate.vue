@@ -1,36 +1,21 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
-import ChevronDown from '@/components/widgets/svg/ChevronDown.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
-import type { AcademicYear, School, Subject } from '@/types';
+import type { AcademicYear, Subject } from '@/types';
 
 setPageTitle('Nouvelle classe');
 
 defineProps<{
-    schools: Pick<School, 'id' | 'name'>[];
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
+    defaults: { school_id: number | null; academic_year_id: number | null };
+    breadcrumb: { label: string; href?: string }[];
 }>();
 </script>
 
 <template>
-    <!-- Fil d'ariane -->
-    <nav class="mb-6 flex items-center gap-3" aria-label="Fil d'ariane">
-        <Link
-            href="/classlist"
-            class="text-base font-bold text-text-base hover:text-blue transition-colors"
-        >
-            Liste de classe
-        </Link>
-        <ChevronDown
-            :size="16"
-            :stroke-width="2"
-            class="-rotate-90 text-text-base shrink-0"
-            aria-hidden="true"
-        />
-        <span class="text-base font-bold text-blue">Nouvelle classe</span>
-    </nav>
+    <Breadcrumb :items="breadcrumb" />
 
     <!-- Layout principal -->
     <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
@@ -50,9 +35,15 @@ defineProps<{
             <ClassGroupForm
                 mode="create"
                 action="/classlist"
-                :schools="schools"
                 :academic-years="academicYears"
                 :subjects="subjects"
+                :initial-data="{
+                    grade: '',
+                    name: '',
+                    school_id: defaults.school_id,
+                    academic_year_id: defaults.academic_year_id,
+                    subject_id: null,
+                }"
             />
         </div>
     </div>

@@ -20,6 +20,14 @@ class ClassListController extends Controller
         return auth()->user()->schools()->pluck('schools.id');
     }
 
+    private function requireAdminOf(int $schoolId): void
+    {
+        abort_unless(
+            auth()->user()->schools()->wherePivot('role', 'admin')->where('schools.id', $schoolId)->exists(),
+            403,
+        );
+    }
+
     private function scopedGroupQuery(Collection $adminSchoolIds, Collection $teacherSchoolIds): Builder
     {
         $userId = auth()->id();
@@ -45,10 +53,16 @@ class ClassListController extends Controller
         $teacherSchoolIds = $userSchools->filter(fn ($s) => $s->pivot->role === 'teacher')->pluck('id');
         $schoolIds = $userSchools->pluck('id');
 
+        $userId = auth()->id();
+        $lessonsLoad = $teacherSchoolIds->isNotEmpty()
+            ? ['lessons' => fn ($q) => $q->whereHas('users', fn ($u) => $u->where('users.id', $userId))
+                    ->select('lessons.id', 'lessons.name', 'lessons.group_id', 'lessons.subject_id')]
+            : ['lessons:id,name,group_id,subject_id'];
+
         $query = $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)->with([
             'school:id,name',
             'academicYear:id,year',
-            'lessons:id,name,group_id',
+            ...$lessonsLoad,
         ])->withCount('students');
 
         if ($request->filled('school')) {
@@ -99,28 +113,62 @@ class ClassListController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $schoolIds = $this->userSchoolIds();
+        abort_if(
+            ! auth()->user()->schools()->wherePivot('role', 'admin')->exists(),
+            403,
+        );
+
+        $adminSchools   = auth()->user()->schools()->wherePivot('role', 'admin')->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
+        $adminSchoolIds = $adminSchools->pluck('id');
+        $academicYears  = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
+            ->orderByDesc('year')->get(['id', 'year']);
+
+        $defaultSchoolId = null;
+        $schoolSlug      = $request->string('school')->toString();
+        if ($request->filled('school')) {
+            $defaultSchoolId = $adminSchools->firstWhere('slug', $schoolSlug)?->id;
+        }
+        if (! $defaultSchoolId && $adminSchools->count() === 1) {
+            $defaultSchoolId = $adminSchools->first()->id;
+            $schoolSlug      = $adminSchools->first()->slug;
+        }
+
+        $breadcrumb = match ($request->string('from')->toString()) {
+            'lessons' => [
+                ['label' => 'Attribution des cours', 'href' => "/schools/{$schoolSlug}/lessons"],
+                ['label' => 'Nouvelle classe'],
+            ],
+            default => [
+                ['label' => 'Liste de classe', 'href' => '/classlist'],
+                ['label' => 'Nouvelle classe'],
+            ],
+        };
 
         return Inertia::render('ClassListCreate', [
-            'schools' => auth()->user()->schools()->orderBy('name')->get(['schools.id', 'schools.name']),
-            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-                ->orderByDesc('year')->get(['id', 'year']),
-            'subjects' => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'academicYears' => $academicYears,
+            'subjects'      => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
                 ->orderBy('name')->get(['id', 'name']),
+            'defaults'      => [
+                'school_id'        => $defaultSchoolId,
+                'academic_year_id' => $academicYears->first()?->id,
+            ],
+            'breadcrumb'    => $breadcrumb,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'grade' => ['required', 'string', 'max:20'],
-            'name' => ['required', 'string', 'max:10'],
-            'school_id' => ['required', 'exists:schools,id'],
+            'grade'            => ['required', 'string', 'max:20'],
+            'name'             => ['required', 'string', 'max:10'],
+            'school_id'        => ['required', 'exists:schools,id'],
             'academic_year_id' => ['required', 'exists:academic_years,id'],
-            'subject_id' => ['nullable', 'exists:subjects,id'],
+            'subject_id'       => ['nullable', 'exists:subjects,id'],
         ]);
+
+        $this->requireAdminOf((int) $validated['school_id']);
 
         $school = School::findOrFail($validated['school_id']);
 
@@ -145,32 +193,88 @@ class ClassListController extends Controller
 
     public function show(Group $group, Request $request)
     {
-        $schoolIds = $this->userSchoolIds();
+        $userSchools = auth()->user()->loadMissing('schools')->schools;
+        $schoolIds   = $userSchools->pluck('id');
+        $userId      = auth()->id();
 
-        $group->load(['school', 'academicYear', 'lessons']);
-        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
+        $canManage   = $userSchools->contains(fn ($s) => $s->id === $group->school_id && $s->pivot->role === 'admin');
+        $isTeacher   = ! $canManage && $userSchools->contains(fn ($s) => $s->pivot->role === 'teacher');
+        $lessonsLoad = $isTeacher
+            ? ['lessons' => fn ($q) => $q->whereHas('users', fn ($u) => $u->where('users.id', $userId))]
+            : ['lessons'];
+        $group->load(['school', 'academicYear', ...$lessonsLoad]);
+
+        $dir     = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
         $sortCol = in_array($request->string('sort')->toString(), ['lastname', 'firstname'])
             ? $request->string('sort')->toString()
             : 'lastname';
         $students = $group->students()->orderBy($sortCol, $dir)->paginate(10);
         $group->students_count = $students->total();
 
+        $schoolStudents = $canManage
+            ? \App\Models\Student::where('school_id', $group->school_id)
+                ->whereNotIn('id', $group->students()->pluck('students.id'))
+                ->with('groups:id,grade,name')
+                ->orderBy('lastname')
+                ->get(['id', 'lastname', 'firstname'])
+            : [];
+
         return Inertia::render('ClassListShow', [
-            'group' => $group,
-            'students' => $students,
-            'schools' => auth()->user()->schools()->orderBy('name')->get(['schools.id', 'schools.name']),
-            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'group'          => $group,
+            'students'       => $students,
+            'canManage'      => $canManage,
+            'isTeacher'      => $isTeacher,
+            'academicYears'  => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderByDesc('year')->get(['id', 'year']),
-            'subjects' => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'subjects'       => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderBy('name')->get(['id', 'name']),
-            'filters' => $request->only(['sort', 'dir']),
+            'filters'        => $request->only(['sort', 'dir']),
+            'schoolStudents' => $schoolStudents,
         ]);
+    }
+
+    public function attachStudent(Request $request, Group $group)
+    {
+        $userSchools = auth()->user()->loadMissing('schools')->schools;
+        abort_unless(
+            $userSchools->contains(fn ($s) => $s->id === $group->school_id && $s->pivot->role === 'admin'),
+            403,
+        );
+
+        if ($request->filled('student_ids')) {
+            $validated = $request->validate([
+                'student_ids'   => ['required', 'array'],
+                'student_ids.*' => ['integer', 'exists:students,id'],
+            ]);
+            $ids = \App\Models\Student::whereIn('id', $validated['student_ids'])
+                ->where('school_id', $group->school_id)
+                ->pluck('id');
+            $group->students()->syncWithoutDetaching($ids->all());
+        } else {
+            // Create new student and attach
+            $validated = $request->validate([
+                'lastname'  => ['required', 'string', 'max:100'],
+                'firstname' => ['required', 'string', 'max:100'],
+                'email'     => ['nullable', 'email', 'max:255'],
+            ]);
+            $student = \App\Models\Student::create([
+                'lastname'  => $validated['lastname'],
+                'firstname' => $validated['firstname'],
+                'email'     => $validated['email'] ?? null,
+                'school_id' => $group->school_id,
+            ]);
+            $group->students()->attach($student->id);
+        }
+
+        return back();
     }
 
     public function edit(Group $group): void {}
 
     public function update(Request $request, Group $group)
     {
+        $this->requireAdminOf($group->school_id);
+
         $validated = $request->validate([
             'grade' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:10'],
@@ -214,6 +318,8 @@ class ClassListController extends Controller
 
     public function destroy(Group $group)
     {
+        $this->requireAdminOf($group->school_id);
+
         $group->delete();
 
         return to_route('classlist');

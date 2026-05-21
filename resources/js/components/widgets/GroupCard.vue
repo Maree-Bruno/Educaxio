@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
-import type { Group } from '@/types';
+import type { Group, Lesson } from '@/types';
 
 const props = defineProps<{
     id: number;
@@ -16,7 +17,8 @@ const props = defineProps<{
     academic_year_id: number;
     academic_year: Group['academic_year'];
     students_count: number;
-    lessons: Group['lessons'];
+    lesson: Lesson | null;
+    canDelete?: boolean;
     viewHref?: string;
     gradesHref?: string;
 }>();
@@ -40,10 +42,8 @@ const emit = defineEmits<{
                     >
                         Classe
                     </dt>
-                    <dd
-                        class="line-clamp-1 text-base leading-5 font-bold text-text-base"
-                    >
-                        {{ grade }}{{ name }}
+                    <dd>
+                        <Badge variant="blue" size="md">{{ grade }}{{ name }}</Badge>
                     </dd>
                 </div>
                 <div class="flex flex-1 flex-col gap-1">
@@ -71,7 +71,7 @@ const emit = defineEmits<{
                     <dd
                         class="line-clamp-1 text-base leading-5 font-bold text-text-base"
                     >
-                        {{ lessons.map((l) => l.name).join(', ') || '—' }}
+                        {{ lesson?.name ?? '—' }}
                     </dd>
                 </div>
             </div>
@@ -139,6 +139,7 @@ const emit = defineEmits<{
             </LinkButton>
 
             <Button
+                v-if="canDelete"
                 variant="danger"
                 size="sm"
                 :icon-only="true"
