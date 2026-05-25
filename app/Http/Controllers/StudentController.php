@@ -23,10 +23,39 @@ class StudentController extends Controller
         $student->load([
             'groups:id,slug,grade,name,school_id',
             'groups.school:id,name',
+            'school:id,name,slug',
         ]);
 
+        $isAdmin = auth()->user()->schools()
+            ->where('schools.id', $student->school_id)
+            ->wherePivot('role', 'admin')
+            ->exists();
+
+        $absenceHistory = null;
+        if ($isAdmin) {
+            $absenceHistory = $student->attendanceStatuses()
+                ->with([
+                    'attendance.classsession.lesson.subject:id,name',
+                    'attendance.classsession.lesson.group:id,grade,name',
+                ])
+                ->get()
+                ->sortByDesc(fn ($s) => $s->attendance?->classsession?->date)
+                ->values()
+                ->map(fn ($s) => [
+                    'date'    => $s->attendance?->classsession?->date,
+                    'type'    => $s->type,
+                    'motive'  => $s->motive,
+                    'subject' => $s->attendance?->classsession?->lesson?->subject?->name,
+                    'group'   => $s->attendance?->classsession?->lesson?->group
+                        ? $s->attendance->classsession->lesson->group->grade.$s->attendance->classsession->lesson->group->name
+                        : null,
+                ]);
+        }
+
         return Inertia::render('StudentShow', [
-            'student' => $student,
+            'student'        => $student,
+            'isAdmin'        => $isAdmin,
+            'absenceHistory' => $absenceHistory,
         ]);
     }
 

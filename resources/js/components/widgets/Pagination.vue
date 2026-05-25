@@ -10,13 +10,20 @@ const props = defineProps<{
     lastPage: number;
 }>();
 
+const emit = defineEmits<{
+    (e: 'update:modelValue', page: number): void;
+}>();
+
 const prevLink = computed(() => props.links[0]);
 const nextLink = computed(() => props.links[props.links.length - 1]);
 const pageLinks = computed(() => props.links.slice(1, -1));
 
-function navigate(url: string | null) {
-    if (!url) return;
-    router.get(url, {}, { preserveState: true, preserveScroll: true });
+function navigate(url: string | null, page: number) {
+    if (url) {
+        router.get(url, {}, { preserveState: true, preserveScroll: true });
+    } else {
+        emit('update:modelValue', page);
+    }
 }
 </script>
 
@@ -28,10 +35,10 @@ function navigate(url: string | null) {
         aria-label="Pagination"
     >
         <button
-            :disabled="!prevLink.url"
+            :disabled="currentPage === 1"
             class="flex h-7 w-7 items-center justify-center rounded-2xl outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
             :aria-label="`Page précédente`"
-            @click="navigate(prevLink.url)"
+            @click="navigate(prevLink.url, currentPage - 1)"
         >
             <ChevronDown
                 :size="12"
@@ -55,7 +62,7 @@ function navigate(url: string | null) {
                     ? 'bg-blue text-white'
                     : 'text-text-base outline-1 -outline-offset-1 outline-blue hover:bg-blue/10'"
                 class="hidden sm:flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors"
-                @click="navigate(link.url)"
+                @click="navigate(link.url, Number(link.label))"
             >
                 {{ link.label }}
             </button>
@@ -65,10 +72,10 @@ function navigate(url: string | null) {
         </template>
 
         <button
-            :disabled="!nextLink.url"
+            :disabled="currentPage === lastPage"
             class="flex h-7 w-7 items-center justify-center rounded-2xl outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
             :aria-label="`Page suivante`"
-            @click="navigate(nextLink.url)"
+            @click="navigate(nextLink.url, currentPage + 1)"
         >
             <ChevronDown
                 :size="12"

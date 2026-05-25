@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
             $table->dateTime('validated_at')->nullable();
-            $table->foreignId('classsession_id')->constrained('classsessions')->cascadeOnDelete();
+            $table->foreignId('classsession_id')->unique()->constrained('classsessions')->cascadeOnDelete();
             $table->timestamps();
         });
     }

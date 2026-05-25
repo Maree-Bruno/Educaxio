@@ -16,18 +16,11 @@ class ClassSession extends Model
     protected $fillable = [
         'date',
         'lesson_id',
-        'classroom',
-        'schedule_slot_id',
     ];
 
     public function lesson(): BelongsTo
     {
         return $this->belongsTo(Lesson::class);
-    }
-
-    public function scheduleSlot(): BelongsTo
-    {
-        return $this->belongsTo(ScheduleSlot::class);
     }
 
     public function attendance(): HasOne
@@ -37,8 +30,6 @@ class ClassSession extends Model
 
     protected function casts(): array
     {
-        return [
-            'date' => 'date',
-        ];
+        return [];
     }
 }
