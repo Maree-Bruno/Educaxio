@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import type { Component } from 'vue';
 import Attendance from '@/components/widgets/svg/Attendance.vue';
+import Bell from '@/components/widgets/svg/Bell.vue';
 import ClassesList from '@/components/widgets/svg/ClassesList.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
 import Home from '@/components/widgets/svg/Home.vue';
@@ -45,8 +46,20 @@ function isActive(href: string): boolean {
     <nav>
         <h3 class="sr-only">Liens de navigation</h3>
 
-        <!-- Navigation commune -->
-        <ul class="space-y-1">
+        <ul v-if="auth.isPending" class="space-y-1">
+            <NavItem
+                href="/pending"
+                title="En attente"
+                :active="isActive('/pending')"
+                :collapsed="collapsed"
+            >
+                <template #icon>
+                    <Bell :size="20" :stroke-width="2" />
+                </template>
+            </NavItem>
+        </ul>
+
+        <ul v-else class="space-y-1">
             <NavItem
                 v-for="item in navItems"
                 :key="item.href"
@@ -97,4 +110,3 @@ function isActive(href: string): boolean {
     </nav>
 </template>
 
-<style scoped></style>

@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Jobs\ProcessUploadedImage;
+use App\Models\School;
+use App\Models\SchoolJoinRequest;
+use App\Models\Subject;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,16 +24,32 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        $approvedSchoolIds = $user->schools()->pluck('schools.id');
+        $requestedSchoolIds = SchoolJoinRequest::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->pluck('school_id');
+        $excludedIds = $approvedSchoolIds->merge($requestedSchoolIds)->unique();
+
         return Inertia::render('settings/Profile', [
-            'mustVerifyEmail'  => $user instanceof MustVerifyEmail,
-            'status'           => $request->session()->get('status'),
-            'assignedLessons'  => $user->lessons()
+            'mustVerifyEmail'     => $user instanceof MustVerifyEmail,
+            'status'              => $request->session()->get('status'),
+            'assignedLessons'     => $user->lessons()
                 ->with([
                     'group:id,slug,grade,name,school_id',
                     'group.school:id,name',
                     'subject:id,name',
                 ])
                 ->get(['lessons.id', 'lessons.name', 'lessons.group_id', 'lessons.subject_id']),
+            'allSubjects'         => Subject::orderBy('name')->get(['id', 'name']),
+            'userSubjectIds'      => $user->subjects()->pluck('subjects.id'),
+            'pendingRequests'     => SchoolJoinRequest::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->with('school:id,name')
+                ->get()
+                ->map(fn ($r) => ['id' => $r->id, 'school' => ['id' => $r->school->id, 'name' => $r->school->name]]),
+            'availableSchools'    => School::orderBy('name')
+                ->whereNotIn('id', $excludedIds)
+                ->get(['id', 'name']),
         ]);
     }
 
