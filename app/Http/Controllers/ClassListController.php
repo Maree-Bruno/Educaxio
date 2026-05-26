@@ -30,6 +30,10 @@ class ClassListController extends Controller
 
     private function scopedGroupQuery(Collection $adminSchoolIds, Collection $teacherSchoolIds): Builder
     {
+        if ($adminSchoolIds->isEmpty() && $teacherSchoolIds->isEmpty()) {
+            return Group::query()->whereRaw('1 = 0');
+        }
+
         $userId = auth()->id();
 
         return Group::query()->where(function ($q) use ($adminSchoolIds, $teacherSchoolIds, $userId) {

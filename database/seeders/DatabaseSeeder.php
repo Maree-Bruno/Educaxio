@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection D */
 
 namespace Database\Seeders;
 
@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
+use App\Models\ScheduleSlot;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\Subject;
@@ -109,27 +110,26 @@ class DatabaseSeeder extends Seeder
             '6e heure',   '7e heure', '8e heure', '9e heure', '10e heure',
         ];
 
+        // 10 slots globaux (communs à tous les profs)
+        $slots = collect();
+        foreach ($slotLabels as $i => $label) {
+            $slots->push(ScheduleSlot::create([
+                'position' => $i + 1,
+                'label' => $label,
+                'type' => 'slot',
+            ]));
+        }
+
         // schedule[teacher_id][school_id] = Schedule
         $schedulesByTeacherSchool = [];
 
         foreach ($teachers as $teacher) {
             foreach ($schools as $school) {
-                $schedule = Schedule::create([
+                $schedulesByTeacherSchool[$teacher->id][$school->id] = Schedule::create([
                     'user_id' => $teacher->id,
                     'school_id' => $school->id,
                     'academic_year_id' => $academicYear->id,
                 ]);
-
-                foreach ($slotLabels as $i => $label) {
-                    $schedule->slots()->create([
-                        'position' => $i + 1,
-                        'label' => $label,
-                        'type' => 'slot',
-                    ]);
-                }
-
-                $schedule->load('slots');
-                $schedulesByTeacherSchool[$teacher->id][$school->id] = $schedule;
             }
         }
 
@@ -198,7 +198,6 @@ class DatabaseSeeder extends Seeder
             $lesson = $data['lesson'];
             $teacher = $data['teacher'];
             $schedule = $schedulesByTeacherSchool[$teacher->id][$data['school_id']];
-            $slots = $schedule->slots;
 
             $assigned = 0;
             $attempts = 0;
@@ -215,6 +214,7 @@ class DatabaseSeeder extends Seeder
                 $usedSlotDays[$teacher->id][$slot->id][$day] = true;
 
                 ScheduleEntry::create([
+                    'schedule_id' => $schedule->id,
                     'schedule_slot_id' => $slot->id,
                     'lesson_id' => $lesson->id,
                     'day_of_week' => $day,

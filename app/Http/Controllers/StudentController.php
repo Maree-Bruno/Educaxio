@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -37,6 +38,7 @@ class StudentController extends Controller
                 ->with([
                     'attendance.classsession.lesson.subject:id,name',
                     'attendance.classsession.lesson.group:id,grade,name',
+                    'attendance.classsession.lesson.scheduleEntries.scheduleSlot:id,label,position',
                 ])
                 ->get()
                 ->sortByDesc(fn ($s) => $s->attendance?->classsession?->date)
@@ -47,6 +49,11 @@ class StudentController extends Controller
                     'subject' => $s->attendance?->classsession?->lesson?->subject?->name,
                     'group' => $s->attendance?->classsession?->lesson?->group
                         ? $s->attendance->classsession->lesson->group->grade.$s->attendance->classsession->lesson->group->name
+                        : null,
+                    'time' => ($session = $s->attendance?->classsession) && $session->date
+                        ? $session->lesson?->scheduleEntries
+                            ->firstWhere('day_of_week', Carbon::parse($session->date)->dayOfWeekIso)
+                            ?->scheduleSlot?->label
                         : null,
                 ]);
         }

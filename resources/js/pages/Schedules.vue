@@ -10,10 +10,10 @@ import type { AcademicYear, School } from '@/types';
 setPageTitle('Horaires');
 
 interface SlotRow {
+    id: number;
     position: number;
     label: string;
     type: 'slot' | 'lunch';
-    ids: number[];
 }
 
 interface EntryData {
@@ -38,7 +38,7 @@ const props = defineProps<{
     entries: Record<number, Record<number, EntryData>>;
     lessons: LessonOption[];
     schools: Pick<School, 'id' | 'name' | 'slug'>[];
-    schedules: { id: number; school: string | null }[];
+    schedules: { id: number; school_id: number; school: string | null }[];
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     filters: { year?: string };
 }>();
@@ -76,7 +76,7 @@ function openCell(slot: SlotRow, dayIndex: number) {
 
 function toggleSlotType(row: SlotRow) {
     router.patch('/schedule-slots-type', {
-        ids: row.ids,
+        id: row.id,
         type: row.type === 'lunch' ? 'slot' : 'lunch',
     }, { preserveState: true });
 }
@@ -260,6 +260,7 @@ function toggleSlotType(row: SlotRow) {
         :day-label="modalState?.dayLabel ?? ''"
         :entry="modalState?.entry ?? null"
         :lessons="lessons"
+        :schedules="schedules"
         @close="modalState = null"
     />
 </template>
