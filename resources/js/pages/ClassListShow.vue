@@ -12,7 +12,6 @@ import SearchInput from '@/components/widgets/SearchInput.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import Attendance from '@/components/widgets/svg/Attendance.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
-import Edit from '@/components/widgets/svg/Edit.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
@@ -119,32 +118,6 @@ function attachSelected() {
     }, { preserveScroll: true, onSuccess: closeAddModal });
 }
 
-// --- Edit student modal ---
-const editModalRef   = ref<InstanceType<typeof BaseModal> | null>(null);
-const editingStudent = ref<Student | null>(null);
-const editForm       = ref({ lastname: '', firstname: '', email: '' });
-
-function openEdit(student: Student) {
-    editingStudent.value = student;
-    editForm.value = { lastname: student.lastname, firstname: student.firstname, email: student.email ?? '' };
-    nextTick(() => editModalRef.value?.open());
-}
-
-function closeEditModal() {
-    editModalRef.value?.close();
-}
-
-function saveEdit() {
-    if (!editingStudent.value) {
-        return;
-    }
-
-    router.patch(`/students/${editingStudent.value.id}`, {
-        lastname:  editForm.value.lastname,
-        firstname: editForm.value.firstname,
-        email:     editForm.value.email || null,
-    }, { preserveScroll: true, onSuccess: closeEditModal });
-}
 </script>
 
 <template>
@@ -229,25 +202,12 @@ function saveEdit() {
                         </span>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
-                        <Button
-                            v-if="canManage"
-                            variant="secondary"
-                            size="sm"
-                            :icon-only="true"
-                            title="Modifier l'élève"
-                            @click="openEdit(student)"
-                        >
-                            <template #icon>
-                                <Edit :size="16" :stroke-width="2" aria-hidden="true" />
-                            </template>
-                        </Button>
                         <LinkButton
-                            v-else
                             :href="`/students/${student.id}`"
                             variant="secondary"
                             size="sm"
                             :icon-only="true"
-                            title="Voir l'élève"
+                            :title="canManage ? 'Voir / modifier l\'élève' : 'Voir l\'élève'"
                         >
                             <template #icon>
                                 <Eye :size="16" :stroke-width="2" aria-hidden="true" />
@@ -327,25 +287,12 @@ function saveEdit() {
                             </td>
                             <td class="px-6 py-5">
                                 <div class="flex items-center justify-center gap-2">
-                                    <Button
-                                        v-if="canManage"
-                                        variant="secondary"
-                                        size="sm"
-                                        :icon-only="true"
-                                        title="Modifier l'élève"
-                                        @click="openEdit(student)"
-                                    >
-                                        <template #icon>
-                                            <Edit :size="16" :stroke-width="2" aria-hidden="true" />
-                                        </template>
-                                    </Button>
                                     <LinkButton
-                                        v-else
                                         :href="`/students/${student.id}`"
                                         variant="secondary"
                                         size="sm"
                                         :icon-only="true"
-                                        title="Voir l'élève"
+                                        :title="canManage ? 'Voir / modifier l\'élève' : 'Voir l\'élève'"
                                     >
                                         <template #icon>
                                             <Eye :size="16" :stroke-width="2" aria-hidden="true" />
@@ -409,35 +356,6 @@ function saveEdit() {
             />
         </div>
     </div>
-
-    <!-- Modal : Modifier un élève -->
-    <BaseModal ref="editModalRef">
-        <div v-if="editingStudent" class="flex flex-col gap-5">
-            <h2 class="text-xl font-bold text-black">Modifier l'élève</h2>
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Nom</label>
-                <input v-model="editForm.lastname" type="text" maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-            </div>
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Prénom</label>
-                <input v-model="editForm.firstname" type="text" maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-            </div>
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
-                    Email <span class="normal-case font-normal">(optionnel)</span>
-                </label>
-                <input v-model="editForm.email" type="email" maxlength="255"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-            </div>
-            <div class="flex gap-3">
-                <Button variant="primary" size="sm" label="Enregistrer" class="flex-1"
-                    :disabled="!editForm.lastname || !editForm.firstname" @click="saveEdit" />
-                <Button variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeEditModal" />
-            </div>
-        </div>
-    </BaseModal>
 
     <!-- Modal : Ajouter un élève -->
     <BaseModal ref="addModalRef">

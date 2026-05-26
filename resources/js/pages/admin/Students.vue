@@ -5,12 +5,13 @@ import { computed, nextTick, ref, watch } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
+import LinkButton from '@/components/widgets/LinkButton.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
-import Edit from '@/components/widgets/svg/Edit.vue';
+import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import type { Paginator } from '@/types';
@@ -61,9 +62,8 @@ function sortBy(col: string) {
     applyFilters();
 }
 
-// ── Modal create / edit ───────────────────────────────────────────────────
-const modalRef       = ref<InstanceType<typeof BaseModal> | null>(null);
-const editingStudent = ref<Student | null>(null);
+// ── Modal création ────────────────────────────────────────────────────────
+const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const form = ref({ lastname: '', firstname: '', email: '', group_ids: [] as string[] });
 
 const availableGroups = computed(() =>
@@ -85,19 +85,7 @@ function removeGroup(id: string) {
 }
 
 function openCreate() {
-    editingStudent.value = null;
     form.value = { lastname: '', firstname: '', email: '', group_ids: [] };
-    nextTick(() => modalRef.value?.open());
-}
-
-function openEdit(student: Student) {
-    editingStudent.value = student;
-    form.value = {
-        lastname:  student.lastname,
-        firstname: student.firstname,
-        email:     student.email ?? '',
-        group_ids: student.groups.map((g) => String(g.id)),
-    };
     nextTick(() => modalRef.value?.open());
 }
 
@@ -106,18 +94,12 @@ function closeModal() {
 }
 
 function save() {
-    const payload = {
+    router.post(base, {
         lastname:  form.value.lastname,
         firstname: form.value.firstname,
         email:     form.value.email || null,
         group_ids: form.value.group_ids.map(Number),
-    };
-
-    if (editingStudent.value) {
-        router.patch(`${base}/${editingStudent.value.id}`, payload, { preserveScroll: true, onSuccess: closeModal });
-    } else {
-        router.post(base, payload, { preserveScroll: true, onSuccess: closeModal });
-    }
+    }, { preserveScroll: true, onSuccess: closeModal });
 }
 
 // ── Suppression ───────────────────────────────────────────────────────────
@@ -212,9 +194,9 @@ function confirmDelete() {
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2 flex-col">
-                    <Button variant="secondary" size="sm" :icon-only="true" title="Modifier" @click="openEdit(student)">
-                        <template #icon><Edit :size="16" :stroke-width="2" aria-hidden="true" /></template>
-                    </Button>
+                    <LinkButton :href="`/students/${student.id}`" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
+                        <template #icon><Eye :size="16" :stroke-width="2" aria-hidden="true" /></template>
+                    </LinkButton>
                     <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = student">
                         <template #icon><Trash :size="16" :stroke-width="2" aria-hidden="true" /></template>
                     </Button>
@@ -270,9 +252,9 @@ function confirmDelete() {
                         <td class="px-6 py-5 text-sm text-text-base">{{ student.email ?? '—' }}</td>
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-2">
-                                <Button variant="secondary" size="sm" :icon-only="true" title="Modifier" @click="openEdit(student)">
-                                    <template #icon><Edit :size="16" :stroke-width="2" aria-hidden="true" /></template>
-                                </Button>
+                                <LinkButton :href="`/students/${student.id}`" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
+                                    <template #icon><Eye :size="16" :stroke-width="2" aria-hidden="true" /></template>
+                                </LinkButton>
                                 <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = student">
                                     <template #icon><Trash :size="16" :stroke-width="2" aria-hidden="true" /></template>
                                 </Button>
@@ -297,9 +279,7 @@ function confirmDelete() {
     <!-- Modal create / edit -->
     <BaseModal ref="modalRef">
         <div class="flex flex-col gap-5">
-            <h2 class="text-xl font-bold text-black">
-                {{ editingStudent ? "Modifier l'élève" : 'Nouvel élève' }}
-            </h2>
+            <h2 class="text-xl font-bold text-black">Nouvel élève</h2>
 
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Nom</label>

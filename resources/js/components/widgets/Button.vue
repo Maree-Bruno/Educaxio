@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 
-type Variant = 'primary' | 'secondary' | 'danger';
+type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type Size = 'sm' | 'md' | 'lg' | 'xs';
 type ButtonType = 'button' | 'submit' | 'reset';
 
@@ -40,7 +40,8 @@ const variantClasses = computed(
                 'bg-blue text-white hover:opacity-85 focus-visible:ring-blue hover:bg-blue-hover',
             secondary:
                 'bg-orange text-white hover:opacity-85 focus-visible:ring-orange hover:bg-orange-hover',
-            danger: 'bg-pink text-white hover:opacity-85 focus-visible:ring-pink hover:bg-pink-hover',
+            danger:  'bg-pink text-white hover:opacity-85 focus-visible:ring-pink hover:bg-pink-hover',
+            ghost:   'text-blue hover:bg-blue/5 focus-visible:ring-blue',
         })[props.variant],
 );
 const sizeClasses = computed(
