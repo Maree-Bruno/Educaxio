@@ -42,19 +42,18 @@ class StudentController extends Controller
                 ->sortByDesc(fn ($s) => $s->attendance?->classsession?->date)
                 ->values()
                 ->map(fn ($s) => [
-                    'date'    => $s->attendance?->classsession?->date,
-                    'type'    => $s->type,
-                    'motive'  => $s->motive,
+                    'date' => $s->attendance?->classsession?->date,
+                    'type' => $s->type,
                     'subject' => $s->attendance?->classsession?->lesson?->subject?->name,
-                    'group'   => $s->attendance?->classsession?->lesson?->group
+                    'group' => $s->attendance?->classsession?->lesson?->group
                         ? $s->attendance->classsession->lesson->group->grade.$s->attendance->classsession->lesson->group->name
                         : null,
                 ]);
         }
 
         return Inertia::render('StudentShow', [
-            'student'        => $student,
-            'isAdmin'        => $isAdmin,
+            'student' => $student,
+            'isAdmin' => $isAdmin,
             'absenceHistory' => $absenceHistory,
         ]);
     }
@@ -66,9 +65,9 @@ class StudentController extends Controller
         abort_unless($this->userSchoolIds()->contains($student->school_id), 403);
 
         $validated = $request->validate([
-            'lastname'  => ['required', 'string', 'max:100'],
+            'lastname' => ['required', 'string', 'max:100'],
             'firstname' => ['required', 'string', 'max:100'],
-            'email'     => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
         ]);
 
         $student->update($validated);
