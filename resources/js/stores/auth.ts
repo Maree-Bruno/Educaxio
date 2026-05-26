@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
     const adminSchools = computed(() => schoolRoles.value.filter((s) => s.role === 'admin'));
     const isTeacher = computed(() => schoolRoles.value.some((s) => s.role === 'teacher'));
     const isPureAdmin = computed(() => adminSchools.value.length > 0 && !isTeacher.value);
+    const isPending = computed(() => schoolRoles.value.length === 0);
 
     const initials = computed(() =>
         user.value.name
@@ -19,5 +20,5 @@ export const useAuthStore = defineStore('auth', () => {
             .slice(0, 2),
     );
 
-    return { user, initials, schoolRoles, adminSchools, isTeacher, isPureAdmin };
+    return { user, initials, schoolRoles, adminSchools, isTeacher, isPureAdmin, isPending };
 });

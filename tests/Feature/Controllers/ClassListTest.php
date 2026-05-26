@@ -110,12 +110,11 @@ it('can filter groups by academic year', function () {
 
 // --- Create ---
 
-it('shows the create form with user\'s schools, years and subjects', function () {
+it('shows the create form with academic years and subjects', function () {
     $this->get(route('classlist.create'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('ClassListCreate')
-            ->has('schools', 1)
             ->has('academicYears', 1)
             ->has('subjects', 1)
         );

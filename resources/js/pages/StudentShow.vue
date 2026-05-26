@@ -184,7 +184,6 @@ function formatDate(date: string | null): string {
         </section>
     </section>
 
-    <!-- Admin : historique des absences -->
     <div v-if="isAdmin" class="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white">
         <div class="border-b border-neutral-300/10 px-6 py-5">
             <h3 class="text-xl font-bold text-text-base">
@@ -193,7 +192,6 @@ function formatDate(date: string | null): string {
             </h3>
         </div>
 
-        <!-- Mobile : cartes -->
         <ul v-if="absenceHistory?.length" class="sm:hidden divide-y divide-neutral-100">
             <li
                 v-for="(record, i) in absenceHistory"
@@ -219,7 +217,6 @@ function formatDate(date: string | null): string {
             </li>
         </ul>
 
-        <!-- Desktop : tableau -->
         <div v-if="absenceHistory?.length" class="hidden sm:block overflow-x-auto">
             <table class="w-full border-collapse text-left">
                 <thead>
@@ -260,14 +257,12 @@ function formatDate(date: string | null): string {
         </p>
     </div>
 
-    <!-- Teacher : section évaluations -->
     <div v-else class="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white">
         <div class="border-b border-neutral-300/10 px-6 py-5">
             <h3 class="text-xl font-bold text-text-base">Evaluations</h3>
         </div>
     </div>
 
-    <!-- Modal d'édition (admin uniquement) -->
     <BaseModal ref="modalRef">
         <div class="flex flex-col gap-5">
             <h2 class="text-xl font-bold text-black">Modifier l'élève</h2>

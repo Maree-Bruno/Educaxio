@@ -5,10 +5,12 @@ const dialogRef = ref<HTMLDialogElement | null>(null);
 
 function open() {
     dialogRef.value?.showModal();
+    document.body.style.overflow = 'hidden';
 }
 
 function close() {
     dialogRef.value?.close();
+    document.body.style.overflow = '';
 }
 
 function onBackdrop(e: MouseEvent) {

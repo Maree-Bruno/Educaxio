@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { useForm, usePage } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import SchoolJoinForm from '@/components/widgets/SchoolJoinForm.vue';
+import SubjectPicker from '@/components/widgets/SubjectPicker.vue';
 import { useImagePreview } from '@/composables/useImagePreview';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useUserHelpers } from '@/composables/useUserHelpers';
@@ -16,9 +19,11 @@ defineOptions({ layout: AppLayout });
 setPageTitle('Profil');
 
 type Props = {
-    mustVerifyEmail: boolean;
-    status?: string;
     assignedLessons: Lesson[];
+    allSubjects: { id: number; name: string }[];
+    userSubjectIds: number[];
+    pendingRequests: { id: number; school: { id: number; name: string } }[];
+    availableSchools: { id: number; name: string }[];
 };
 const props = defineProps<Props>();
 
@@ -93,6 +98,12 @@ function submitPassword() {
     });
 }
 
+const addingSchool = ref(false);
+
+function cancelRequest(id: number) {
+    router.delete(`/pending/join-requests/${id}`);
+}
+
 const lessonsBySchool = computed(() => {
     const map = new Map<string, Lesson[]>();
 
@@ -117,12 +128,10 @@ function confirmDelete() {
 <template>
     <div class="flex flex-col gap-8">
 
-        <!-- Informations personnelles -->
-        <section class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10">
+        <section class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
             <h2 class="text-base font-bold text-text-base">Informations personnelles</h2>
 
             <div class="flex flex-col gap-5 sm:flex-row">
-                <!-- Avatar -->
                 <div class="shrink-0 self-start">
                     <div class="relative">
                         <img
@@ -166,7 +175,6 @@ function confirmDelete() {
                     </button>
                 </div>
 
-                <!-- Champs + bouton -->
                 <div class="flex flex-1 flex-col items-end gap-5">
                     <InputLabel
                         v-model="profileForm.name"
@@ -194,10 +202,9 @@ function confirmDelete() {
             </div>
         </section>
 
-        <!-- Mes cours (profs uniquement) -->
         <section
             v-if="auth.isTeacher"
-            class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10"
+            class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10"
         >
             <h2 class="text-base font-bold text-text-base">Mes cours</h2>
 
@@ -234,11 +241,80 @@ function confirmDelete() {
             </div>
         </section>
 
-        <!-- Ligne du bas -->
+        <section v-if="!auth.isPureAdmin" class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
+            <div>
+                <h2 class="text-base font-bold text-text-base">Matières enseignées</h2>
+                <p class="mt-0.5 text-sm text-stone-400">Les matières que vous pouvez enseigner.</p>
+            </div>
+            <SubjectPicker :subjects="allSubjects" :model-value="userSubjectIds" />
+        </section>
+
+        <section v-if="!auth.isPureAdmin" class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
+            <h2 class="text-base font-bold text-text-base">Établissements</h2>
+
+            <div>
+                <p class="mb-2 text-xs font-bold uppercase tracking-wider text-stone-500">Rattachements actifs</p>
+                <ul class="flex flex-col gap-2">
+                    <li
+                        v-for="school in auth.schoolRoles"
+                        :key="school.id"
+                        class="flex items-center gap-3 rounded-xl border border-blue bg-blue/5 px-4 py-3 text-sm font-medium text-text-base"
+                    >
+                        <span class="size-2 shrink-0 rounded-full bg-blue" />
+                        {{ school.name }}
+                    </li>
+                    <li v-if="auth.schoolRoles.length === 0" class="text-sm text-border-figma">Aucun établissement actif.</li>
+                </ul>
+            </div>
+
+            <div v-if="pendingRequests.length > 0">
+                <p class="mb-2 text-xs font-bold uppercase tracking-wider text-stone-500">Demandes en attente</p>
+                <ul class="flex flex-col gap-2">
+                    <li
+                        v-for="req in pendingRequests"
+                        :key="req.id"
+                        class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 px-4 py-3"
+                    >
+                        <div class="flex items-center gap-3">
+                            <Badge variant="neutral">En attente</Badge>
+                            <span class="text-sm font-medium text-text-base">{{ req.school.name }}</span>
+                        </div>
+                        <button
+                            type="button"
+                            class="text-xs text-stone-400 transition-colors hover:text-pink"
+                            @click="cancelRequest(req.id)"
+                        >
+                            Annuler
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div v-if="availableSchools.length > 0 || addingSchool">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold uppercase tracking-wider text-stone-500">Postuler à un établissement</p>
+                    <button
+                        v-if="!addingSchool"
+                        type="button"
+                        class="text-sm font-medium text-blue hover:underline"
+                        @click="addingSchool = true"
+                    >
+                        + Ajouter
+                    </button>
+                </div>
+                <div v-if="addingSchool" class="mt-3">
+                    <SchoolJoinForm
+                        :schools="availableSchools"
+                        @cancel="addingSchool = false"
+                        @success="addingSchool = false"
+                    />
+                </div>
+            </div>
+        </section>
+
         <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
 
-            <!-- Changer de mot de passe -->
-            <section class="flex flex-[3] flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10">
+            <section class="flex flex-3 flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
                 <h2 class="text-base font-bold text-text-base">Changer de mot de passe</h2>
 
                 <div class="flex flex-col items-end gap-5">
@@ -278,8 +354,7 @@ function confirmDelete() {
                 </div>
             </section>
 
-            <!-- Supprimer le compte -->
-            <section class="flex flex-col justify-between gap-5 rounded-2xl bg-pink/10 p-6 shadow-sm outline outline-1 -outline-offset-1 outline-neutral-300/10 lg:flex-[2] lg:min-h-80">
+            <section class="flex flex-col justify-between gap-5 rounded-2xl bg-pink/10 p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10 lg:flex-2 lg:min-h-80">
                 <div class="flex flex-col gap-5">
                     <h2 class="text-base font-bold text-text-base">Supprimer le compte</h2>
                     <p class="text-sm text-text-base">

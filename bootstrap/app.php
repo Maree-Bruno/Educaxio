@@ -23,7 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'school.admin' => \App\Http\Middleware\EnsureSchoolAdmin::class,
+            'school.admin'     => \App\Http\Middleware\EnsureSchoolAdmin::class,
+            'school.approved'  => \App\Http\Middleware\EnsureApprovedSchool::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

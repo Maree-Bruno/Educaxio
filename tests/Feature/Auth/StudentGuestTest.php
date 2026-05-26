@@ -1,11 +1,5 @@
 <?php
 
-use App\Models\Student;
-
-it("can't access the student create page as a guest", function () {
-    $this->get(route('students.create'))->assertRedirect(route('login'));
-});
-
 it("can't store a student as a guest", function () {
     $this->post(route('students.store'))->assertRedirect(route('login'));
 });

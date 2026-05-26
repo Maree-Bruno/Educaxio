@@ -1,22 +1,43 @@
 <?php
 
+use App\Http\Controllers\Admin\JoinRequestController as AdminJoinRequestController;
 use App\Http\Controllers\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassListController;
+use App\Http\Controllers\PendingController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ScheduleEntryController;
 use App\Http\Controllers\ScheduleSlotController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Features;
+
+Route::middleware('guest')->post('register/validate', function (\Illuminate\Http\Request $request) {
+    $request->validate([
+        'name'     => ['required', 'string', 'max:255'],
+        'email'    => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique(\App\Models\User::class)],
+        'password' => ['required', 'string', Password::default(), 'confirmed'],
+    ]);
+
+    return redirect()->back();
+});
 
 Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Accessible sans école approuvée
+    Route::get('pending', [PendingController::class, 'index'])->name('pending');
+    Route::post('pending/join-requests', [PendingController::class, 'requestSchool'])->name('pending.join-requests.store');
+    Route::delete('pending/join-requests/{joinRequest}', [PendingController::class, 'cancelRequest'])->name('pending.join-requests.destroy');
+    Route::patch('pending/subjects', [PendingController::class, 'syncSubjects'])->name('pending.subjects.sync');
+});
+
+Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
 
     // Class list
@@ -61,6 +82,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('students/{student}', [AdminStudentController::class, 'destroy'])->name('students.destroy');
 
             Route::get('teachers', [AdminTeacherController::class, 'index'])->name('teachers.index');
+            Route::patch('join-requests/{joinRequest}/approve', [AdminJoinRequestController::class, 'approve'])->name('join-requests.approve');
+            Route::patch('join-requests/{joinRequest}/reject', [AdminJoinRequestController::class, 'reject'])->name('join-requests.reject');
 
             Route::get('lessons', [AdminLessonController::class, 'index'])->name('lessons.index');
             Route::post('lessons', [AdminLessonController::class, 'store'])->name('lessons.store');
