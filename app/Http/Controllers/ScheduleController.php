@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AcademicYear;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
+use App\Models\ScheduleSlot;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -25,7 +26,6 @@ class ScheduleController extends Controller
             : $academicYears->first()?->id;
 
         $scheduleQuery = Schedule::where('user_id', $user->id)
-            ->with(['slots'])
             ->orderBy('school_id');
 
         if ($selectedYearId) {
@@ -33,18 +33,16 @@ class ScheduleController extends Controller
         }
 
         $schedules = $scheduleQuery->get();
-        $allSlots = $schedules->flatMap(fn ($s) => $s->slots);
-        $allSlotIds = $allSlots->pluck('id');
+        $scheduleIds = $schedules->pluck('id');
 
-        $slots = $allSlots->sortBy('position')
-            ->unique('position')
+        $slots = ScheduleSlot::orderBy('position')
+            ->get()
             ->map(fn ($slot) => [
+                'id'       => $slot->id,
                 'position' => $slot->position,
-                'label' => $slot->label,
-                'type' => $slot->type->value,
-                'ids' => $allSlots->where('position', $slot->position)->pluck('id')->values()->all(),
-            ])
-            ->values();
+                'label'    => $slot->label,
+                'type'     => $slot->type->value,
+            ]);
 
         $lessons = $user->lessons()
             ->with([
@@ -61,8 +59,8 @@ class ScheduleController extends Controller
         ));
 
         $entries = [];
-        if ($allSlotIds->isNotEmpty()) {
-            ScheduleEntry::whereIn('schedule_slot_id', $allSlotIds)
+        if ($scheduleIds->isNotEmpty()) {
+            ScheduleEntry::whereIn('schedule_id', $scheduleIds)
                 ->with(['scheduleSlot:id,position'])
                 ->get()
                 ->each(function (ScheduleEntry $e) use (&$entries, $lessons) {
@@ -72,24 +70,28 @@ class ScheduleController extends Controller
                     }
                     $pos = $e->scheduleSlot->position;
                     $entries[$pos][$e->day_of_week] = [
-                        'id' => $e->id,
+                        'id'        => $e->id,
                         'lesson_id' => $e->lesson_id,
-                        'grade' => $lesson->group->grade.$lesson->group->name,
-                        'subject' => $lesson->subject->name,
-                        'room' => $e->classroom,
-                        'school' => $lesson->group->school->name,
+                        'grade'     => $lesson->group->grade.$lesson->group->name,
+                        'subject'   => $lesson->subject->name,
+                        'room'      => $e->classroom,
+                        'school'    => $lesson->group->school->name,
                     ];
                 });
         }
 
         return Inertia::render('Schedules', [
-            'slots' => $slots,
-            'entries' => $entries,
-            'lessons' => $lessons,
-            'schools' => $userSchools,
-            'schedules' => $schedules->map(fn ($s) => ['id' => $s->id, 'school' => $schoolsById->get($s->school_id)?->name]),
+            'slots'        => $slots,
+            'entries'      => $entries,
+            'lessons'      => $lessons,
+            'schools'      => $userSchools,
+            'schedules'    => $schedules->map(fn ($s) => [
+                'id'        => $s->id,
+                'school_id' => $s->school_id,
+                'school'    => $schoolsById->get($s->school_id)?->name,
+            ]),
             'academicYears' => $academicYears,
-            'filters' => (object) ['year' => $selectedYearId ? (string) $selectedYearId : null],
+            'filters'       => (object) ['year' => $selectedYearId ? (string) $selectedYearId : null],
         ]);
     }
 }

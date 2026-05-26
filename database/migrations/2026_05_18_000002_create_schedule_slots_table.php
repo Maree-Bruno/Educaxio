@@ -10,14 +10,10 @@ return new class extends Migration
     {
         Schema::create('schedule_slots', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('schedule_id')->constrained()->cascadeOnDelete();
-            $table->unsignedTinyInteger('position');
+            $table->unsignedTinyInteger('position')->unique();
             $table->string('label');
-            $table->string('classroom')->nullable();
             $table->string('type')->default('slot');
             $table->timestamps();
-
-            $table->unique(['schedule_id', 'position']);
         });
     }
 

@@ -28,8 +28,8 @@ class Schedule extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
-    public function slots(): HasMany
+    public function entries(): HasMany
     {
-        return $this->hasMany(ScheduleSlot::class)->orderBy('position');
+        return $this->hasMany(ScheduleEntry::class);
     }
 }

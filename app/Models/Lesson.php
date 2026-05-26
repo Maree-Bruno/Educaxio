@@ -37,4 +37,9 @@ class Lesson extends Model
     {
         return $this->hasMany(ClassSession::class);
     }
+
+    public function scheduleEntries(): HasMany
+    {
+        return $this->hasMany(ScheduleEntry::class);
+    }
 }

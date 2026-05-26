@@ -11,16 +11,12 @@ class ScheduleSlotController extends Controller
 {
     public function updateType(Request $request)
     {
-        $user = auth()->user();
-
         $validated = $request->validate([
-            'ids'   => ['required', 'array'],
-            'ids.*' => ['integer', 'exists:schedule_slots,id'],
-            'type'  => ['required', Rule::enum(ScheduleSlotType::class)],
+            'id'   => ['required', 'integer', 'exists:schedule_slots,id'],
+            'type' => ['required', Rule::enum(ScheduleSlotType::class)],
         ]);
 
-        ScheduleSlot::whereIn('id', $validated['ids'])
-            ->whereHas('schedule', fn ($q) => $q->where('user_id', $user->id))
+        ScheduleSlot::where('id', $validated['id'])
             ->update(['type' => $validated['type']]);
 
         return back();

@@ -4,10 +4,10 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 
 interface SlotRow {
+    id: number;
     position: number;
     label: string;
     type: 'slot' | 'lunch';
-    ids: number[];
 }
 
 interface EntryData {
@@ -40,6 +40,7 @@ const props = defineProps<{
     dayLabel: string;
     entry: EntryData | null;
     lessons: LessonOption[];
+    schedules: { id: number; school_id: number }[];
 }>();
 
 const emit = defineEmits<{
@@ -150,9 +151,13 @@ function onCancel(event: Event) {
 function save() {
     if (!props.scheduleSlot || !selectedLesson.value) return;
 
+    const lesson = props.lessons.find((l) => l.id === selectedLesson.value);
+    const schedule = props.schedules.find((s) => s.school_id === lesson?.group.school_id);
+
     router.post(
         '/schedule-entries',
         {
+            schedule_id: schedule?.id,
             lesson_id: selectedLesson.value,
             position: props.scheduleSlot.position,
             day_of_week: props.dayOfWeek,

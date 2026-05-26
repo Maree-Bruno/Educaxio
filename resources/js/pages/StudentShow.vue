@@ -13,9 +13,9 @@ import type { Student } from '@/types';
 interface AbsenceRecord {
     date: string | null;
     type: 'Absent' | 'Late' | 'Excluded';
-    motive: string | null;
     subject: string | null;
     group: string | null;
+    time: string | null;
 }
 
 type StudentWithSchool = Student & { school?: { id: number; name: string; slug: string } };
@@ -201,12 +201,14 @@ function formatDate(date: string | null): string {
                 class="flex items-start justify-between gap-3 px-4 py-4"
             >
                 <div class="flex min-w-0 flex-col gap-1">
-                    <span class="text-sm font-medium text-text-base">{{ formatDate(record.date) }}</span>
+                    <span class="text-sm font-medium text-text-base">
+                        {{ formatDate(record.date) }}
+                        <span v-if="record.time" class="text-stone-400"> · {{ record.time }}</span>
+                    </span>
                     <span class="text-xs text-stone-500">
                         {{ record.subject ?? '—' }}
                         <span v-if="record.group"> · {{ record.group }}</span>
                     </span>
-                    <span v-if="record.motive" class="text-xs text-stone-400 italic">{{ record.motive }}</span>
                 </div>
                 <span
                     class="shrink-0 rounded-lg px-2 py-1 text-xs font-bold"
@@ -223,10 +225,11 @@ function formatDate(date: string | null): string {
                 <thead>
                     <tr class="bg-gray-100">
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Date</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Heure de
+                            cours</th>
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Cours</th>
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Classe</th>
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Type</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Motif</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-neutral-100">
@@ -236,6 +239,7 @@ function formatDate(date: string | null): string {
                         class="transition-colors hover:bg-gray-50"
                     >
                         <td class="px-6 py-4 text-sm text-text-base">{{ formatDate(record.date) }}</td>
+                        <td class="px-6 py-4 text-sm text-text-base">{{ record.time ?? '—' }}</td>
                         <td class="px-6 py-4 text-sm text-text-base">{{ record.subject ?? '—' }}</td>
                         <td class="px-6 py-4 text-sm text-text-base">{{ record.group ?? '—' }}</td>
                         <td class="px-6 py-4">
@@ -246,7 +250,6 @@ function formatDate(date: string | null): string {
                                 {{ TYPE_LABELS[record.type] ?? record.type }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-stone-500">{{ record.motive ?? '—' }}</td>
                     </tr>
                 </tbody>
             </table>
