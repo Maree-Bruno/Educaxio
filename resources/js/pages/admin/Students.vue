@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { computed, nextTick, ref, watch } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
-import LinkButton from '@/components/widgets/LinkButton.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
@@ -62,30 +63,29 @@ function sortBy(col: string) {
     applyFilters();
 }
 
-// ── Modal création ────────────────────────────────────────────────────────
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const form = ref({ lastname: '', firstname: '', email: '', group_ids: [] as string[] });
+const form = useForm({ lastname: '', firstname: '', email: '', group_ids: [] as string[] });
 
 const availableGroups = computed(() =>
-    props.groups.filter((g) => !form.value.group_ids.includes(String(g.id))),
+    props.groups.filter((g) => !form.group_ids.includes(String(g.id))),
 );
 
 function addGroup(e: Event) {
     const id = (e.target as HTMLSelectElement).value;
 
-    if (id && !form.value.group_ids.includes(id)) {
-        form.value.group_ids.push(id);
+    if (id && !form.group_ids.includes(id)) {
+        form.group_ids.push(id);
     }
 
     (e.target as HTMLSelectElement).value = '';
 }
 
 function removeGroup(id: string) {
-    form.value.group_ids = form.value.group_ids.filter((gid) => gid !== id);
+    form.group_ids = form.group_ids.filter((gid) => gid !== id);
 }
 
 function openCreate() {
-    form.value = { lastname: '', firstname: '', email: '', group_ids: [] };
+    form.reset();
     nextTick(() => modalRef.value?.open());
 }
 
@@ -94,15 +94,13 @@ function closeModal() {
 }
 
 function save() {
-    router.post(base, {
-        lastname:  form.value.lastname,
-        firstname: form.value.firstname,
-        email:     form.value.email || null,
-        group_ids: form.value.group_ids.map(Number),
-    }, { preserveScroll: true, onSuccess: closeModal });
+    form.transform((data) => ({
+        ...data,
+        email:     data.email || null,
+        group_ids: data.group_ids.map(Number),
+    })).post(base, { preserveScroll: true, onSuccess: closeModal });
 }
 
-// ── Suppression ───────────────────────────────────────────────────────────
 const pendingDelete = ref<Student | null>(null);
 const deleteLoading = ref(false);
 
@@ -135,8 +133,6 @@ function confirmDelete() {
     />
 
     <div class="min-w-0 overflow-hidden rounded-2xl">
-
-        <!-- En-tête -->
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-300/10 bg-white px-4 sm:px-6 py-4 sm:py-5">
             <h2 class="text-xl font-bold text-text-base">
                 Élèves
@@ -161,8 +157,6 @@ function confirmDelete() {
                 />
             </div>
         </div>
-
-        <!-- Mobile : liste de cartes -->
         <ul class="sm:hidden divide-y divide-neutral-100 bg-white">
             <li
                 v-for="(student, index) in students.data"
@@ -206,8 +200,6 @@ function confirmDelete() {
                 Aucun élève trouvé
             </li>
         </ul>
-
-        <!-- Desktop : tableau -->
         <div class="hidden sm:block overflow-x-auto bg-white">
             <table class="w-full border-collapse text-left">
                 <thead>
@@ -269,37 +261,17 @@ function confirmDelete() {
                 </tbody>
             </table>
         </div>
-
-        <!-- Pied : pagination -->
         <div class="rounded-b-2xl bg-gray-100 px-4 sm:px-6 py-4">
             <Pagination :links="students.links" :current-page="students.current_page" :last-page="students.last_page" />
         </div>
     </div>
 
-    <!-- Modal create / edit -->
     <BaseModal ref="modalRef">
-        <div class="flex flex-col gap-5">
+        <form class="flex flex-col gap-5" @submit.prevent="save">
             <h2 class="text-xl font-bold text-black">Nouvel élève</h2>
-
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Nom</label>
-                <input v-model="form.lastname" type="text" placeholder="Dupont" maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Prénom</label>
-                <input v-model="form.firstname" type="text" placeholder="Marie" maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
-                    Email <span class="normal-case font-normal">(optionnel)</span>
-                </label>
-                <input v-model="form.email" type="email" placeholder="marie@exemple.be" maxlength="255"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-            </div>
+            <InputLabel v-model="form.lastname" label="Nom" placeholder="Dupont" :error="form.errors.lastname" />
+            <InputLabel v-model="form.firstname" label="Prénom" placeholder="Marie" :error="form.errors.firstname" />
+            <InputLabel v-model="form.email" type="email" label="Email (optionnel)" placeholder="marie@exemple.be" :error="form.errors.email" />
 
             <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
@@ -331,10 +303,10 @@ function confirmDelete() {
             </div>
 
             <div class="flex gap-3">
-                <Button variant="primary" size="sm" label="Enregistrer" class="flex-1"
-                    :disabled="!form.lastname || !form.firstname" @click="save" />
-                <Button variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeModal" />
+                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1"
+                    :disabled="!form.lastname || !form.firstname" :loading="form.processing" />
+                <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeModal" />
             </div>
-        </div>
+        </form>
     </BaseModal>
 </template>

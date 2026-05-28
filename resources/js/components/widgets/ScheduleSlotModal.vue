@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 
@@ -52,7 +52,7 @@ const dialogRef = ref<HTMLDialogElement | null>(null);
 const filterEcole      = ref<number | ''>('');
 const filterClasse     = ref<number | ''>('');
 const selectedLesson   = ref<number | ''>('');
-const classroom        = ref('');
+const form             = useForm({ classroom: '' });
 const confirmingDelete = ref(false);
 const syncing          = ref(false);
 
@@ -104,7 +104,7 @@ watch(filterClasse, () => {
 async function syncFromEntry() {
     syncing.value = true;
     confirmingDelete.value = false;
-    classroom.value = props.entry?.room ?? '';
+    form.classroom = props.entry?.room ?? '';
 
     if (props.entry) {
         const lesson = props.lessons.find(
@@ -154,20 +154,16 @@ function save() {
     const lesson = props.lessons.find((l) => l.id === selectedLesson.value);
     const schedule = props.schedules.find((s) => s.school_id === lesson?.group.school_id);
 
-    router.post(
-        '/schedule-entries',
-        {
-            schedule_id: schedule?.id,
-            lesson_id: selectedLesson.value,
-            position: props.scheduleSlot.position,
-            day_of_week: props.dayOfWeek,
-            classroom: classroom.value || null,
-        },
-        {
-            preserveScroll: true,
-            onSuccess: () => emit('close'),
-        },
-    );
+    form.transform((data) => ({
+        schedule_id: schedule?.id,
+        lesson_id: selectedLesson.value,
+        position: props.scheduleSlot!.position,
+        day_of_week: props.dayOfWeek,
+        classroom: data.classroom || null,
+    })).post('/schedule-entries', {
+        preserveScroll: true,
+        onSuccess: () => emit('close'),
+    });
 }
 
 function deleteEntry() {
@@ -273,7 +269,7 @@ function deleteEntry() {
                         >Local</span
                     >
                     <input
-                        v-model="classroom"
+                        v-model="form.classroom"
                         type="text"
                         placeholder="Ex : 302"
                         class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
@@ -287,6 +283,7 @@ function deleteEntry() {
                         size="md"
                         class="flex-1"
                         :disabled="!selectedLesson"
+                        :loading="form.processing"
                         @click="save"
                     >
                         Enregistrer

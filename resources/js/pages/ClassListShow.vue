@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { computed, nextTick, ref, watch } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import Button from '@/components/widgets/Button.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
@@ -68,13 +69,14 @@ function sortBy(col: string) {
 // --- Add student modal ---
 const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const addTab = ref<'new' | 'existing'>('new');
-const addForm = ref({ lastname: '', firstname: '', email: '' });
+const addForm    = useForm({ lastname: '', firstname: '', email: '' });
+const attachForm = useForm({ student_ids: [] as number[] });
 const studentSearch = ref('');
 const selectedStudentIds = ref<number[]>([]);
 
 function openAddModal() {
     addTab.value = 'new';
-    addForm.value = { lastname: '', firstname: '', email: '' };
+    addForm.reset();
     studentSearch.value = '';
     selectedStudentIds.value = [];
     nextTick(() => addModalRef.value?.open());
@@ -101,11 +103,11 @@ const filteredSchoolStudents = computed(() => {
 });
 
 function submitNew() {
-    router.post(`/classlist/${props.group.slug}/students`, {
-        lastname:  addForm.value.lastname,
-        firstname: addForm.value.firstname,
-        email:     addForm.value.email || null,
-    }, { preserveScroll: true, onSuccess: closeAddModal });
+    addForm.transform((data) => ({ ...data, email: data.email || null }))
+        .post(`/classlist/${props.group.slug}/students`, {
+            preserveScroll: true,
+            onSuccess: closeAddModal,
+        });
 }
 
 function attachSelected() {
@@ -113,9 +115,11 @@ function attachSelected() {
         return;
     }
 
-    router.post(`/classlist/${props.group.slug}/students`, {
-        student_ids: selectedStudentIds.value,
-    }, { preserveScroll: true, onSuccess: closeAddModal });
+    attachForm.student_ids = [...selectedStudentIds.value];
+    attachForm.post(`/classlist/${props.group.slug}/students`, {
+        preserveScroll: true,
+        onSuccess: closeAddModal,
+    });
 }
 
 </script>
@@ -383,33 +387,19 @@ function attachSelected() {
             </div>
 
             <!-- Tab: Nouvel élève -->
-            <div v-if="addTab === 'new'" class="flex flex-col gap-4">
-                <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Nom</label>
-                    <input v-model="addForm.lastname" type="text" placeholder="Dupont" maxlength="100"
-                        class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-                </div>
-                <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Prénom</label>
-                    <input v-model="addForm.firstname" type="text" placeholder="Marie" maxlength="100"
-                        class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-                </div>
-                <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
-                        Email <span class="normal-case font-normal">(optionnel)</span>
-                    </label>
-                    <input v-model="addForm.email" type="email" placeholder="marie@exemple.be" maxlength="255"
-                        class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma" />
-                </div>
+            <form v-if="addTab === 'new'" class="flex flex-col gap-4" @submit.prevent="submitNew">
+                <InputLabel v-model="addForm.lastname" label="Nom" placeholder="Dupont" :error="addForm.errors.lastname" />
+                <InputLabel v-model="addForm.firstname" label="Prénom" placeholder="Marie" :error="addForm.errors.firstname" />
+                <InputLabel v-model="addForm.email" type="email" label="Email (optionnel)" placeholder="marie@exemple.be" :error="addForm.errors.email" />
                 <div class="flex gap-3">
-                    <Button variant="primary" size="md" label="Ajouter" class="flex-1"
-                        :disabled="!addForm.lastname || !addForm.firstname" @click="submitNew" />
-                    <Button variant="danger" size="md" label="Annuler" class="flex-1" @click="closeAddModal" />
+                    <Button type="submit" variant="primary" size="md" label="Ajouter" class="flex-1"
+                        :disabled="!addForm.lastname || !addForm.firstname" :loading="addForm.processing" />
+                    <Button type="button" variant="danger" size="md" label="Annuler" class="flex-1" @click="closeAddModal" />
                 </div>
-            </div>
+            </form>
 
             <!-- Tab: Élève existant -->
-            <div v-else class="flex flex-col gap-4">
+            <form v-else class="flex flex-col gap-4" @submit.prevent="attachSelected">
                 <SearchInput id="student-search" v-model="studentSearch" placeholder="Rechercher un élève…" />
                 <div class="flex flex-col divide-y divide-neutral-100 rounded-2xl bg-white overflow-hidden max-h-64 overflow-y-auto">
                     <div v-if="filteredSchoolStudents.length === 0" class="px-4 py-8 text-center text-sm text-border-figma">
@@ -438,16 +428,17 @@ function attachSelected() {
                 </div>
                 <div class="flex gap-3">
                     <Button
+                        type="submit"
                         variant="primary"
                         size="md"
                         :label="selectedStudentIds.length ? `Ajouter (${selectedStudentIds.length})` : 'Ajouter'"
                         class="flex-1"
                         :disabled="!selectedStudentIds.length"
-                        @click="attachSelected"
+                        :loading="attachForm.processing"
                     />
-                    <Button variant="danger" size="md" label="Annuler" class="flex-1" @click="closeAddModal" />
+                    <Button type="button" variant="danger" size="md" label="Annuler" class="flex-1" @click="closeAddModal" />
                 </div>
-            </div>
+            </form>
         </div>
     </BaseModal>
 </template>

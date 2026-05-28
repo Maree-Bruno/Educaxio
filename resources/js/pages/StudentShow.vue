@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { computed, nextTick, ref } from 'vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import Button from '@/components/widgets/Button.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Edit from '@/components/widgets/svg/Edit.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
@@ -55,23 +56,22 @@ const breadcrumbItems = computed(() => {
 });
 
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const form = ref({ lastname: props.student.lastname, firstname: props.student.firstname, email: props.student.email ?? '' });
+const form = useForm({ lastname: props.student.lastname, firstname: props.student.firstname, email: props.student.email ?? '' });
 
 function openEdit() {
-    form.value = {
-        lastname: props.student.lastname,
-        firstname: props.student.firstname,
-        email: props.student.email ?? '',
-    };
+    form.lastname = props.student.lastname;
+    form.firstname = props.student.firstname;
+    form.email = props.student.email ?? '';
+    form.clearErrors();
     nextTick(() => modalRef.value?.open());
 }
 
 function save() {
-    router.patch(`/students/${props.student.id}`, {
-        lastname: form.value.lastname,
-        firstname: form.value.firstname,
-        email: form.value.email || null,
-    }, { preserveScroll: true, onSuccess: () => modalRef.value?.close() });
+    form.transform((data) => ({ ...data, email: data.email || null }))
+        .patch(`/students/${props.student.id}`, {
+            preserveScroll: true,
+            onSuccess: () => modalRef.value?.close(),
+        });
 }
 const TYPE_LABELS: Record<string, string> = {
     Absent:   'Absent',
@@ -264,54 +264,25 @@ function formatDate(date: string | null): string {
     </div>
 
     <BaseModal ref="modalRef">
-        <div class="flex flex-col gap-5">
+        <form class="flex flex-col gap-5" @submit.prevent="save">
             <h2 class="text-xl font-bold text-black">Modifier l'élève</h2>
 
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Nom</label>
-                <input
-                    v-model="form.lastname"
-                    type="text"
-                    placeholder="Dupont"
-                    maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
-                />
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">Prénom</label>
-                <input
-                    v-model="form.firstname"
-                    type="text"
-                    placeholder="Marie"
-                    maxlength="100"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
-                />
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
-                    Email <span class="normal-case font-normal">(optionnel)</span>
-                </label>
-                <input
-                    v-model="form.email"
-                    type="email"
-                    placeholder="marie@exemple.be"
-                    maxlength="255"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma placeholder:font-normal placeholder:text-border-figma"
-                />
-            </div>
+            <InputLabel v-model="form.lastname" label="Nom" placeholder="Dupont" :error="form.errors.lastname" />
+            <InputLabel v-model="form.firstname" label="Prénom" placeholder="Marie" :error="form.errors.firstname" />
+            <InputLabel v-model="form.email" type="email" label="Email (optionnel)" placeholder="marie@exemple.be" :error="form.errors.email" />
 
             <div class="flex gap-3">
                 <Button
+                    type="submit"
                     variant="primary"
                     size="sm"
                     label="Enregistrer"
                     class="flex-1"
                     :disabled="!form.lastname || !form.firstname"
-                    @click="save"
+                    :loading="form.processing"
                 />
                 <Button
+                    type="button"
                     variant="danger"
                     size="sm"
                     label="Annuler"
@@ -319,6 +290,6 @@ function formatDate(date: string | null): string {
                     @click="modalRef?.close()"
                 />
             </div>
-        </div>
+        </form>
     </BaseModal>
 </template>

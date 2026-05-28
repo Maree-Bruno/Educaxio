@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import SearchInput from '@/components/widgets/SearchInput.vue';
 import SubjectGrid from '@/components/widgets/SubjectGrid.vue';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
@@ -141,7 +142,7 @@ watch(
         />
     </div>
 
-    <div v-if="step === 1" class="flex flex-col gap-5">
+    <form v-if="step === 1" class="flex flex-col gap-5" @submit.prevent="next">
         <div class="flex flex-col gap-1">
             <p class="text-xs font-bold uppercase tracking-widest text-gray-400">Étape 1 sur 3</p>
             <h2 class="text-xl font-bold text-text-base">Vos informations</h2>
@@ -175,15 +176,15 @@ watch(
             :error="stepErrors.password_confirmation ?? form.errors.password_confirmation"
         />
 
-        <Button variant="primary" size="md" label="Suivant →" class="w-full" :loading="form.processing" @click="next" />
+        <Button type="submit" variant="primary" size="md" label="Suivant →" class="w-full" :loading="form.processing" />
 
         <p class="text-center text-sm">
             <span class="text-neutral-500">Déjà un compte ? </span>
             <Link :href="login.url()" class="font-medium text-blue hover:underline">Se connecter</Link>
         </p>
-    </div>
+    </form>
 
-    <div v-else-if="step === 2" class="flex flex-col gap-5">
+    <form v-else-if="step === 2" class="flex flex-col gap-5" @submit.prevent="next">
         <div class="flex flex-col gap-1">
             <p class="text-xs font-bold uppercase tracking-widest text-gray-400">Étape 2 sur 3</p>
             <h2 class="text-xl font-bold text-text-base">Vos matières</h2>
@@ -193,12 +194,12 @@ watch(
         <SubjectGrid v-model="form.subject_ids" :subjects="subjects" />
 
         <div class="flex gap-3">
-            <Button variant="ghost" size="md" label="← Retour" class="w-full" @click="back" />
-            <Button variant="primary" size="md" label="Suivant →" class="w-full" @click="next" />
+            <Button type="button" variant="ghost" size="md" label="← Retour" class="w-full" @click="back" />
+            <Button type="submit" variant="primary" size="md" label="Suivant →" class="w-full" />
         </div>
-    </div>
+    </form>
 
-    <div v-else class="flex flex-col gap-5">
+    <form v-else class="flex flex-col gap-5" @submit.prevent="submit">
         <div class="flex flex-col gap-1">
             <p class="text-xs font-bold uppercase tracking-widest text-gray-400">Étape 3 sur 3</p>
             <h2 class="text-xl font-bold text-text-base">Votre établissement</h2>
@@ -207,12 +208,7 @@ watch(
             </p>
         </div>
 
-        <input
-            v-model="schoolSearch"
-            type="search"
-            placeholder="Rechercher un établissement..."
-            class="w-full rounded-2xl border border-border-figma bg-white px-3 py-3 font-manrope text-base outline-none transition-all duration-150 placeholder:text-gray-400 focus:border-blue focus:ring-2 focus:ring-blue/20"
-        />
+        <SearchInput v-model="schoolSearch" placeholder="Rechercher un établissement..." />
 
         <div class="flex max-h-52 flex-col gap-2 overflow-y-auto pr-1">
             <button
@@ -246,16 +242,16 @@ watch(
         </p>
 
         <div class="flex gap-3">
-            <Button variant="ghost" size="md" label="← Retour" class="w-full" @click="back" />
+            <Button type="button" variant="ghost" size="md" label="← Retour" class="w-full" @click="back" />
             <Button
+                type="submit"
                 variant="primary"
                 size="md"
                 label="Créer mon compte"
                 class="w-full"
                 :loading="form.processing"
                 :disabled="form.school_ids.length === 0"
-                @click="submit"
             />
         </div>
-    </div>
+    </form>
 </template>

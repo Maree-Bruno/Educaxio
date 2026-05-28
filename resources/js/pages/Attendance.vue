@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AttendanceStatusButton from '@/components/widgets/AttendanceStatusButton.vue';
 import Button from '@/components/widgets/Button.vue';
@@ -27,6 +27,8 @@ const props = defineProps<{
 }>();
 
 type StatusType = 'Absent' | 'Late' | 'Excluded';
+
+const form = useForm({});
 
 const localStatuses = ref<Record<number, StatusType | null>>(
     Object.fromEntries(
@@ -70,11 +72,11 @@ function save() {
         .filter(([, type]) => type !== null)
         .map(([student_id, type]) => ({ student_id: Number(student_id), type, motive: null }));
 
-    router.post('/attendances', {
+    form.transform(() => ({
         lesson_id: entry.lesson_id,
         date:      props.date,
         statuses,
-    }, { preserveScroll: true });
+    })).post('/attendances', { preserveScroll: true });
 }
 
 const journal = ref('');
@@ -189,7 +191,7 @@ const paginationLinks = computed<PaginationLink[]>(() => {
                     </span>
                     <template v-if="isEditable">
                         <Button variant="ghost" size="sm" @click="setAllPresent">Tous présent</Button>
-                        <Button variant="primary" size="sm" @click="save">Valider</Button>
+                        <Button variant="primary" size="sm" :loading="form.processing" @click="save">Valider</Button>
                     </template>
                     <span v-else class="text-xs font-bold text-stone-400">Lecture seule</span>
                 </div>

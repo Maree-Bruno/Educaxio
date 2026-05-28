@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import Button from './Button.vue';
+import SearchInput from './SearchInput.vue';
 
 const props = defineProps<{
     schools: { id: number; name: string }[];
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 
 const search     = ref('');
 const selectedId = ref<number | null>(null);
+const form       = useForm({ school_id: null as number | null });
 
 const filtered = computed(() => {
     const q = search.value.trim().toLowerCase();
@@ -26,10 +28,12 @@ function submit() {
         return;
     }
 
-    router.post('/pending/join-requests', { school_id: selectedId.value }, {
+    form.school_id = selectedId.value;
+    form.post('/pending/join-requests', {
         onSuccess: () => {
             selectedId.value = null;
             search.value = '';
+            form.reset();
             emit('success');
         },
     });
@@ -43,13 +47,8 @@ function cancel() {
 </script>
 
 <template>
-    <div class="flex flex-col gap-3">
-        <input
-            v-model="search"
-            type="search"
-            placeholder="Rechercher un établissement…"
-            class="w-full rounded-2xl border border-border-figma bg-white px-3 py-2.5 font-manrope text-sm outline-none transition-all placeholder:text-gray-400 focus:border-blue focus:ring-2 focus:ring-blue/20"
-        />
+    <form class="flex flex-col gap-3" @submit.prevent="submit">
+        <SearchInput v-model="search" placeholder="Rechercher un établissement…" />
         <div class="flex max-h-48 flex-col gap-1.5 overflow-y-auto">
             <button
                 v-for="school in filtered"
@@ -72,8 +71,8 @@ function cancel() {
             <p v-if="filtered.length === 0" class="py-2 text-center text-sm text-gray-400">Aucun résultat</p>
         </div>
         <div class="flex gap-2">
-            <Button variant="ghost" size="sm" label="Annuler" @click="cancel" />
-            <Button variant="primary" size="sm" label="Envoyer la demande" :disabled="!selectedId" @click="submit" />
+            <Button type="button" variant="ghost" size="sm" label="Annuler" @click="cancel" />
+            <Button type="submit" variant="primary" size="sm" label="Envoyer la demande" :disabled="!selectedId" :loading="form.processing" />
         </div>
-    </div>
+    </form>
 </template>

@@ -313,11 +313,11 @@ const testimonials = [
                         </p>
                     </div>
                     <LinkButton
-                        :href="login.url()"
-                        variant="primary"
+                        :href="register.url()"
+                        variant="secondary"
                         size="md"
                         mobile-size="sm"
-                        label="Se connecter"
+                        label="Créer un compte dès maintenant"
                     />
                 </div>
             </section>
