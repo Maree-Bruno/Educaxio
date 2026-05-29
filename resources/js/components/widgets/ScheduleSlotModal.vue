@@ -41,6 +41,8 @@ const props = defineProps<{
     entry: EntryData | null;
     lessons: LessonOption[];
     schedules: { id: number; school_id: number }[];
+    slots: SlotRow[];
+    entries: Record<number, Record<number, EntryData>>;
 }>();
 
 const emit = defineEmits<{
@@ -49,12 +51,31 @@ const emit = defineEmits<{
 
 const dialogRef = ref<HTMLDialogElement | null>(null);
 
+const DAY_OPTIONS = [
+    { value: 1, label: 'Lundi' },
+    { value: 2, label: 'Mardi' },
+    { value: 3, label: 'Mercredi' },
+    { value: 4, label: 'Jeudi' },
+    { value: 5, label: 'Vendredi' },
+];
+
 const filterEcole      = ref<number | ''>('');
 const filterClasse     = ref<number | ''>('');
 const selectedLesson   = ref<number | ''>('');
+const selectedDay      = ref<number>(1);
+const selectedSlotId   = ref<number | null>(null);
 const form             = useForm({ classroom: '' });
 const confirmingDelete = ref(false);
 const syncing          = ref(false);
+
+const selectedDayLabel = computed(() => DAY_OPTIONS.find((d) => d.value === selectedDay.value)?.label ?? '');
+const selectedSlot     = computed(() => props.slots.find((s) => s.id === selectedSlotId.value) ?? null);
+const slotOptions      = computed(() => props.slots.filter((s) => s.type === 'slot'));
+const currentEntry     = computed<EntryData | null>(() => {
+    const slot = selectedSlot.value;
+    if (!slot) return null;
+    return props.entries?.[slot.position]?.[selectedDay.value] ?? null;
+});
 
 const ecoleOptions = computed(() => {
     const seen = new Set<number>();
@@ -101,26 +122,38 @@ watch(filterClasse, () => {
     selectedLesson.value = '';
 });
 
-async function syncFromEntry() {
-    syncing.value = true;
-    confirmingDelete.value = false;
-    form.classroom = props.entry?.room ?? '';
-
-    if (props.entry) {
-        const lesson = props.lessons.find(
-            (l) => l.id === props.entry!.lesson_id,
-        );
+async function syncFormFromEntry(entry: EntryData | null) {
+    form.classroom = entry?.room ?? '';
+    if (entry) {
+        const lesson = props.lessons.find((l) => l.id === entry.lesson_id);
         filterEcole.value = lesson?.group.school_id ?? '';
         filterClasse.value = lesson?.group_id ?? '';
         await nextTick();
-        selectedLesson.value = props.entry.lesson_id;
+        selectedLesson.value = entry.lesson_id;
     } else {
         filterEcole.value = '';
         filterClasse.value = '';
         selectedLesson.value = '';
     }
+}
+
+async function syncFromEntry() {
+    syncing.value = true;
+    confirmingDelete.value = false;
+    selectedDay.value    = props.dayOfWeek;
+    selectedSlotId.value = props.scheduleSlot?.id ?? null;
+    await nextTick();
+    await syncFormFromEntry(currentEntry.value);
     syncing.value = false;
 }
+
+watch(currentEntry, async (entry) => {
+    if (syncing.value) return;
+    syncing.value = true;
+    confirmingDelete.value = false;
+    await syncFormFromEntry(entry);
+    syncing.value = false;
+});
 
 onMounted(() => {
     if (props.open) dialogRef.value?.showModal();
@@ -149,7 +182,7 @@ function onCancel(event: Event) {
 }
 
 function save() {
-    if (!props.scheduleSlot || !selectedLesson.value) return;
+    if (!selectedSlot.value || !selectedLesson.value) return;
 
     const lesson = props.lessons.find((l) => l.id === selectedLesson.value);
     const schedule = props.schedules.find((s) => s.school_id === lesson?.group.school_id);
@@ -157,8 +190,8 @@ function save() {
     form.transform((data) => ({
         schedule_id: schedule?.id,
         lesson_id: selectedLesson.value,
-        position: props.scheduleSlot!.position,
-        day_of_week: props.dayOfWeek,
+        position: selectedSlot.value!.position,
+        day_of_week: selectedDay.value,
         classroom: data.classroom || null,
     })).post('/schedule-entries', {
         preserveScroll: true,
@@ -167,8 +200,9 @@ function save() {
 }
 
 function deleteEntry() {
-    if (!props.entry) return;
-    router.delete(`/schedule-entries/${props.entry.id}`, {
+    const entry = currentEntry.value;
+    if (!entry) return;
+    router.delete(`/schedule-entries/${entry.id}`, {
         preserveScroll: true,
         onSuccess: () => emit('close'),
     });
@@ -186,17 +220,39 @@ function deleteEntry() {
             <div>
                 <h2 class="text-2xl font-bold text-black">
                     {{
-                        entry
+                        currentEntry
                             ? 'Modifier le créneau'
                             : 'Ajouter un créneau horaire'
                     }}
                 </h2>
                 <p class="mt-1 text-sm font-bold text-border-figma">
-                    {{ dayLabel }} · {{ scheduleSlot?.label }}
+                    {{ selectedDayLabel }} · {{ selectedSlot?.label ?? scheduleSlot?.label }}
                 </p>
             </div>
 
             <div class="flex flex-col gap-5">
+                <!-- Jour + Heure -->
+                <div class="flex gap-3">
+                    <div class="flex flex-1 flex-col gap-2">
+                        <span class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Jour</span>
+                        <select
+                            v-model="selectedDay"
+                            class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
+                        >
+                            <option v-for="d in DAY_OPTIONS" :key="d.value" :value="d.value">{{ d.label }}</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-1 flex-col gap-2">
+                        <span class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Heure</span>
+                        <select
+                            v-model="selectedSlotId"
+                            class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
+                        >
+                            <option v-for="s in slotOptions" :key="s.id" :value="s.id">{{ s.label }}</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- École -->
                 <div class="flex flex-col gap-2">
                     <span
@@ -282,7 +338,7 @@ function deleteEntry() {
                         variant="primary"
                         size="md"
                         class="flex-1"
-                        :disabled="!selectedLesson"
+                        :disabled="!selectedLesson || !selectedSlotId"
                         :loading="form.processing"
                         @click="save"
                     >
@@ -295,7 +351,7 @@ function deleteEntry() {
 
                 <!-- Suppression : étape 1 -->
                 <Button
-                    v-if="entry && !confirmingDelete"
+                    v-if="currentEntry && !confirmingDelete"
                     variant="danger"
                     size="sm"
                     class="w-full"
@@ -305,7 +361,7 @@ function deleteEntry() {
                 </Button>
 
                 <!-- Suppression : étape 2 (confirmation) -->
-                <div v-if="entry && confirmingDelete" class="flex gap-3">
+                <div v-if="currentEntry && confirmingDelete" class="flex gap-3">
                     <Button variant="danger" size="sm" class="flex-1" @click="deleteEntry">
                         Confirmer la suppression
                     </Button>

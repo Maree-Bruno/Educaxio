@@ -261,6 +261,8 @@ function toggleSlotType(row: SlotRow) {
         :entry="modalState?.entry ?? null"
         :lessons="lessons"
         :schedules="schedules"
+        :slots="slots"
+        :entries="entries"
         @close="modalState = null"
     />
 </template>
