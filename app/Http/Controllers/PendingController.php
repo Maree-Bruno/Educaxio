@@ -18,7 +18,7 @@ class PendingController extends Controller
             ->with('school:id,name,slug')
             ->get()
             ->map(fn ($r) => [
-                'id'     => $r->id,
+                'id' => $r->id,
                 'school' => ['id' => $r->school->id, 'name' => $r->school->name],
                 'status' => $r->status,
             ]);
@@ -26,12 +26,13 @@ class PendingController extends Controller
         $requestedSchoolIds = $requests->pluck('school.id');
 
         return Inertia::render('Pending', [
-            'requests'    => $requests,
-            'schools'     => School::orderBy('name')
+            'requests' => $requests,
+            'schools' => School::orderBy('name')
                 ->whereNotIn('id', $requestedSchoolIds)
                 ->get(['id', 'name']),
             'allSubjects' => Subject::orderBy('name')->get(['id', 'name']),
             'userSubjects' => $user->subjects()->pluck('subjects.id'),
+            'user' => $user,
         ]);
     }
 
@@ -51,9 +52,9 @@ class PendingController extends Controller
         );
 
         SchoolJoinRequest::create([
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'school_id' => $validated['school_id'],
-            'status'    => 'pending',
+            'status' => 'pending',
         ]);
 
         return back();
@@ -72,7 +73,7 @@ class PendingController extends Controller
     public function syncSubjects(Request $request)
     {
         $validated = $request->validate([
-            'subject_ids'   => ['present', 'array'],
+            'subject_ids' => ['present', 'array'],
             'subject_ids.*' => ['integer', 'exists:subjects,id'],
         ]);
 
