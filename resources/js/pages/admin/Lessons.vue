@@ -1,10 +1,11 @@
 <!--suppress D -->
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import FilterBar from '@/components/widgets/FilterBar.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
@@ -33,6 +34,7 @@ interface Subject {
 interface Teacher {
     id: number;
     name: string;
+    subject_ids: number[];
 }
 interface Lesson {
     id: number;
@@ -160,6 +162,16 @@ const addForm = useForm<{ subject_id: string | number | null; teacher_ids: numbe
 const addSubjectOptions = computed(() =>
     addingToGroup.value ? availableSubjects(addingToGroup.value).map((s) => ({ value: s.id, label: s.name })) : [],
 );
+
+const addTeacherOptions = computed(() =>
+    addForm.subject_id
+        ? props.teachers.filter((t) => t.subject_ids.includes(Number(addForm.subject_id)))
+        : [],
+);
+
+watch(() => addForm.subject_id, () => {
+    addForm.teacher_ids = [];
+});
 
 function availableSubjects(group: Group) {
     const assigned = props.lessons
@@ -356,12 +368,11 @@ function confirmDelete() {
             </div>
         </div>
 
-        <p
+        <EmptyState
             v-if="groupedLessons.length === 0"
-            class="rounded-2xl bg-white px-6 py-16 text-center text-sm font-bold text-border-figma"
-        >
-            {{ hasActiveFilter ? 'Aucun résultat pour ces filtres' : 'Aucun groupe pour cette école' }}
-        </p>
+            :message="hasActiveFilter ? 'Aucun résultat pour ces filtres' : 'Aucun groupe pour cette école'"
+            class="rounded-2xl bg-white"
+        />
     </div>
 
     <!-- Modal : gérer les profs d'un cours -->
@@ -418,13 +429,13 @@ function confirmDelete() {
                 :options="addSubjectOptions"
             />
 
-            <div class="flex flex-col gap-2">
+            <div v-if="addForm.subject_id" class="flex flex-col gap-2">
                 <label class="text-xs font-bold tracking-wider text-border-figma uppercase">
                     Profs <span class="font-normal normal-case">(optionnel)</span>
                 </label>
                 <div class="flex flex-col gap-1.5">
                     <label
-                        v-for="teacher in teachers"
+                        v-for="teacher in addTeacherOptions"
                         :key="teacher.id"
                         class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
                         :class="addForm.teacher_ids.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
@@ -437,8 +448,8 @@ function confirmDelete() {
                         />
                         <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
                     </label>
-                    <p v-if="teachers.length === 0" class="text-xs text-border-figma italic">
-                        Aucun prof dans cette école
+                    <p v-if="addTeacherOptions.length === 0" class="text-xs text-border-figma italic">
+                        Aucun prof rattaché à cette matière
                     </p>
                 </div>
             </div>

@@ -31,8 +31,14 @@ class LessonController extends Controller
 
         $teachers = $school->users()
             ->wherePivot('role', 'teacher')
+            ->with('subjects:id')
             ->orderBy('name')
-            ->get(['users.id', 'users.name']);
+            ->get(['users.id', 'users.name'])
+            ->map(fn ($t) => [
+                'id'          => $t->id,
+                'name'        => $t->name,
+                'subject_ids' => $t->subjects->pluck('id')->values()->all(),
+            ]);
 
         return Inertia::render('admin/Lessons', [
             'school' => $school->only('id', 'name', 'slug'),

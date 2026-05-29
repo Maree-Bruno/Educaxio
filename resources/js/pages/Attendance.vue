@@ -3,6 +3,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AttendanceStatusButton from '@/components/widgets/AttendanceStatusButton.vue';
 import Button from '@/components/widgets/Button.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
@@ -198,13 +199,11 @@ const paginationLinks = computed<PaginationLink[]>(() => {
             </div>
 
             <!-- État vide -->
-            <div v-if="!selectedEntry" class="bg-white px-6 py-16 text-center text-sm font-bold text-border-figma">
-                {{
-                    entries.length === 0
-                        ? 'Aucun cours planifié ce jour'
-                        : 'Sélectionnez un créneau horaire'
-                }}
-            </div>
+            <EmptyState
+                v-if="!selectedEntry"
+                :message="entries.length === 0 ? 'Aucun cours planifié ce jour' : 'Sélectionnez un créneau horaire'"
+                class="bg-white"
+            />
 
             <template v-else>
 
@@ -230,9 +229,7 @@ const paginationLinks = computed<PaginationLink[]>(() => {
                             <option value="Excluded">Exclu</option>
                         </select>
                     </li>
-                    <li v-if="students.length === 0" class="px-4 py-16 text-center text-sm font-bold text-border-figma">
-                        Aucun élève dans ce groupe
-                    </li>
+                    <li v-if="students.length === 0"><EmptyState message="Aucun élève dans ce groupe" /></li>
                 </ul>
 
                 <!-- Desktop -->
@@ -272,9 +269,7 @@ const paginationLinks = computed<PaginationLink[]>(() => {
                             </td>
                         </tr>
                         <tr v-if="students.length === 0">
-                            <td colspan="3" class="px-6 py-16 text-center text-sm font-bold text-border-figma">
-                                Aucun élève dans ce groupe
-                            </td>
+                            <td colspan="3"><EmptyState message="Aucun élève dans ce groupe" /></td>
                         </tr>
                     </tbody>
                 </table>

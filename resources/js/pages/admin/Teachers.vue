@@ -5,6 +5,7 @@ import { ref, watch } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
@@ -115,9 +116,7 @@ function rejectRequest(id: number) {
                     <span v-if="teacher.lessons.length === 0" class="text-xs text-border-figma">Aucun cours attribué</span>
                 </div>
             </li>
-            <li v-if="teachers.total === 0" class="px-4 py-16 text-center text-sm font-bold text-border-figma">
-                Aucun professeur trouvé
-            </li>
+            <li v-if="teachers.total === 0"><EmptyState message="Aucun professeur trouvé" /></li>
         </ul>
 
         <div class="hidden sm:block overflow-x-auto bg-white">
@@ -153,9 +152,7 @@ function rejectRequest(id: number) {
                         </td>
                     </tr>
                     <tr v-if="teachers.total === 0">
-                        <td colspan="4" class="px-6 py-16 text-center text-sm font-bold text-border-figma">
-                            Aucun professeur trouvé
-                        </td>
+                        <td colspan="4"><EmptyState message="Aucun professeur trouvé" /></td>
                     </tr>
                 </tbody>
             </table>

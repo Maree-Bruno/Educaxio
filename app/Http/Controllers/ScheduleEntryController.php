@@ -41,10 +41,7 @@ class ScheduleEntryController extends Controller
 
     public function destroy(ScheduleEntry $scheduleEntry)
     {
-        abort_unless(
-            $scheduleEntry->schedule->user_id === auth()->id(),
-            403
-        );
+        $this->authorize('delete', $scheduleEntry);
 
         $scheduleEntry->delete();
 

@@ -6,6 +6,7 @@ import BaseModal from '@/components/widgets/BaseModal.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import Button from '@/components/widgets/Button.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
@@ -232,9 +233,7 @@ function attachSelected() {
                         </LinkButton>
                     </div>
                 </li>
-                <li v-if="students.total === 0" class="px-4 py-16 text-center text-sm font-bold text-border-figma">
-                    Aucun élève dans cette classe
-                </li>
+                <li v-if="students.total === 0"><EmptyState message="Aucun élève dans cette classe" /></li>
             </ul>
 
             <!-- Desktop : tableau -->
@@ -321,12 +320,7 @@ function attachSelected() {
 
                         <!-- État vide -->
                         <tr v-if="students.total === 0">
-                            <td
-                                colspan="5"
-                                class="px-6 py-16 text-center text-sm font-bold text-border-figma"
-                            >
-                                Aucun élève dans cette classe
-                            </td>
+                            <td colspan="5"><EmptyState message="Aucun élève dans cette classe" /></td>
                         </tr>
                     </tbody>
                 </table>
@@ -402,9 +396,11 @@ function attachSelected() {
             <form v-else class="flex flex-col gap-4" @submit.prevent="attachSelected">
                 <SearchInput id="student-search" v-model="studentSearch" placeholder="Rechercher un élève…" />
                 <div class="flex flex-col divide-y divide-neutral-100 rounded-2xl bg-white overflow-hidden max-h-64 overflow-y-auto">
-                    <div v-if="filteredSchoolStudents.length === 0" class="px-4 py-8 text-center text-sm text-border-figma">
-                        {{ schoolStudents.length === 0 ? "Tous les élèves de l'école sont déjà dans ce groupe." : 'Aucun résultat' }}
-                    </div>
+                    <EmptyState
+                        v-if="filteredSchoolStudents.length === 0"
+                        :message="schoolStudents.length === 0 ? 'Tous les élèves de l\'école sont déjà dans ce groupe.' : 'Aucun résultat'"
+                        size="sm"
+                    />
                     <label
                         v-for="s in filteredSchoolStudents"
                         :key="s.id"

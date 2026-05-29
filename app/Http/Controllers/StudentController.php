@@ -5,16 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 class StudentController extends Controller
 {
-    private function userSchoolIds(): Collection
-    {
-        return auth()->user()->schools()->pluck('schools.id');
-    }
-
     public function index() {}
 
     public function store() {}
@@ -26,6 +20,8 @@ class StudentController extends Controller
             'groups.school:id,name',
             'school:id,name,slug',
         ]);
+
+        $this->authorize('view', $student);
 
         $isAdmin = auth()->user()->schools()
             ->where('schools.id', $student->school_id)
@@ -69,7 +65,7 @@ class StudentController extends Controller
 
     public function update(Request $request, Student $student)
     {
-        abort_unless($this->userSchoolIds()->contains($student->school_id), 403);
+        $this->authorize('update', $student);
 
         $validated = $request->validate([
             'lastname' => ['required', 'string', 'max:100'],

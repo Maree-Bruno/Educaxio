@@ -15,19 +15,6 @@ use Inertia\Inertia;
 
 class ClassListController extends Controller
 {
-    private function userSchoolIds(): Collection
-    {
-        return auth()->user()->schools()->pluck('schools.id');
-    }
-
-    private function requireAdminOf(int $schoolId): void
-    {
-        abort_unless(
-            auth()->user()->schools()->wherePivot('role', 'admin')->where('schools.id', $schoolId)->exists(),
-            403,
-        );
-    }
-
     private function scopedGroupQuery(Collection $adminSchoolIds, Collection $teacherSchoolIds): Builder
     {
         if ($adminSchoolIds->isEmpty() && $teacherSchoolIds->isEmpty()) {
@@ -119,10 +106,7 @@ class ClassListController extends Controller
 
     public function create(Request $request)
     {
-        abort_if(
-            ! auth()->user()->schools()->wherePivot('role', 'admin')->exists(),
-            403,
-        );
+        $this->authorize('create', Group::class);
 
         $adminSchools   = auth()->user()->schools()->wherePivot('role', 'admin')->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
         $adminSchoolIds = $adminSchools->pluck('id');
@@ -172,9 +156,8 @@ class ClassListController extends Controller
             'subject_id'       => ['nullable', 'exists:subjects,id'],
         ]);
 
-        $this->requireAdminOf((int) $validated['school_id']);
-
         $school = School::findOrFail($validated['school_id']);
+        $this->authorize('update', new Group(['school_id' => $school->id]));
 
         $group = Group::create([
             'grade' => $validated['grade'],
@@ -239,11 +222,7 @@ class ClassListController extends Controller
 
     public function attachStudent(Request $request, Group $group)
     {
-        $userSchools = auth()->user()->loadMissing('schools')->schools;
-        abort_unless(
-            $userSchools->contains(fn ($s) => $s->id === $group->school_id && $s->pivot->role === 'admin'),
-            403,
-        );
+        $this->authorize('attachStudent', $group);
 
         if ($request->filled('student_ids')) {
             $validated = $request->validate([
@@ -277,7 +256,7 @@ class ClassListController extends Controller
 
     public function update(Request $request, Group $group)
     {
-        $this->requireAdminOf($group->school_id);
+        $this->authorize('update', $group);
 
         $validated = $request->validate([
             'grade' => ['required', 'string', 'max:20'],
@@ -322,7 +301,7 @@ class ClassListController extends Controller
 
     public function destroy(Group $group)
     {
-        $this->requireAdminOf($group->school_id);
+        $this->authorize('delete', $group);
 
         $group->delete();
 

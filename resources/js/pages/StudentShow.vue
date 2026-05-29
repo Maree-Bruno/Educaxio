@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/vue3';
 import { computed, nextTick, ref } from 'vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import Button from '@/components/widgets/Button.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
@@ -173,12 +174,7 @@ function formatDate(date: string | null): string {
                         </LinkButton>
                     </li>
 
-                    <li
-                        v-if="!student.groups?.length"
-                        class="px-6 py-8 text-center text-sm font-bold text-border-figma"
-                    >
-                        Aucune classe
-                    </li>
+                    <li v-if="!student.groups?.length"><EmptyState message="Aucune classe" size="sm" /></li>
                 </ul>
             </div>
         </section>
@@ -252,9 +248,7 @@ function formatDate(date: string | null): string {
             </table>
         </div>
 
-        <p v-else class="px-6 py-8 text-center text-sm font-bold text-border-figma">
-            Aucune absence enregistrée
-        </p>
+        <EmptyState v-else message="Aucune absence enregistrée" size="sm" />
     </div>
 
     <div v-else class="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white">

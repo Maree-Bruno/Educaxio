@@ -6,6 +6,7 @@ import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
@@ -196,9 +197,7 @@ function confirmDelete() {
                     </Button>
                 </div>
             </li>
-            <li v-if="students.total === 0" class="px-4 py-16 text-center text-sm font-bold text-border-figma">
-                Aucun élève trouvé
-            </li>
+            <li v-if="students.total === 0"><EmptyState message="Aucun élève trouvé" /></li>
         </ul>
         <div class="hidden sm:block overflow-x-auto bg-white">
             <table class="w-full border-collapse text-left">
@@ -254,9 +253,7 @@ function confirmDelete() {
                         </td>
                     </tr>
                     <tr v-if="students.total === 0">
-                        <td colspan="6" class="px-6 py-16 text-center text-sm font-bold text-border-figma">
-                            Aucun élève trouvé
-                        </td>
+                        <td colspan="6"><EmptyState message="Aucun élève trouvé" /></td>
                     </tr>
                 </tbody>
             </table>
