@@ -4,6 +4,12 @@ export interface School {
     slug: string;
 }
 
+export interface UserSummary {
+    id: number;
+    name: string;
+    email: string;
+}
+
 export interface AcademicYear {
     id: number;
     year: string;
