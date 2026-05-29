@@ -5,6 +5,8 @@ withDefaults(
         role: string;
         text: string;
         rating: number;
+        avatarSrc?: string;
+        avatarSrcset?: string;
     }>(),
     { rating: 5 },
 );
@@ -14,7 +16,18 @@ withDefaults(
     <article class="flex flex-col gap-6 rounded-3xl bg-white p-6">
         <h3 class="sr-only">Avis de {{name}}</h3>
         <div class="flex items-center gap-3.5">
-            <div class="size-20 shrink-0 rounded-full bg-zinc-300" />
+            <div class="size-20 shrink-0 overflow-hidden rounded-full bg-zinc-300">
+                <img
+                    v-if="avatarSrc"
+                    :src="avatarSrc"
+                    :srcset="avatarSrcset"
+                    sizes="80px"
+                    :alt="name"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                />
+            </div>
             <div class="flex flex-col gap-1">
                 <p class="text-base font-bold text-black">{{ name }}</p>
                 <p class="text-sm text-black">{{ role }}</p>
