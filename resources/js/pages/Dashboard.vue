@@ -5,25 +5,32 @@ import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
+import Pagination from '@/components/widgets/Pagination.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { approve, reject } from '@/routes/admin/join-requests';
 import { index as lessonsIndex } from '@/routes/admin/lessons';
 import { index as studentsIndex } from '@/routes/admin/students';
 import { index as teachersIndex } from '@/routes/admin/teachers';
-import type { Student, Subject, UserSummary } from '@/types';
+import type { PaginationLink, Student, Subject, UserSummary } from '@/types';
 
 setPageTitle('Dashboard');
 
-interface Stats        { students: number; teachers: number; pending: number; lessons: number }
-interface JoinRequest  { id: number; user: UserSummary; subjects: Subject[] }
+interface Stats       { students: number; teachers: number; pending: number; lessons: number }
+interface JoinRequest { id: number; user: UserSummary; subjects: Subject[] }
+
+type StudentRow = Pick<Student, 'id' | 'firstname' | 'lastname'> & { groups: { id: number; grade: string; name: string; slug: string }[] }
+type TeacherRow = UserSummary & { subjects: Subject[] }
+
+interface DashboardPage<T> { data: T[]; current_page: number; last_page: number; links: PaginationLink[] }
+
 interface School {
     id: number;
     name: string;
     slug: string;
     stats: Stats;
     joinRequests: JoinRequest[];
-    recentStudents: (Pick<Student, 'id' | 'firstname' | 'lastname'> & { groups: { id: number; grade: string; name: string; slug: string }[] })[];
-    teachers: (UserSummary & { subjects: Subject[] })[];
+    recentStudents: DashboardPage<StudentRow>;
+    teachers: DashboardPage<TeacherRow>;
 }
 
 defineProps<{ schools: School[] }>();
@@ -138,24 +145,33 @@ function rejectRequest(school: School, req: JoinRequest) {
                         <LinkButton :href="studentsIndex.url(school)" variant="primary" size="sm" label="Voir tout" />
                     </div>
 
-                    <EmptyState v-if="school.recentStudents.length === 0" message="Aucun élève" class="bg-white" />
+                    <EmptyState v-if="school.recentStudents.data.length === 0" message="Aucun élève" class="bg-white" />
 
-                    <ul v-else class="divide-y divide-neutral-100 bg-white">
-                        <li
-                            v-for="student in school.recentStudents"
-                            :key="student.id"
-                            class="flex items-center justify-between gap-3 px-6 py-4"
-                        >
-                            <span class="truncate text-sm font-medium text-text-base">{{ student.lastname }} {{ student.firstname }}</span>
-                            <div class="flex shrink-0 flex-wrap gap-1">
-                                <Badge
-                                    v-for="g in student.groups"
-                                    :key="g.id"
-                                    :href="`/classlist/${g.slug}`"
-                                >{{ g.grade }}{{ g.name }}</Badge>
-                            </div>
-                        </li>
-                    </ul>
+                    <template v-else>
+                        <ul class="divide-y divide-neutral-100 bg-white">
+                            <li
+                                v-for="student in school.recentStudents.data"
+                                :key="student.id"
+                                class="flex items-center justify-between gap-3 px-6 py-4"
+                            >
+                                <span class="truncate text-sm font-medium text-text-base">{{ student.lastname }} {{ student.firstname }}</span>
+                                <div class="flex shrink-0 flex-wrap gap-1">
+                                    <Badge
+                                        v-for="g in student.groups"
+                                        :key="g.id"
+                                        :href="`/classlist/${g.slug}`"
+                                    >{{ g.grade }}{{ g.name }}</Badge>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="bg-gray-100 px-6 py-3">
+                            <Pagination
+                                :links="school.recentStudents.links"
+                                :current-page="school.recentStudents.current_page"
+                                :last-page="school.recentStudents.last_page"
+                            />
+                        </div>
+                    </template>
                 </div>
 
             </div>
@@ -170,23 +186,32 @@ function rejectRequest(school: School, req: JoinRequest) {
                         <LinkButton :href="teachersIndex.url(school)" variant="primary" size="sm" label="Voir tout" />
                     </div>
 
-                    <EmptyState v-if="school.teachers.length === 0" message="Aucun professeur" class="bg-white" />
+                    <EmptyState v-if="school.teachers.data.length === 0" message="Aucun professeur" class="bg-white" />
 
-                    <ul v-else class="divide-y divide-neutral-100 bg-white">
-                        <li
-                            v-for="teacher in school.teachers"
-                            :key="teacher.id"
-                            class="flex items-center justify-between gap-3 px-6 py-4"
-                        >
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-bold text-text-base">{{ teacher.name }}</p>
-                                <p class="truncate text-xs text-border-figma">{{ teacher.email }}</p>
-                            </div>
-                            <p v-if="teacher.subjects.length" class="shrink-0 text-right text-xs text-stone-400">
-                                {{ teacher.subjects.map(s => s.name).join(', ') }}
-                            </p>
-                        </li>
-                    </ul>
+                    <template v-else>
+                        <ul class="divide-y divide-neutral-100 bg-white">
+                            <li
+                                v-for="teacher in school.teachers.data"
+                                :key="teacher.id"
+                                class="flex items-center justify-between gap-3 px-6 py-4"
+                            >
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-bold text-text-base">{{ teacher.name }}</p>
+                                    <p class="truncate text-xs text-border-figma">{{ teacher.email }}</p>
+                                </div>
+                                <p v-if="teacher.subjects.length" class="shrink-0 text-right text-xs text-stone-400">
+                                    {{ teacher.subjects.map(s => s.name).join(', ') }}
+                                </p>
+                            </li>
+                        </ul>
+                        <div class="bg-gray-100 px-6 py-3">
+                            <Pagination
+                                :links="school.teachers.links"
+                                :current-page="school.teachers.current_page"
+                                :last-page="school.teachers.last_page"
+                            />
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Accès rapide -->
