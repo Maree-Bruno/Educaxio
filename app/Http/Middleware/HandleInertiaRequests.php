@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
             'storage' => [
                 'users' => Storage::disk(config('images.disk'))->url(''),
             ],
+            'csrf_token'  => csrf_token(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

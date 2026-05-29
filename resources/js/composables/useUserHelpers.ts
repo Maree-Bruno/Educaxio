@@ -33,8 +33,11 @@ export const useUserHelpers = () => {
 
         const base = storageUrl();
 
-        return Object.entries(profileImageVariants)
-            .map(([, size]) => `${base}/profile/variants/${size}/${picture} ${size.split('x')[0]}w`)
+        return Object.values(profileImageVariants)
+            .map((size) => {
+                const width = size.split('x')[0];
+                return `${base}/profile/variants/${size}/${picture} ${width}w`;
+            })
             .join(', ');
     };
 

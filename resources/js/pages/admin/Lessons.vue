@@ -1,10 +1,11 @@
 <!--suppress D -->
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import { computed, nextTick, ref } from 'vue';
+import { router, useForm } from '@inertiajs/vue3';
+import { computed, nextTick, ref, watch } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import FilterBar from '@/components/widgets/FilterBar.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
@@ -33,6 +34,7 @@ interface Subject {
 interface Teacher {
     id: number;
     name: string;
+    subject_ids: number[];
 }
 interface Lesson {
     id: number;
@@ -118,11 +120,12 @@ function isGroupOpen(id: number): boolean {
 // ── Modal : gérer les profs d'un cours ───────────────────────────────────
 const teacherModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const editingLesson = ref<Lesson | null>(null);
-const selectedTeacherIds = ref<number[]>([]);
+const teacherForm = useForm({ teacher_ids: [] as number[] });
 
 function openTeachers(lesson: Lesson) {
     editingLesson.value = lesson;
-    selectedTeacherIds.value = lesson.users.map((u) => u.id);
+    teacherForm.teacher_ids = lesson.users.map((u) => u.id);
+    teacherForm.clearErrors();
     nextTick(() => teacherModalRef.value?.open());
 }
 
@@ -131,12 +134,12 @@ function closeTeachers() {
 }
 
 function toggleTeacher(id: number) {
-    const idx = selectedTeacherIds.value.indexOf(id);
+    const idx = teacherForm.teacher_ids.indexOf(id);
 
     if (idx === -1) {
-        selectedTeacherIds.value.push(id);
+        teacherForm.teacher_ids.push(id);
     } else {
-        selectedTeacherIds.value.splice(idx, 1);
+        teacherForm.teacher_ids.splice(idx, 1);
     }
 }
 
@@ -145,17 +148,30 @@ function syncTeachers() {
         return;
     }
 
-    router.put(
-        `${base}/${editingLesson.value.id}/teachers`,
-        { teacher_ids: selectedTeacherIds.value },
-        { preserveScroll: true, onSuccess: closeTeachers },
-    );
+    const lessonId = editingLesson.value.id;
+    teacherForm.put(`${base}/${lessonId}/teachers`, {
+        preserveScroll: true,
+        onSuccess: closeTeachers,
+    });
 }
 
 // ── Modal : ajouter une matière à un groupe ───────────────────────────────
 const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const addingToGroup = ref<Group | null>(null);
-const addForm = ref({ subject_id: '', teacher_ids: [] as number[] });
+const addForm = useForm<{ subject_id: string | number | null; teacher_ids: number[] }>({ subject_id: null, teacher_ids: [] });
+const addSubjectOptions = computed(() =>
+    addingToGroup.value ? availableSubjects(addingToGroup.value).map((s) => ({ value: s.id, label: s.name })) : [],
+);
+
+const addTeacherOptions = computed(() =>
+    addForm.subject_id
+        ? props.teachers.filter((t) => t.subject_ids.includes(Number(addForm.subject_id)))
+        : [],
+);
+
+watch(() => addForm.subject_id, () => {
+    addForm.teacher_ids = [];
+});
 
 function availableSubjects(group: Group) {
     const assigned = props.lessons
@@ -167,7 +183,7 @@ function availableSubjects(group: Group) {
 
 function openAdd(group: Group) {
     addingToGroup.value = group;
-    addForm.value = { subject_id: '', teacher_ids: [] };
+    addForm.reset();
     nextTick(() => addModalRef.value?.open());
 }
 
@@ -176,12 +192,12 @@ function closeAdd() {
 }
 
 function toggleAddTeacher(id: number) {
-    const idx = addForm.value.teacher_ids.indexOf(id);
+    const idx = addForm.teacher_ids.indexOf(id);
 
     if (idx === -1) {
-        addForm.value.teacher_ids.push(id);
+        addForm.teacher_ids.push(id);
     } else {
-        addForm.value.teacher_ids.splice(idx, 1);
+        addForm.teacher_ids.splice(idx, 1);
     }
 }
 
@@ -190,15 +206,9 @@ function submitAdd() {
         return;
     }
 
-    router.post(
-        base,
-        {
-            group_id: addingToGroup.value.id,
-            subject_id: addForm.value.subject_id,
-            teacher_ids: addForm.value.teacher_ids,
-        },
-        { preserveScroll: true, onSuccess: closeAdd },
-    );
+    const groupId = addingToGroup.value.id;
+    addForm.transform((data) => ({ ...data, group_id: groupId }))
+        .post(base, { preserveScroll: true, onSuccess: closeAdd });
 }
 
 // ── Suppression ───────────────────────────────────────────────────────────
@@ -358,17 +368,16 @@ function confirmDelete() {
             </div>
         </div>
 
-        <p
+        <EmptyState
             v-if="groupedLessons.length === 0"
-            class="rounded-2xl bg-white px-6 py-16 text-center text-sm font-bold text-border-figma"
-        >
-            {{ hasActiveFilter ? 'Aucun résultat pour ces filtres' : 'Aucun groupe pour cette école' }}
-        </p>
+            :message="hasActiveFilter ? 'Aucun résultat pour ces filtres' : 'Aucun groupe pour cette école'"
+            class="rounded-2xl bg-white"
+        />
     </div>
 
     <!-- Modal : gérer les profs d'un cours -->
     <BaseModal ref="teacherModalRef">
-        <div v-if="editingLesson" class="flex flex-col gap-5">
+        <form v-if="editingLesson" class="flex flex-col gap-5" @submit.prevent="syncTeachers">
             <div>
                 <h2 class="text-xl font-bold text-black">Profs assignés</h2>
                 <p class="mt-1 text-sm font-bold text-border-figma">
@@ -381,12 +390,12 @@ function confirmDelete() {
                     v-for="teacher in teachers"
                     :key="teacher.id"
                     class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
-                    :class="selectedTeacherIds.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
+                    :class="teacherForm.teacher_ids.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
                 >
                     <input
                         type="checkbox"
                         class="accent-blue"
-                        :checked="selectedTeacherIds.includes(teacher.id)"
+                        :checked="teacherForm.teacher_ids.includes(teacher.id)"
                         @change="toggleTeacher(teacher.id)"
                     />
                     <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
@@ -397,15 +406,15 @@ function confirmDelete() {
             </div>
 
             <div class="flex gap-3">
-                <Button variant="primary" size="sm" label="Enregistrer" class="flex-1" @click="syncTeachers" />
-                <Button variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeTeachers" />
+                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1" :loading="teacherForm.processing" />
+                <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeTeachers" />
             </div>
-        </div>
+        </form>
     </BaseModal>
 
     <!-- Modal : ajouter une matière à un groupe -->
     <BaseModal ref="addModalRef">
-        <div v-if="addingToGroup" class="flex flex-col gap-5">
+        <form v-if="addingToGroup" class="flex flex-col gap-5" @submit.prevent="submitAdd">
             <div>
                 <h2 class="text-xl font-bold text-black">Ajouter une matière</h2>
                 <p class="mt-1 text-sm font-bold text-border-figma">
@@ -413,26 +422,20 @@ function confirmDelete() {
                 </p>
             </div>
 
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold tracking-wider text-border-figma uppercase">Matière</label>
-                <select
-                    v-model="addForm.subject_id"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
-                >
-                    <option value="">Choisir une matière</option>
-                    <option v-for="s in availableSubjects(addingToGroup)" :key="s.id" :value="String(s.id)">
-                        {{ s.name }}
-                    </option>
-                </select>
-            </div>
+            <SelectField
+                v-model="addForm.subject_id"
+                label="Matière"
+                placeholder="Choisir une matière"
+                :options="addSubjectOptions"
+            />
 
-            <div class="flex flex-col gap-2">
+            <div v-if="addForm.subject_id" class="flex flex-col gap-2">
                 <label class="text-xs font-bold tracking-wider text-border-figma uppercase">
                     Profs <span class="font-normal normal-case">(optionnel)</span>
                 </label>
                 <div class="flex flex-col gap-1.5">
                     <label
-                        v-for="teacher in teachers"
+                        v-for="teacher in addTeacherOptions"
                         :key="teacher.id"
                         class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
                         :class="addForm.teacher_ids.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
@@ -445,16 +448,16 @@ function confirmDelete() {
                         />
                         <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
                     </label>
-                    <p v-if="teachers.length === 0" class="text-xs text-border-figma italic">
-                        Aucun prof dans cette école
+                    <p v-if="addTeacherOptions.length === 0" class="text-xs text-border-figma italic">
+                        Aucun prof rattaché à cette matière
                     </p>
                 </div>
             </div>
 
             <div class="flex gap-3">
-                <Button variant="primary" size="sm" label="Enregistrer" class="flex-1" :disabled="!addForm.subject_id" @click="submitAdd" />
-                <Button variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeAdd" />
+                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1" :disabled="!addForm.subject_id" :loading="addForm.processing" />
+                <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeAdd" />
             </div>
-        </div>
+        </form>
     </BaseModal>
 </template>

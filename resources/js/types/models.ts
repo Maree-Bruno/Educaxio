@@ -80,6 +80,31 @@ export interface ScheduleSlot {
     type: 'slot' | 'lunch';
 }
 
+export type SlotRow = Pick<ScheduleSlot, 'id' | 'position' | 'label' | 'type'>;
+
+export interface ScheduleEntry {
+    id: number;
+    lesson_id: number;
+    grade: string;
+    subject: string;
+    room: string | null;
+    school: string;
+}
+
+export interface LessonOption {
+    id: number;
+    group_id: number;
+    subject_id: number;
+    group: {
+        id: number;
+        grade: string;
+        name: string;
+        school_id: number;
+        school: { id: number; name: string };
+    };
+    subject: { id: number; name: string };
+}
+
 export interface Group {
     id: number;
     name: string;

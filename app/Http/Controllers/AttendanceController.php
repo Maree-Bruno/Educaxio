@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Attendance_type;
 use App\Models\Attendance;
 use App\Models\ClassSession;
+use App\Models\Lesson;
 use App\Models\ScheduleEntry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -96,6 +97,9 @@ class AttendanceController extends Controller
             'statuses.*.motive' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $lesson = Lesson::findOrFail($validated['lesson_id']);
+        $this->authorize('create', [Attendance::class, $lesson]);
+
         $session = ClassSession::firstOrCreate(
             ['lesson_id' => $validated['lesson_id'], 'date' => $validated['date']],
         );
@@ -117,6 +121,8 @@ class AttendanceController extends Controller
 
     public function destroy(Attendance $attendance)
     {
+        $this->authorize('delete', $attendance);
+
         $attendance->delete();
 
         return back();

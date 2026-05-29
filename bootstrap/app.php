@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureApprovedSchool;
+use App\Http\Middleware\EnsureSchoolAdmin;
+use App\Http\Middleware\EnsureTeacherRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -23,8 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'school.admin'     => \App\Http\Middleware\EnsureSchoolAdmin::class,
-            'school.approved'  => \App\Http\Middleware\EnsureApprovedSchool::class,
+            'school.admin' => EnsureSchoolAdmin::class,
+            'school.approved' => EnsureApprovedSchool::class,
+            'role.teacher' => EnsureTeacherRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

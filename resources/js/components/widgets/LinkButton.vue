@@ -1,17 +1,17 @@
 <script lang="ts" setup>
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import type { ButtonSize, ButtonVariant } from '@/types';
 
-type Variant = 'primary' | 'secondary' | 'danger';
-type Size = 'sm' | 'md' | 'lg' | 'xs';
+type Variant = Exclude<ButtonVariant, 'ghost'>;
 type Method = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 const props = withDefaults(
     defineProps<{
         href: string;
         variant?: Variant;
-        size?: Size;
-        mobileSize?: Size;
+        size?: ButtonSize;
+        mobileSize?: ButtonSize;
         label?: string;
         iconOnly?: boolean;
         method?: Method;

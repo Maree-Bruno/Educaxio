@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import type { AcademicYear, Subject } from '@/types';
 
@@ -25,9 +26,7 @@ defineProps<{
             <div class="flex items-center border-b border-neutral-300/10 bg-white px-6 py-5">
                 <h2 class="text-xl font-bold text-text-base">Liste des élèves</h2>
             </div>
-            <div class="rounded-b-2xl bg-white px-6 py-16 text-center text-sm font-bold text-border-figma">
-                Créez la classe pour commencer à ajouter des élèves
-            </div>
+            <EmptyState message="Créez la classe pour commencer à ajouter des élèves" class="rounded-b-2xl bg-white" />
         </div>
 
         <!-- Sidebar droite -->

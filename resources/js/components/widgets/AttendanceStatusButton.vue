@@ -1,17 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-
-export type StatusType = 'Absent' | 'Late' | 'Excluded';
-
-const COLORS: Record<string, [string, string]> = {
-    '':         ['bg-green-100',  'text-green-800'],
-    Absent:     ['bg-red-100',    'text-red-800'],
-    Late:       ['bg-yellow-100', 'text-yellow-800'],
-    Excluded:   ['bg-gray-100',   'text-gray-700'],
-};
+import { ATTENDANCE_STATUS_COLORS, type AttendanceStatus } from '@/types';
 
 const props = defineProps<{
-    statusKey: StatusType | null;
+    statusKey: AttendanceStatus | null;
     label:     string;
     title:     string;
     active:    boolean;
@@ -20,7 +12,7 @@ const props = defineProps<{
 
 defineEmits<{ click: [] }>();
 
-const activeClasses = computed(() => COLORS[props.statusKey ?? '']);
+const activeClasses = computed(() => ATTENDANCE_STATUS_COLORS[props.statusKey ?? '']);
 </script>
 
 <template>
