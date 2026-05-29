@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import { register } from '@/routes';
@@ -18,6 +19,9 @@ defineProps<{
     canResetPassword: boolean;
     canRegister: boolean;
 }>();
+
+const page = usePage();
+const serverErrors = computed(() => page.props.errors);
 
 const form = useForm({
     email: '',
@@ -39,13 +43,14 @@ function submit() {
         {{ status }}
     </div>
 
-    <form class="flex flex-col gap-5" @submit.prevent="submit">
+    <form method="post" :action="store.url()" class="flex flex-col gap-5" @submit.prevent="submit">
+        <input type="hidden" name="_token" :value="page.props.csrf_token" />
         <InputLabel
             v-model="form.email"
             label="Adresse email"
             type="email"
             placeholder="email@exemple.com"
-            :error="form.errors.email"
+            :error="form.errors.email || serverErrors.email"
         />
 
         <div class="flex flex-col gap-1">
@@ -54,7 +59,7 @@ function submit() {
                 label="Mot de passe"
                 type="password"
                 placeholder="••••••••••"
-                :error="form.errors.password"
+                :error="form.errors.password || serverErrors.password"
             />
             <Link
                 v-if="canResetPassword"

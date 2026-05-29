@@ -149,11 +149,11 @@ function toggleSlotType(row: SlotRow) {
                     v-for="(day, i) in DAY_NAMES"
                     :key="day"
                     class="flex h-10 items-center justify-center border-b border-r border-zinc-400/10 last:rounded-tr-3xl"
-                    :class="todayDow >= 1 && todayDow <= 5 && todayDow === i + 1 && 'bg-zinc-400/10'"
+                    :class="todayDow === i + 1 && 'bg-zinc-400/10'"
                 >
                     <span
                         class="text-base font-extrabold leading-4"
-                        :class="todayDow >= 1 && todayDow <= 5 && todayDow === i + 1 ? 'text-blue' : 'text-text-base'"
+                        :class="todayDow === i + 1 ? 'text-blue' : 'text-text-base'"
                     >
                         {{ day }}
                     </span>

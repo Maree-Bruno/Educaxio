@@ -299,7 +299,7 @@ const testimonials: Testimonial[] = [
                     </div>
                     <div class="aspect-square w-full shrink-0 overflow-hidden rounded-3xl lg:size-116.25">
                         <img
-                            src="/images/blackboard-1024w.jpg"
+                            src="/images/blackboard-640w.jpg"
                             srcset="/images/blackboard-320w.jpg 320w, /images/blackboard-640w.jpg 640w, /images/blackboard-768w.jpg 768w, /images/blackboard-1024w.jpg 1024w, /images/blackboard-1280w.jpg 1280w, /images/blackboard-1536w.jpg 1536w"
                             sizes="(max-width: 1024px) calc(100vw - 4rem), 465px"
                             alt="Tableau de classe"

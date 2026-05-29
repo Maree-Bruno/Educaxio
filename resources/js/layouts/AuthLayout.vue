@@ -34,12 +34,22 @@ withDefaults(
                     Simplifiez votre gestion de classe avec une clarté éditoriale sans précédent.
                 </p>
 
-                <div class="w-full h-64 rounded-[20px] bg-zinc-300" />
+                <div class="w-full h-64 overflow-hidden rounded-[20px]">
+                    <img
+                        src="/images/blackboard-1024w.jpg"
+                        srcset="/images/blackboard-320w.jpg 320w, /images/blackboard-640w.jpg 640w, /images/blackboard-768w.jpg 768w, /images/blackboard-1024w.jpg 1024w, /images/blackboard-1280w.jpg 1280w, /images/blackboard-1536w.jpg 1536w"
+                        sizes="588px"
+                        alt="Tableau de classe"
+                        class="h-full w-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                    />
+                </div>
             </div>
 
             <div class="w-full max-w-125 rounded-[20px] bg-white px-10 py-15 flex flex-col gap-7 shadow-sm">
                 <div v-if="title || description" class="flex flex-col gap-2">
-                    <h1 v-if="title" class="text-3xl font-bold text-text-base">{{ title }}</h1>
+                    <h2 v-if="title" class="text-3xl font-bold text-text-base">{{ title }}</h2>
                     <p v-if="description" class="text-base text-text-base">{{ description }}</p>
                 </div>
 

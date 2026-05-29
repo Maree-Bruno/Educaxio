@@ -29,14 +29,12 @@ const props = defineProps<{
 
 const form = useForm({});
 
-const localStatuses = ref<Record<number, AttendanceStatus | null>>(
-    Object.fromEntries(
-        props.students.map((s) => [
-            s.id,
-            (props.statuses.find((st) => st.student_id === s.id)?.type as AttendanceStatus) ?? null,
-        ]),
-    ),
-);
+const initialStatuses: Record<number, AttendanceStatus | null> = {};
+for (const s of props.students) {
+    const found = props.statuses.find((st) => st.student_id === s.id);
+    initialStatuses[s.id] = (found?.type as AttendanceStatus) ?? null;
+}
+const localStatuses = ref<Record<number, AttendanceStatus | null>>(initialStatuses);
 
 function nav(params: Record<string, string | number | null | undefined>) {
     router.get('/attendances', params, { preserveState: false });

@@ -53,6 +53,12 @@ const applyFiltersDebounced = useDebounceFn(applyFilters, 300);
 
 watch(search, applyFiltersDebounced);
 
+function rowNumber(index: number): string {
+    const position = (props.students.current_page - 1) * props.students.per_page + index + 1;
+    const number = sortDir.value === 'desc' ? props.students.total - position + 1 : position;
+    return String(number).padStart(2, '0');
+}
+
 function sortBy(col: string) {
     if (sortCol.value === col) {
         sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
@@ -166,11 +172,7 @@ function confirmDelete() {
             >
                 <div class="flex min-w-0 items-start gap-3">
                     <span class="mt-0.5 w-5 shrink-0 text-xs text-stone-400">
-                        {{
-                            sortDir === 'desc'
-                                ? String(students.total - (students.current_page - 1) * students.per_page - index).padStart(2, '0')
-                                : String((students.current_page - 1) * students.per_page + index + 1).padStart(2, '0')
-                        }}
+                        {{ rowNumber(index) }}
                     </span>
                     <div class="flex min-w-0 flex-col gap-1">
                         <span class="truncate text-base font-medium text-text-base">
