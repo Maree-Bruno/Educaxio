@@ -3,6 +3,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AttendanceStatusButton from '@/components/widgets/AttendanceStatusButton.vue';
 import Button from '@/components/widgets/Button.vue';
+import DateField from '@/components/widgets/DateField.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
@@ -38,10 +39,6 @@ const localStatuses = ref<Record<number, AttendanceStatus | null>>(initialStatus
 
 function nav(params: Record<string, string | number | null | undefined>) {
     router.get('/attendances', params, { preserveState: false });
-}
-
-function changeDate(e: Event) {
-    nav({ date: (e.target as HTMLInputElement).value });
 }
 
 function toggleStatus(studentId: number, status: AttendanceStatus) {
@@ -120,15 +117,13 @@ const paginationLinks = computed<PaginationLink[]>(() => {
     <div class="rounded-2xl bg-white px-6 py-5 shadow-sm outline -outline-offset-1 outline-neutral-300/10">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-6">
 
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase leading-4 tracking-wide text-border-figma">Date</label>
-                <input
-                    type="date"
-                    :value="date"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline -outline-offset-1 outline-border-figma focus:outline-blue"
-                    @change="changeDate"
-                />
-            </div>
+            <DateField
+                label="Date"
+                :model-value="date"
+                :max="new Date().toISOString().slice(0, 10)"
+                class="w-full"
+                @update:model-value="val => nav({ date: val })"
+            />
 
             <SelectField
                 label="Heure de cours"

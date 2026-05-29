@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lesson;
+use App\Models\ScheduleEntry;
+use App\Models\ScheduleSlot;
 use App\Models\SchoolJoinRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,6 +19,10 @@ class DashboardController extends Controller
         $adminSchools = $user->schools()
             ->wherePivot('role', 'admin')
             ->get(['schools.id', 'schools.name', 'schools.slug']);
+
+        if ($adminSchools->isEmpty()) {
+            return $this->teacherDashboard($user);
+        }
 
         $schools = $adminSchools->map(function ($school) {
             $studentsCount = $school->students()->count();
@@ -97,6 +104,76 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'schools' => $schools,
+        ]);
+    }
+
+    private function teacherDashboard($user)
+    {
+        $request = request();
+        $today = $request->filled('date') ? Carbon::parse($request->date) : now();
+        $dow = $today->dayOfWeekIso;
+
+        // Entrées du prof aujourd'hui
+        $todayEntries = ScheduleEntry::where('schedule_entries.day_of_week', $dow)
+            ->whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
+            ->join('schedule_slots', 'schedule_entries.schedule_slot_id', '=', 'schedule_slots.id')
+            ->orderBy('schedule_slots.position')
+            ->select('schedule_entries.*')
+            ->with([
+                'lesson:id,group_id,subject_id',
+                'lesson.group:id,grade,name,slug,school_id',
+                'lesson.group.school:id,name,slug',
+                'lesson.subject:id,name',
+            ])
+            ->get();
+
+        $entriesBySlotId = $todayEntries->keyBy('schedule_slot_id');
+
+        $slots = ScheduleSlot::orderBy('position')
+            ->get(['id', 'position', 'label', 'type'])
+            ->map(function ($s) use ($entriesBySlotId) {
+                $entry = $entriesBySlotId->get($s->id);
+
+                return [
+                    'id' => $s->id,
+                    'position' => $s->position,
+                    'label' => $s->label,
+                    'type' => $s->type,
+                    'entry' => $entry ? [
+                        'id' => $entry->id,
+                        'subject' => $entry->lesson->subject->name,
+                        'group' => $entry->lesson->group->grade.$entry->lesson->group->name,
+                        'groupSlug' => $entry->lesson->group->slug,
+                        'school' => $entry->lesson->group->school->name,
+                        'room' => $entry->classroom,
+                    ] : null,
+                ];
+            });
+
+        $groups = $user->lessons()
+            ->with([
+                'group:id,grade,name,slug,school_id',
+                'group.school:id,name',
+                'subject:id,name',
+            ])
+            ->get()
+            ->groupBy('group_id')
+            ->map(fn ($lessons) => [
+                'id' => $lessons->first()->group->id,
+                'grade' => $lessons->first()->group->grade,
+                'name' => $lessons->first()->group->name,
+                'slug' => $lessons->first()->group->slug,
+                'school' => $lessons->first()->group->school->name,
+                'subjects' => $lessons->map(fn ($l) => $l->subject->name)->unique()->values(),
+            ])
+            ->values();
+
+        return Inertia::render('TeacherDashboard', [
+            'slots' => $slots,
+            'groups' => $groups,
+            'date' => $today->locale('fr')->isoFormat('dddd D MMMM YYYY'),
+            'selectedDate' => $today->toDateString(),
+            'user' => $user,
         ]);
     }
 }

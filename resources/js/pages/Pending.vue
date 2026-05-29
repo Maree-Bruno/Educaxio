@@ -5,19 +5,20 @@ import Badge from '@/components/widgets/Badge.vue';
 import SchoolJoinForm from '@/components/widgets/SchoolJoinForm.vue';
 import SubjectPicker from '@/components/widgets/SubjectPicker.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { User } from '@/types';
 
 interface School   { id: number; name: string }
 interface Request_ { id: number; school: School; status: 'pending' | 'approved' | 'rejected' }
 
-defineProps<{
+const {user} = defineProps<{
     requests:     Request_[];
     schools:      School[];
     allSubjects:  { id: number; name: string }[];
     userSubjects: number[];
+    user : User;
 }>();
 
-setPageTitle('En attente de validation');
-
+setPageTitle(`Bonjour ${user.name}`);
 const addingSchool = ref(false);
 
 const statusLabel: Record<string, string> = {
