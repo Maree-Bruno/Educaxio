@@ -9,12 +9,13 @@ import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Edit from '@/components/widgets/svg/Edit.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
+import { formatDate } from '@/composables/useFormatter';
 import { setPageTitle } from '@/composables/usePageTitle';
-import type { Student } from '@/types';
+import { ATTENDANCE_STATUS_COLORS, ATTENDANCE_STATUS_LABELS, type AttendanceStatus, type Student } from '@/types';
 
 interface AbsenceRecord {
     date: string | null;
-    type: 'Absent' | 'Late' | 'Excluded';
+    type: AttendanceStatus;
     subject: string | null;
     group: string | null;
     time: string | null;
@@ -73,25 +74,6 @@ function save() {
             preserveScroll: true,
             onSuccess: () => modalRef.value?.close(),
         });
-}
-const TYPE_LABELS: Record<string, string> = {
-    Absent:   'Absent',
-    Late:     'Arrivée tardive',
-    Excluded: 'Exclu',
-};
-
-const TYPE_CLASSES: Record<string, string> = {
-    Absent:   'bg-red-100 text-red-800',
-    Late:     'bg-yellow-100 text-yellow-800',
-    Excluded: 'bg-gray-100 text-gray-700',
-};
-
-function formatDate(date: string | null): string {
-    if (!date) {
-        return '—';
-    }
-
-    return new Date(date).toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 </script>
 
@@ -206,9 +188,9 @@ function formatDate(date: string | null): string {
                 </div>
                 <span
                     class="shrink-0 rounded-lg px-2 py-1 text-xs font-bold"
-                    :class="TYPE_CLASSES[record.type]"
+                    :class="ATTENDANCE_STATUS_COLORS[record.type].join(' ')"
                 >
-                    {{ TYPE_LABELS[record.type] ?? record.type }}
+                    {{ ATTENDANCE_STATUS_LABELS[record.type] ?? record.type }}
                 </span>
             </li>
         </ul>
@@ -238,9 +220,9 @@ function formatDate(date: string | null): string {
                         <td class="px-6 py-4">
                             <span
                                 class="rounded-lg px-2 py-1 text-xs font-bold"
-                                :class="TYPE_CLASSES[record.type]"
+                                :class="ATTENDANCE_STATUS_COLORS[record.type].join(' ')"
                             >
-                                {{ TYPE_LABELS[record.type] ?? record.type }}
+                                {{ ATTENDANCE_STATUS_LABELS[record.type] ?? record.type }}
                             </span>
                         </td>
                     </tr>

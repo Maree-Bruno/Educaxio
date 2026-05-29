@@ -7,7 +7,7 @@ import EmptyState from '@/components/widgets/EmptyState.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
-import type { PaginationLink } from '@/types/models';
+import { attendanceStatusClasses, type AttendanceStatus, type PaginationLink } from '@/types';
 
 setPageTitle('Présences');
 
@@ -27,15 +27,13 @@ const props = defineProps<{
     lastSavedAt:    string | null;
 }>();
 
-type StatusType = 'Absent' | 'Late' | 'Excluded';
-
 const form = useForm({});
 
-const localStatuses = ref<Record<number, StatusType | null>>(
+const localStatuses = ref<Record<number, AttendanceStatus | null>>(
     Object.fromEntries(
         props.students.map((s) => [
             s.id,
-            (props.statuses.find((st) => st.student_id === s.id)?.type as StatusType) ?? null,
+            (props.statuses.find((st) => st.student_id === s.id)?.type as AttendanceStatus) ?? null,
         ]),
     ),
 );
@@ -48,12 +46,12 @@ function changeDate(e: Event) {
     nav({ date: (e.target as HTMLInputElement).value });
 }
 
-function toggleStatus(studentId: number, status: StatusType) {
+function toggleStatus(studentId: number, status: AttendanceStatus) {
     localStatuses.value[studentId] = localStatuses.value[studentId] === status ? null : status;
 }
 
 function setStatusFromSelect(studentId: number, value: string) {
-    localStatuses.value[studentId] = (value as StatusType) || null;
+    localStatuses.value[studentId] = (value as AttendanceStatus) || null;
 }
 
 function setAllPresent() {
@@ -82,7 +80,7 @@ function save() {
 
 const journal = ref('');
 
-const STATUS_BUTTONS: { key: StatusType | null; label: string; title: string }[] = [
+const STATUS_BUTTONS: { key: AttendanceStatus | null; label: string; title: string }[] = [
     { key: null,       label: 'P',  title: 'Présent'         },
     { key: 'Absent',   label: 'A',  title: 'Absent'          },
     { key: 'Late',     label: 'AT', title: 'Arrivée tardive' },
@@ -96,21 +94,6 @@ const entryOptions = computed(() =>
     })),
 );
 
-function selectClass(status: StatusType | null): string {
-    if (status === 'Absent') {
-        return 'bg-red-100 text-red-800';
-    }
-
-    if (status === 'Late') {
-        return 'bg-yellow-100 text-yellow-800';
-    }
-
-    if (status === 'Excluded') {
-        return 'bg-gray-100 text-gray-700';
-    }
-
-    return 'bg-green-100 text-green-800';
-}
 
 const isEditable = computed(() => props.date <= new Date().toISOString().slice(0, 10));
 
@@ -219,7 +202,7 @@ const paginationLinks = computed<PaginationLink[]>(() => {
                         <select
                             :disabled="!isEditable"
                             class="shrink-0 appearance-none rounded-xl px-3 py-2 text-xs font-bold transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-                            :class="selectClass(localStatuses[student.id])"
+                            :class="attendanceStatusClasses(localStatuses[student.id])"
                             :value="localStatuses[student.id] ?? ''"
                             @change="setStatusFromSelect(student.id, ($event.target as HTMLSelectElement).value)"
                         >

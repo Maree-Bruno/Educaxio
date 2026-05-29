@@ -2,47 +2,18 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
-
-interface SlotRow {
-    id: number;
-    position: number;
-    label: string;
-    type: 'slot' | 'lunch';
-}
-
-interface EntryData {
-    id: number;
-    lesson_id: number;
-    grade: string;
-    subject: string;
-    room: string | null;
-    school: string;
-}
-
-interface LessonOption {
-    id: number;
-    group_id: number;
-    subject_id: number;
-    group: {
-        id: number;
-        grade: string;
-        name: string;
-        school_id: number;
-        school: { id: number; name: string };
-    };
-    subject: { id: number; name: string };
-}
+import type { LessonOption, ScheduleEntry, SlotRow } from '@/types';
 
 const props = defineProps<{
     open: boolean;
     scheduleSlot: SlotRow | null;
     dayOfWeek: number;
     dayLabel: string;
-    entry: EntryData | null;
+    entry: ScheduleEntry | null;
     lessons: LessonOption[];
     schedules: { id: number; school_id: number }[];
     slots: SlotRow[];
-    entries: Record<number, Record<number, EntryData>>;
+    entries: Record<number, Record<number, ScheduleEntry>>;
 }>();
 
 const emit = defineEmits<{
@@ -71,7 +42,7 @@ const syncing          = ref(false);
 const selectedDayLabel = computed(() => DAY_OPTIONS.find((d) => d.value === selectedDay.value)?.label ?? '');
 const selectedSlot     = computed(() => props.slots.find((s) => s.id === selectedSlotId.value) ?? null);
 const slotOptions      = computed(() => props.slots.filter((s) => s.type === 'slot'));
-const currentEntry     = computed<EntryData | null>(() => {
+const currentEntry     = computed<ScheduleEntry | null>(() => {
     const slot = selectedSlot.value;
     if (!slot) return null;
     return props.entries?.[slot.position]?.[selectedDay.value] ?? null;
@@ -122,7 +93,7 @@ watch(filterClasse, () => {
     selectedLesson.value = '';
 });
 
-async function syncFormFromEntry(entry: EntryData | null) {
+async function syncFormFromEntry(entry: ScheduleEntry | null) {
     form.classroom = entry?.room ?? '';
     if (entry) {
         const lesson = props.lessons.find((l) => l.id === entry.lesson_id);

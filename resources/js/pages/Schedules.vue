@@ -5,37 +5,13 @@ import Button from '@/components/widgets/Button.vue';
 import ScheduleSlotModal from '@/components/widgets/ScheduleSlotModal.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
-import type { AcademicYear, School } from '@/types';
+import type { AcademicYear, LessonOption, ScheduleEntry, School, SlotRow } from '@/types';
 
 setPageTitle('Horaires');
 
-interface SlotRow {
-    id: number;
-    position: number;
-    label: string;
-    type: 'slot' | 'lunch';
-}
-
-interface EntryData {
-    id: number;
-    lesson_id: number;
-    grade: string;
-    subject: string;
-    room: string | null;
-    school: string;
-}
-
-interface LessonOption {
-    id: number;
-    group_id: number;
-    subject_id: number;
-    group: { id: number; grade: string; name: string; school_id: number; school: { id: number; name: string } };
-    subject: { id: number; name: string };
-}
-
 const props = defineProps<{
     slots: SlotRow[];
-    entries: Record<number, Record<number, EntryData>>;
+    entries: Record<number, Record<number, ScheduleEntry>>;
     lessons: LessonOption[];
     schools: Pick<School, 'id' | 'name' | 'slug'>[];
     schedules: { id: number; school_id: number; school: string | null }[];
@@ -63,7 +39,7 @@ interface ModalState {
     slot: SlotRow;
     dayOfWeek: number;
     dayLabel: string;
-    entry: EntryData | null;
+    entry: ScheduleEntry | null;
 }
 
 const modalState = ref<ModalState | null>(null);

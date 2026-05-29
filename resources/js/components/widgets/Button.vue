@@ -1,14 +1,13 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
+import type { ButtonSize, ButtonVariant } from '@/types';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
-type Size = 'sm' | 'md' | 'lg' | 'xs';
 type ButtonType = 'button' | 'submit' | 'reset';
 
 const props = withDefaults(
     defineProps<{
-        variant?: Variant;
-        size?: Size;
+        variant?: ButtonVariant;
+        size?: ButtonSize;
         label?: string;
         disabled?: boolean;
         loading?: boolean;
