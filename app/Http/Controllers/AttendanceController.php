@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\ComputesNextOccurrence;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\ClassSession;
+use App\Models\LessonNote;
 use App\Models\Lesson;
 use App\Models\ScheduleEntry;
 use Carbon\Carbon;
@@ -79,6 +80,9 @@ class AttendanceController extends Controller
 
             $nextAssignmentDate = $this->nextOccurrence($lesson);
 
+            $lessonNote = LessonNote::where('lesson_id', $selected->lesson_id)
+                ->whereDate('date', $date)->first();
+
             $schedulePattern = $lesson->scheduleEntries
                 ->sortBy('scheduleSlot.position')
                 ->map(fn ($e) => [
@@ -104,7 +108,11 @@ class AttendanceController extends Controller
             'statuses' => $statuses,
             'attendanceId' => $attendanceId,
             'lastSavedAt' => $session?->updated_at?->format('d/m/Y H:i'),
-            'classSession' => $session ? ['id' => $session->id, 'notes' => $session->notes] : null,
+            'lessonNote'  => isset($lessonNote) && $lessonNote ? [
+                'id'      => $lessonNote->id,
+                'notes'   => $lessonNote->notes,
+                'savedAt' => $lessonNote->updated_at?->format('d/m/Y H:i'),
+            ] : null,
             'lessonId' => $selected?->lesson_id,
             'assignments' => $assignments->map(fn ($a) => [
                 'id' => $a->id,

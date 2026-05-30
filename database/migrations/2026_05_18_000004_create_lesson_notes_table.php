@@ -8,10 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('classsessions', function (Blueprint $table) {
+        Schema::create('lesson_notes', function (Blueprint $table) {
             $table->id();
             $table->date('date');
             $table->foreignId('lesson_id')->constrained('lessons')->cascadeOnDelete();
+            $table->text('notes');
             $table->timestamps();
 
             $table->unique(['lesson_id', 'date']);
@@ -20,6 +21,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('classsessions');
+        Schema::dropIfExists('lesson_notes');
     }
 };

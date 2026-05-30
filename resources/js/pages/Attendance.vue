@@ -21,7 +21,7 @@ interface Entry {
 }
 interface Student   { id: number; lastname: string; firstname: string }
 interface Status    { student_id: number; type: string; motive: string | null }
-interface ClassSessionData { id: number; notes: string | null }
+interface LessonNoteData { id: number; notes: string | null; savedAt: string | null }
 
 const props = defineProps<{
     entries:            Entry[];
@@ -33,7 +33,7 @@ const props = defineProps<{
     statuses:           Status[];
     attendanceId:       number | null;
     lastSavedAt:        string | null;
-    classSession:       ClassSessionData | null;
+    lessonNote:         LessonNoteData | null;
     lessonId:           number | null;
     assignments:        Assignment[];
     nextAssignmentDate: string | null;
@@ -105,11 +105,10 @@ const entryOptions = computed(() =>
         <!-- Sidebar -->
         <div class="flex w-full shrink-0 flex-col gap-8 xl:w-72">
             <AttendanceJournal
-                :class-session="classSession"
+                :lesson-note="lessonNote"
                 :lesson-id="lessonId"
                 :date="date"
                 :selected-entry="selectedEntry"
-                :last-saved-at="lastSavedAt"
             />
 
             <AttendanceAssignments

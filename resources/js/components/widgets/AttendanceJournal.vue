@@ -4,15 +4,14 @@ import { useDebounceFn } from '@vueuse/core';
 import { ref, watch } from 'vue';
 
 const props = defineProps<{
-    classSession: { id: number; notes: string | null } | null;
-    lessonId: number | null;
-    date: string;
+    lessonNote:    { id: number; notes: string | null; savedAt: string | null } | null;
+    lessonId:      number | null;
+    date:          string;
     selectedEntry: number | null;
-    lastSavedAt: string | null;
 }>();
 
-const journalNotes = ref(props.classSession?.notes ?? '');
-watch(() => props.classSession, (s) => { journalNotes.value = s?.notes ?? ''; });
+const journalNotes = ref(props.lessonNote?.notes ?? '');
+watch(() => props.lessonNote, (n) => { journalNotes.value = n?.notes ?? ''; });
 
 const form = useForm({ lesson_id: 0, date: '', notes: '' });
 
@@ -21,7 +20,7 @@ const save = useDebounceFn(() => {
     form.lesson_id = props.lessonId;
     form.date = props.date;
     form.notes = journalNotes.value;
-    form.post('/class-sessions/notes', { preserveState: true, preserveScroll: true });
+    form.post('/lesson-notes', { preserveState: true, preserveScroll: true });
 }, 800);
 </script>
 
@@ -30,7 +29,7 @@ const save = useDebounceFn(() => {
         <div class="flex items-center justify-between">
             <h3 class="text-base font-bold text-stone-800">Journal de classe</h3>
             <span v-if="form.processing" class="text-[10px] text-stone-400">Sauvegarde…</span>
-            <span v-else-if="lastSavedAt" class="text-[10px] text-stone-400">{{ lastSavedAt }}</span>
+            <span v-else-if="lessonNote?.savedAt" class="text-[10px] text-stone-400">{{ lessonNote.savedAt }}</span>
         </div>
         <textarea
             v-model="journalNotes"

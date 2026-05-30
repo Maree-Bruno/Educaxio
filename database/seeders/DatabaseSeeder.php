@@ -9,6 +9,7 @@ use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\ClassSession;
 use App\Models\Group;
+use App\Models\LessonNote;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
@@ -265,11 +266,16 @@ class DatabaseSeeder extends Seeder
                 if ($dows->contains($date->dayOfWeekIso)) {
                     $session = ClassSession::create([
                         'lesson_id' => $lesson->id,
-                        'date' => $date->toDateString(),
-                        'notes' => fake()->boolean(40)
-                            ? fake()->randomElement($journalNotes)
-                            : null,
+                        'date'      => $date->toDateString(),
                     ]);
+
+                    if (fake()->boolean(40)) {
+                        LessonNote::create([
+                            'lesson_id' => $lesson->id,
+                            'date'      => $date->toDateString(),
+                            'notes'     => fake()->randomElement($journalNotes),
+                        ]);
+                    }
 
                     $attendance = Attendance::create([
                         'classsession_id' => $session->id,

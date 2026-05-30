@@ -16,7 +16,6 @@ class ClassSession extends Model
     protected $fillable = [
         'date',
         'lesson_id',
-        'notes',
     ];
 
     public function lesson(): BelongsTo

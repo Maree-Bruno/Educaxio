@@ -7,7 +7,7 @@ use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\ClassSessionController;
+use App\Http\Controllers\LessonNoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClassListController;
 use App\Http\Controllers\PendingController;
@@ -73,7 +73,7 @@ Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
         Route::post('attendances', [AttendanceController::class, 'store'])->name('attendances.store');
         Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy');
 
-        Route::post('class-sessions/notes', [ClassSessionController::class, 'updateNotes'])->name('class-sessions.notes');
+        Route::post('lesson-notes', [LessonNoteController::class, 'store'])->name('lesson-notes.store');
 
         Route::post('assignments', [AssignmentController::class, 'store'])->name('assignments.store');
         Route::patch('assignments/{assignment}', [AssignmentController::class, 'update'])->name('assignments.update');

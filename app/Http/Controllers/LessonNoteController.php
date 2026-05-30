@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ClassSession;
+use App\Models\LessonNote;
 use Illuminate\Http\Request;
 
-class ClassSessionController extends Controller
+class LessonNoteController extends Controller
 {
-    public function updateNotes(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'lesson_id' => ['required', 'exists:lessons,id'],
@@ -15,11 +15,10 @@ class ClassSessionController extends Controller
             'notes'     => ['nullable', 'string', 'max:10000'],
         ]);
 
-        $session = ClassSession::firstOrCreate(
+        LessonNote::updateOrCreate(
             ['lesson_id' => $validated['lesson_id'], 'date' => $validated['date']],
+            ['notes'     => $validated['notes'] ?? ''],
         );
-
-        $session->update(['notes' => $validated['notes'] ?? null]);
 
         return back();
     }

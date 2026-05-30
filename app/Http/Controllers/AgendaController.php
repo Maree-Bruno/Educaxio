@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assignment;
-use App\Models\ClassSession;
+use App\Models\LessonNote;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -43,25 +43,24 @@ class AgendaController extends Controller
             )->keys()->toArray()
             : null;
 
-        $journalEntries = ClassSession::whereIn('lesson_id', $lessonIds)
-            ->whereNotNull('notes')
+        $journalEntries = LessonNote::whereIn('lesson_id', $lessonIds)
             ->when($search, fn ($q) => $q->where(fn ($q) => $q
                 ->where('notes', 'like', "%{$search}%")
                 ->orWhereIn('lesson_id', $searchLessonIds ?? [])
             ))
             ->orderByDesc('date')
             ->paginate(25)
-            ->through(function ($s) use ($lessons) {
-                $lesson = $lessons[$s->lesson_id];
+            ->through(function ($n) use ($lessons) {
+                $lesson = $lessons[$n->lesson_id];
 
                 return [
-                    'id' => $s->id,
-                    'date' => $s->date->toDateString(),
-                    'notes' => $s->notes,
-                    'group' => $lesson->group->grade.$lesson->group->name,
+                    'id'         => $n->id,
+                    'date'       => $n->date->toDateString(),
+                    'notes'      => $n->notes,
+                    'group'      => $lesson->group->grade.$lesson->group->name,
                     'group_slug' => $lesson->group->slug,
-                    'subject' => $lesson->subject->name,
-                    'school' => $lesson->group->school->name,
+                    'subject'    => $lesson->subject->name,
+                    'school'     => $lesson->group->school->name,
                 ];
             });
 
