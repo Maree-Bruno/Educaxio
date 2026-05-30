@@ -7,7 +7,7 @@ import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import type { AcademicYear, LessonOption, ScheduleEntry, School, SlotRow } from '@/types';
 
-setPageTitle('Horaires');
+setPageTitle('Horaire hebdomadaire annuel');
 
 const props = defineProps<{
     slots: SlotRow[];
@@ -23,7 +23,6 @@ const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'];
 const todayDow = new Date().getDay(); // 0=dim, 1=lun … 5=ven, 6=sam
 const lastRowIndex = computed(() => props.slots.length - 1);
 
-// Year filter
 const filterYear = ref<string | null>(props.filters.year ?? null);
 const yearOptions = props.academicYears.map((y) => ({ value: String(y.id), label: y.year }));
 
@@ -31,10 +30,8 @@ watch(filterYear, () => {
     router.get('/schedules', { year: filterYear.value ?? undefined }, { preserveState: true, replace: true });
 });
 
-// Mobile: selected day (1=lun … 5=ven), defaults to today or Monday
 const selectedDay = ref(todayDow >= 1 && todayDow <= 5 ? todayDow : 1);
 
-// Modal
 interface ModalState {
     slot: SlotRow;
     dayOfWeek: number;
@@ -59,7 +56,6 @@ function toggleSlotType(row: SlotRow) {
 </script>
 
 <template>
-    <!-- Year filter + actions -->
     <div class="mb-6 flex flex-wrap items-end gap-4">
         <SelectField
             id="filter-year"
@@ -69,22 +65,18 @@ function toggleSlotType(row: SlotRow) {
             class="w-48"
         />
         <div class="ml-auto flex items-center gap-4">
-            <Button variant="primary" size="sm">Importer</Button>
             <Button variant="primary" size="sm">Exporter</Button>
         </div>
     </div>
 
-    <!-- Empty state -->
     <div v-if="slots.length === 0" class="flex items-center justify-center rounded-3xl bg-white py-20">
         <p class="font-bold text-text-base">Aucun horaire configuré</p>
     </div>
 
     <div v-else>
 
-        <!-- ── Mobile / tablette portrait : vue jour par jour ──────────────── -->
         <div class="md:hidden">
 
-            <!-- Sélecteur de jour -->
             <div class="mb-4 flex gap-1.5">
                 <button
                     v-for="(day, i) in DAY_NAMES"
@@ -99,11 +91,9 @@ function toggleSlotType(row: SlotRow) {
                 </button>
             </div>
 
-            <!-- Liste des créneaux -->
             <div class="overflow-hidden rounded-3xl bg-bg-primary">
                 <template v-for="(row, rowIndex) in slots" :key="row.position">
 
-                    <!-- Pause -->
                     <div
                         v-if="row.type === 'lunch'"
                         class="flex items-center justify-center border-b border-zinc-400/10 bg-white py-3"
@@ -112,7 +102,6 @@ function toggleSlotType(row: SlotRow) {
                         <span class="text-xs font-bold uppercase tracking-wider text-zinc-400">Pause</span>
                     </div>
 
-                    <!-- Créneau cours -->
                     <div
                         v-else
                         class="flex cursor-pointer items-center gap-3 border-b border-zinc-400/10 bg-white px-4 py-3 transition-colors hover:bg-blue/5"
@@ -139,10 +128,8 @@ function toggleSlotType(row: SlotRow) {
             </div>
         </div>
 
-        <!-- ── Desktop / tablette paysage : grille semaine complète ────────── -->
         <div class="hidden overflow-hidden rounded-3xl bg-bg-primary md:block">
 
-            <!-- Header : jours -->
             <div class="grid" style="grid-template-columns: 80px repeat(5, 1fr)">
                 <div class="self-stretch rounded-tl-3xl bg-blue"></div>
                 <div
@@ -160,10 +147,8 @@ function toggleSlotType(row: SlotRow) {
                 </div>
             </div>
 
-            <!-- Corps -->
             <template v-for="(row, rowIndex) in slots" :key="row.position">
 
-                <!-- Créneau cours -->
                 <div
                     v-if="row.type === 'slot'"
                     class="grid h-20"
@@ -209,7 +194,6 @@ function toggleSlotType(row: SlotRow) {
                     </div>
                 </div>
 
-                <!-- Pause -->
                 <div v-else class="grid h-20" style="grid-template-columns: 80px repeat(5, 1fr)">
                     <div
                         class="cursor-pointer border-b border-r border-zinc-400/10 bg-white transition-colors hover:bg-blue/5"

@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->date('date');
             $table->foreignId('lesson_id')->constrained('lessons')->cascadeOnDelete();
+            $table->text('notes')->nullable();
             $table->timestamps();
 
             $table->unique(['lesson_id', 'date']);

@@ -1,0 +1,541 @@
+<script setup lang="ts">
+import { router, useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
+import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
+import AgendaJournalRow from '@/components/widgets/AgendaJournalRow.vue';
+import type { AgendaJournalEntry } from '@/components/widgets/AgendaJournalRow.vue';
+import BaseModal from '@/components/widgets/BaseModal.vue';
+import Button from '@/components/widgets/Button.vue';
+import DateField from '@/components/widgets/DateField.vue';
+import EmptyState from '@/components/widgets/EmptyState.vue';
+import FilterBar from '@/components/widgets/FilterBar.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import Pagination from '@/components/widgets/Pagination.vue';
+import SearchInput from '@/components/widgets/SearchInput.vue';
+import SelectField from '@/components/widgets/SelectField.vue';
+import type { PaginationLink } from '@/types';
+import { setPageTitle } from '@/composables/usePageTitle';
+
+setPageTitle('Journal & Devoirs');
+
+interface PaginatedJournal {
+    data: AgendaJournalEntry[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: PaginationLink[];
+}
+
+const props = defineProps<{
+    journalEntries: PaginatedJournal;
+    assignments: AgendaAssignment[];
+    groupOptions: string[];
+    schoolOptions: string[];
+    filters: {
+        search: string;
+        group: string;
+        school: string;
+    };
+}>();
+
+// ── Tabs ─────────────────────────────────────────────────────────────────
+type Tab = 'journal' | 'assignments';
+const activeTab = ref<Tab>('journal');
+
+// ── Filtres serveur ────────────────────────────────────────────────────────
+const search = ref(props.filters.search);
+const filterGroup = ref(props.filters.group);
+const filterSchool = ref(props.filters.school);
+
+// ── Sous-vue devoirs ──────────────────────────────────────────────────────
+const showPast = ref(false);
+
+// ── Filtres client (type + tri sur les devoirs) ───────────────────────────
+const filterType = ref<'' | 'homework' | 'test'>('');
+const sortField = ref<'date' | 'group' | 'subject'>('date');
+const sortDir = ref<'asc' | 'desc'>('asc');
+
+const today = new Date().toISOString().slice(0, 10);
+
+const sortOptions = [
+    { value: 'date', label: 'Date' },
+    { value: 'group', label: 'Classe' },
+    { value: 'subject', label: 'Matière' },
+];
+
+const typeOptions = [
+    { value: 'homework', label: 'Devoirs' },
+    { value: 'test', label: 'Interrogations' },
+];
+
+const groupSelectOptions = computed(() =>
+    props.groupOptions.map((g) => ({ value: g, label: g })),
+);
+const schoolSelectOptions = computed(() =>
+    props.schoolOptions.map((s) => ({ value: s, label: s })),
+);
+
+const activeFilterCount = computed(() => {
+    let n = 0;
+    if (search.value) n++;
+    if (filterType.value) n++;
+    if (filterGroup.value) n++;
+    if (filterSchool.value) n++;
+    if (sortField.value !== 'date' || sortDir.value !== 'asc') n++;
+
+    return n;
+});
+
+function toggleDir() {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+}
+
+// ── Requêtes serveur ──────────────────────────────────────────────────────
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+function applyServerFilters() {
+    router.get(
+        '/agenda',
+        {
+            search: search.value || undefined,
+            group: filterGroup.value || undefined,
+            school: filterSchool.value || undefined,
+        },
+        { preserveState: true, preserveScroll: true, replace: true },
+    );
+}
+
+watch(search, () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyServerFilters, 300);
+});
+
+watch([filterGroup, filterSchool], applyServerFilters);
+
+// ── Assignments filtrés + triés (client) ──────────────────────────────────
+const filteredAssignments = computed(() => {
+    let list = [...props.assignments];
+
+    if (filterType.value)
+        list = list.filter((a) => a.type === filterType.value);
+
+    list.sort((a, b) => {
+        let cmp = 0;
+        if (sortField.value === 'date')
+            cmp = a.scheduled_date.localeCompare(b.scheduled_date);
+        if (sortField.value === 'group') cmp = a.group.localeCompare(b.group);
+        if (sortField.value === 'subject')
+            cmp = a.subject.localeCompare(b.subject);
+
+        return sortDir.value === 'desc' ? -cmp : cmp;
+    });
+
+    return list;
+});
+
+const upcomingAssignments = computed(() =>
+    filteredAssignments.value.filter((a) => a.scheduled_date >= today),
+);
+const pastAssignments = computed(() =>
+    filteredAssignments.value.filter((a) => a.scheduled_date < today).reverse(),
+);
+
+// ── Édition ───────────────────────────────────────────────────────────────
+const editModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
+const editingAssignment = ref<AgendaAssignment | null>(null);
+
+const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
+const pendingDelete    = ref<{ id: number; title: string } | null>(null);
+const editForm = useForm({
+    type: 'homework' as 'homework' | 'test',
+    title: '',
+    scheduled_date: '',
+    description: '',
+});
+
+function openEdit(id: number) {
+    const a = props.assignments.find((x) => x.id === id);
+    if (!a) return;
+
+    editingAssignment.value = a;
+    editForm.type = a.type;
+    editForm.title = a.title;
+    editForm.scheduled_date = a.scheduled_date;
+    editForm.description = a.description ?? '';
+    editModalRef.value?.open();
+}
+
+function submitEdit() {
+    if (!editingAssignment.value) return;
+
+    editForm.patch(`/assignments/${editingAssignment.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => editModalRef.value?.close(),
+    });
+}
+
+function requestDelete(id: number) {
+    const a = props.assignments.find((x) => x.id === id);
+
+    if (!a) {
+        return;
+    }
+
+    pendingDelete.value = { id, title: a.title };
+    confirmDeleteRef.value?.open();
+}
+
+function confirmDelete() {
+    if (!pendingDelete.value) {
+        return;
+    }
+
+    router.delete(`/assignments/${pendingDelete.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => confirmDeleteRef.value?.close(),
+    });
+}
+
+function goToAttendance(entry: AgendaJournalEntry) {
+    router.get('/attendances', { date: entry.date, group: entry.group_slug });
+}
+</script>
+
+<template>
+    <!-- Barre de filtres -->
+    <FilterBar :active-count="activeFilterCount">
+        <template #action>
+            <div class="flex gap-1 rounded-xl bg-stone-100 p-1">
+                <button
+                    type="button"
+                    class="rounded-lg px-3 py-1.5 text-sm font-bold transition-colors"
+                    :class="
+                        activeTab === 'journal'
+                            ? 'bg-white text-stone-900 shadow-sm'
+                            : 'text-stone-500 hover:text-stone-800'
+                    "
+                    @click="activeTab = 'journal'"
+                >
+                    Journal
+                    <span class="ml-1 text-[10px] font-normal text-stone-400">{{
+                        journalEntries.total
+                    }}</span>
+                </button>
+                <button
+                    type="button"
+                    class="rounded-lg px-3 py-1.5 text-sm font-bold transition-colors"
+                    :class="
+                        activeTab === 'assignments'
+                            ? 'bg-white text-stone-900 shadow-sm'
+                            : 'text-stone-500 hover:text-stone-800'
+                    "
+                    @click="activeTab = 'assignments'"
+                >
+                    Devoirs & Interros
+                    <span class="ml-1 text-[10px] font-normal text-stone-400">{{
+                        filteredAssignments.length
+                    }}</span>
+                </button>
+            </div>
+        </template>
+
+        <template #filters>
+            <SelectField
+                v-if="activeTab === 'assignments'"
+                placeholder="Tous les types"
+                :options="typeOptions"
+                :model-value="filterType || null"
+                class="w-40"
+                @update:model-value="
+                    (v) => (filterType = (v as '' | 'homework' | 'test') ?? '')
+                "
+            />
+
+            <SelectField
+                v-if="groupSelectOptions.length > 1"
+                placeholder="Toutes les classes"
+                :options="groupSelectOptions"
+                :model-value="filterGroup || null"
+                class="w-44 flex-1"
+                @update:model-value="(v) => (filterGroup = (v as string) ?? '')"
+            />
+
+            <SelectField
+                v-if="schoolSelectOptions.length > 1"
+                placeholder="Toutes les écoles"
+                :options="schoolSelectOptions"
+                :model-value="filterSchool || null"
+                class="w-44 flex-1"
+                @update:model-value="
+                    (v) => (filterSchool = (v as string) ?? '')
+                "
+            />
+            <SearchInput
+                v-model="search"
+                :placeholder="
+                    activeTab === 'journal'
+                        ? 'Matière, classe, note…'
+                        : 'Titre, matière, classe…'
+                "
+                class="flex-1"
+            />
+            <div class="flex items-end gap-2">
+                <SelectField
+                    placeholder="Trier par…"
+                    :options="sortOptions"
+                    :model-value="sortField"
+                    class="w-36 flex-1"
+                    @update:model-value="
+                        (v) =>
+                            (sortField =
+                                (v as 'date' | 'group' | 'subject') ?? 'date')
+                    "
+                />
+                <button
+                    type="button"
+                    class="flex h-11.5 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma transition-colors hover:bg-gray-50"
+                    :title="sortDir === 'asc' ? 'Croissant' : 'Décroissant'"
+                    @click="toggleDir"
+                >
+                    {{ sortDir === 'asc' ? '↑' : '↓' }}
+                </button>
+            </div>
+        </template>
+    </FilterBar>
+
+    <!-- Journal -->
+    <template v-if="activeTab === 'journal'">
+        <EmptyState
+            v-if="journalEntries.data.length === 0"
+            :message="
+                search || filterGroup || filterSchool
+                    ? 'Aucun résultat pour ces filtres'
+                    : 'Aucune note de journal'
+            "
+            class="rounded-2xl bg-white"
+        />
+        <div
+            v-else
+            class="overflow-hidden rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10"
+        >
+            <div class="border-b border-neutral-300/10 px-6 py-4">
+                <h2 class="text-xl font-bold text-text-base">
+                    Journal de classe
+                    <span class="text-border-figma"
+                        >({{ journalEntries.total }})</span
+                    >
+                </h2>
+            </div>
+            <ul class="divide-y divide-neutral-100">
+                <AgendaJournalRow
+                    v-for="entry in journalEntries.data"
+                    :key="entry.id"
+                    :entry="entry"
+                    @click="goToAttendance(entry)"
+                />
+            </ul>
+            <div class="border-t border-neutral-100 px-6 py-4">
+                <Pagination
+                    :links="journalEntries.links"
+                    :current-page="journalEntries.current_page"
+                    :last-page="journalEntries.last_page"
+                />
+            </div>
+        </div>
+    </template>
+
+    <!-- Devoirs & Interros -->
+    <template v-if="activeTab === 'assignments'">
+        <EmptyState
+            v-if="filteredAssignments.length === 0"
+            :message="
+                search || filterType || filterGroup || filterSchool
+                    ? 'Aucun résultat pour ces filtres'
+                    : 'Aucun devoir ni interrogation'
+            "
+            class="rounded-2xl bg-white"
+        />
+
+        <div
+            v-else
+            class="overflow-hidden rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10"
+        >
+            <div class="flex items-center justify-between border-b border-neutral-300/10 px-6 py-4">
+                <h2 class="text-xl font-bold text-text-base">
+                    {{ showPast ? 'Passés' : 'À venir' }}
+                    <span class="text-border-figma">
+                        ({{ showPast ? pastAssignments.length : upcomingAssignments.length }})
+                    </span>
+                </h2>
+                <div class="flex gap-1 rounded-xl bg-stone-100 p-1">
+                    <button
+                        type="button"
+                        class="rounded-lg px-3 py-1 text-xs font-bold transition-colors"
+                        :class="!showPast ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'"
+                        @click="showPast = false"
+                    >
+                        À venir
+                        <span class="ml-1 font-normal text-stone-400">{{ upcomingAssignments.length }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-lg px-3 py-1 text-xs font-bold transition-colors"
+                        :class="showPast ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'"
+                        @click="showPast = true"
+                    >
+                        Passés
+                        <span class="ml-1 font-normal text-stone-400">{{ pastAssignments.length }}</span>
+                    </button>
+                </div>
+            </div>
+            <template v-if="!showPast">
+                <ul class="divide-y divide-neutral-100">
+                    <AgendaAssignmentRow
+                        v-for="a in upcomingAssignments"
+                        :key="a.id"
+                        :assignment="a"
+                        @edit="openEdit"
+                        @delete="requestDelete"
+                    />
+                </ul>
+            </template>
+            <template v-else>
+                <p v-if="pastAssignments.length === 0" class="px-6 py-8 text-center text-sm text-stone-400">
+                    Aucun devoir ni interrogation passé
+                </p>
+                <ul v-else class="divide-y divide-neutral-100">
+                    <AgendaAssignmentRow
+                        v-for="a in pastAssignments"
+                        :key="a.id"
+                        :assignment="a"
+                        :past="true"
+                        @edit="openEdit"
+                        @delete="requestDelete"
+                    />
+                </ul>
+            </template>
+        </div>
+    </template>
+
+    <!-- Modale édition -->
+    <BaseModal ref="editModalRef">
+        <div class="flex flex-col gap-5">
+            <div>
+                <h2 class="text-base font-bold text-stone-900">Modifier</h2>
+                <p
+                    v-if="editingAssignment"
+                    class="mt-0.5 text-xs text-stone-400"
+                >
+                    {{ editingAssignment.subject }} ·
+                    {{ editingAssignment.group }}
+                </p>
+            </div>
+
+            <form class="flex flex-col gap-4" @submit.prevent="submitEdit">
+                <div class="flex flex-col gap-1.5">
+                    <span
+                        class="font-manrope text-xs leading-4 font-bold tracking-widest text-border-figma uppercase"
+                        >Type</span
+                    >
+                    <div class="flex gap-2">
+                        <label
+                            class="flex flex-1 cursor-pointer items-center justify-center rounded-2xl border py-2.5 font-manrope text-sm font-bold transition-all duration-150"
+                            :class="
+                                editForm.type === 'homework'
+                                    ? 'border-blue bg-blue/5 text-blue ring-2 ring-blue/20'
+                                    : 'border-border-figma bg-white text-text-base'
+                            "
+                        >
+                            <input
+                                v-model="editForm.type"
+                                type="radio"
+                                value="homework"
+                                class="sr-only"
+                            />
+                            Devoir
+                        </label>
+                        <label
+                            class="flex flex-1 cursor-pointer items-center justify-center rounded-2xl border py-2.5 font-manrope text-sm font-bold transition-all duration-150"
+                            :class="
+                                editForm.type === 'test'
+                                    ? 'border-blue bg-blue/5 text-blue ring-2 ring-blue/20'
+                                    : 'border-border-figma bg-white text-text-base'
+                            "
+                        >
+                            <input
+                                v-model="editForm.type"
+                                type="radio"
+                                value="test"
+                                class="sr-only"
+                            />
+                            Interrogation
+                        </label>
+                    </div>
+                </div>
+
+                <InputLabel
+                    v-model="editForm.title"
+                    label="Titre"
+                    placeholder="Ex : Chapitre 3 – exercices"
+                />
+
+                <DateField
+                    label="Date"
+                    :model-value="editForm.scheduled_date"
+                    @update:model-value="editForm.scheduled_date = $event"
+                />
+
+                <div class="flex flex-col gap-1.5">
+                    <label
+                        class="font-manrope text-xs leading-4 font-bold tracking-widest text-border-figma uppercase"
+                    >
+                        Description
+                        <span class="font-normal normal-case">(optionnel)</span>
+                    </label>
+                    <textarea
+                        v-model="editForm.description"
+                        rows="3"
+                        placeholder="Précisions…"
+                        class="w-full resize-none rounded-2xl border border-border-figma bg-white px-3 py-3 font-manrope text-sm text-text-base transition-all duration-150 outline-none placeholder:font-normal placeholder:text-gray-400 focus:border-blue focus:ring-2 focus:ring-blue/20"
+                    />
+                </div>
+
+                <div class="flex justify-end gap-2 pt-1">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        @click="editModalRef?.close()"
+                        >Annuler</Button
+                    >
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        :loading="editForm.processing"
+                        >Enregistrer</Button
+                    >
+                </div>
+            </form>
+        </div>
+    </BaseModal>
+
+    <!-- Modale confirmation suppression -->
+    <BaseModal ref="confirmDeleteRef">
+        <div class="flex flex-col gap-5">
+            <div>
+                <h2 class="text-base font-bold text-stone-900">Supprimer ce devoir ?</h2>
+                <p v-if="pendingDelete" class="mt-1 text-sm text-stone-500">
+                    « {{ pendingDelete.title }} »
+                </p>
+                <p class="mt-1 text-xs text-stone-400">Cette action est irréversible.</p>
+            </div>
+            <div class="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" @click="confirmDeleteRef?.close()">Annuler</Button>
+                <Button variant="danger" size="sm" @click="confirmDelete">Supprimer</Button>
+            </div>
+        </div>
+    </BaseModal>
+</template>

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Attendance_type;
+use App\Http\Controllers\Concerns\ComputesNextOccurrence;
+use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\ClassSession;
 use App\Models\Lesson;
@@ -14,6 +16,7 @@ use Inertia\Inertia;
 
 class AttendanceController extends Controller
 {
+    use ComputesNextOccurrence;
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -50,6 +53,9 @@ class AttendanceController extends Controller
         $attendanceId = null;
         $session = null;
 
+        $assignments = collect();
+        $nextAssignmentDate = null;
+
         if ($selected) {
             $students = $selected->lesson->group->students()
                 ->orderBy('lastname')->orderBy('firstname')
@@ -64,6 +70,21 @@ class AttendanceController extends Controller
                     ->studentAttendanceStatuses()
                     ->get(['student_id', 'type', 'motive'])->toArray();
             }
+
+            $lesson = $selected->lesson->load('scheduleEntries.scheduleSlot');
+
+            $assignments = Assignment::where('lesson_id', $selected->lesson_id)
+                ->orderBy('scheduled_date')
+                ->get(['id', 'type', 'title', 'scheduled_date', 'description']);
+
+            $nextAssignmentDate = $this->nextOccurrence($lesson);
+
+            $schedulePattern = $lesson->scheduleEntries
+                ->sortBy('scheduleSlot.position')
+                ->map(fn ($e) => [
+                    'day_of_week' => $e->day_of_week,
+                    'slot_label'  => $e->scheduleSlot->label,
+                ])->values();
         }
 
         return Inertia::render('Attendance', [
@@ -83,6 +104,17 @@ class AttendanceController extends Controller
             'statuses' => $statuses,
             'attendanceId' => $attendanceId,
             'lastSavedAt' => $session?->updated_at?->format('d/m/Y H:i'),
+            'classSession' => $session ? ['id' => $session->id, 'notes' => $session->notes] : null,
+            'lessonId' => $selected?->lesson_id,
+            'assignments' => $assignments->map(fn ($a) => [
+                'id' => $a->id,
+                'type' => $a->type,
+                'title' => $a->title,
+                'scheduled_date' => $a->scheduled_date->toDateString(),
+                'description' => $a->description,
+            ]),
+            'nextAssignmentDate'  => $nextAssignmentDate ?? null,
+            'schedulePattern'     => $schedulePattern ?? [],
         ]);
     }
 
@@ -127,4 +159,5 @@ class AttendanceController extends Controller
 
         return back();
     }
+
 }
