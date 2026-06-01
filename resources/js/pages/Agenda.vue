@@ -2,6 +2,8 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { useToasterStore } from '@/stores/toaster';
+import { agenda, attendances } from '@/routes';
+import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
 import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
 import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
 import AgendaJournalRow from '@/components/widgets/AgendaJournalRow.vue';
@@ -100,7 +102,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 function applyServerFilters() {
     router.get(
-        '/agenda',
+        agenda.url(),
         {
             search:      search.value || undefined,
             group:       filterGroup.value || undefined,
@@ -186,7 +188,7 @@ function openEdit(id: number) {
 function submitEdit() {
     if (!editingAssignment.value) return;
 
-    editForm.patch(`/assignments/${editingAssignment.value.id}`, {
+    editForm.patch(updateAssignment.url({ assignment: editingAssignment.value.id }), {
         preserveScroll: true,
         onSuccess: () => {
             editModalRef.value?.close();
@@ -218,13 +220,13 @@ function confirmDelete() {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `« ${title} » supprimé`,
-        () => router.delete(`/assignments/${id}`, { preserveScroll: true }),
+        () => router.delete(destroyAssignment.url({ assignment: id }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
 
 function goToAttendance(entry: AgendaJournalEntry) {
-    router.get('/attendances', { date: entry.date, group: entry.group_slug });
+    router.get(attendances.url(), { date: entry.date, group: entry.group_slug });
 }
 </script>
 

@@ -3,6 +3,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import NoScriptWarning from '@/components/widgets/NoScriptWarning.vue';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request as forgotPassword } from '@/routes/password';
@@ -38,6 +39,8 @@ function submit() {
 
 <template>
     <Head title="Connexion" />
+
+    <NoScriptWarning />
 
     <div v-if="status" class="text-sm font-medium text-green-600 text-center">
         {{ status }}

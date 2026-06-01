@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { computed, nextTick, ref } from 'vue';
+import { classlist } from '@/routes';
+import { show as showClasslist } from '@/routes/classlist';
+import { update as updateStudent } from '@/routes/students';
+import { index as adminStudentsIndex } from '@/routes/admin/students';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
@@ -41,13 +45,13 @@ const breadcrumbItems = computed(() => {
     const items: { label: string; href?: string }[] = [];
 
     if (props.isAdmin && props.student.school) {
-        items.push({ label: 'Élèves', href: `/schools/${props.student.school.slug}/students` });
+        items.push({ label: 'Élèves', href: adminStudentsIndex.url({ school: props.student.school.slug }) });
     } else {
-        items.push({ label: 'Liste de classe', href: '/classlist' });
+        items.push({ label: 'Liste de classe', href: classlist.url() });
         if (firstGroup.value) {
             items.push({
                 label: `${firstGroup.value.grade}${firstGroup.value.name} — ${firstGroup.value.school.name}`,
-                href: `/classlist/${firstGroup.value.slug}`,
+                href: showClasslist.url({ group: firstGroup.value.slug }),
             });
         }
     }
@@ -70,7 +74,7 @@ function openEdit() {
 
 function save() {
     form.transform((data) => ({ ...data, email: data.email || null }))
-        .patch(`/students/${props.student.id}`, {
+        .patch(updateStudent.url({ student: props.student.id }), {
             preserveScroll: true,
             onSuccess: () => modalRef.value?.close(),
         });
@@ -144,7 +148,7 @@ function save() {
                             </p>
                         </div>
                         <LinkButton
-                            :href="`/classlist/${group.slug}`"
+                            :href="showClasslist.url({ group: group.slug })"
                             variant="secondary"
                             size="sm"
                             :icon-only="true"

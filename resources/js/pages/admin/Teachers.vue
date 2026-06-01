@@ -11,6 +11,7 @@ import SearchInput from '@/components/widgets/SearchInput.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { approve, reject } from '@/routes/admin/join-requests';
+import { index as adminTeachersIndex } from '@/routes/admin/teachers';
 import type { Paginator } from '@/types';
 
 interface School      { id: number; name: string; slug: string }
@@ -29,14 +30,13 @@ const props = defineProps<{
 
 setPageTitle('Professeurs');
 
-const base    = `/schools/${props.school.slug}/teachers`;
 const search  = ref(props.filters.search ?? '');
 const sortCol = ref(props.filters.sort ?? 'name');
 const sortDir = ref<'asc' | 'desc'>(props.filters.dir === 'desc' ? 'desc' : 'asc');
 const requestsModal = ref<InstanceType<typeof BaseModal> | null>(null);
 
 function applyFilters() {
-    router.get(base, {
+    router.get(adminTeachersIndex.url({ school: props.school.slug }), {
         search: search.value.trim() || undefined,
         sort:   sortCol.value !== 'name' ? sortCol.value : undefined,
         dir:    sortDir.value === 'desc' ? 'desc' : undefined,

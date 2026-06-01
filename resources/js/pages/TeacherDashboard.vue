@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
+import { dashboard, agenda, attendances } from '@/routes';
+import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
+import { show as showClasslist } from '@/routes/classlist';
 import Badge from '@/components/widgets/Badge.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
@@ -64,7 +67,7 @@ const today = new Date().toISOString().slice(0, 10);
 const isEditable = selectedDate <= today;
 
 function changeDate(value: string) {
-    router.get('/dashboard', { date: value }, { preserveState: false });
+    router.get(dashboard.url(), { date: value }, { preserveState: false });
 }
 
 // Auto-avance à minuit si l'utilisateur est sur "aujourd'hui"
@@ -80,7 +83,7 @@ onMounted(() => {
     midnight.setHours(24, 0, 0, 0);
 
     midnightTimer = setTimeout(() => {
-        router.get('/dashboard', {}, { preserveState: false });
+        router.get(dashboard.url(), {}, { preserveState: false });
     }, midnight.getTime() - now.getTime());
 });
 
@@ -124,7 +127,7 @@ function submitEdit() {
         return;
     }
 
-    editForm.patch(`/assignments/${editingAssignment.value.id}`, {
+    editForm.patch(updateAssignment.url({ assignment: editingAssignment.value.id }), {
         preserveScroll: true,
         onSuccess: () => {
             editModalRef.value?.close();
@@ -156,7 +159,7 @@ function confirmDelete() {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `« ${title} » supprimé`,
-        () => router.delete(`/assignments/${id}`, { preserveScroll: true }),
+        () => router.delete(destroyAssignment.url({ assignment: id }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
@@ -207,7 +210,7 @@ function confirmDelete() {
                                 </div>
                                 <a
                                     v-if="isEditable"
-                                    :href="`/attendances?entry=${slot.entry.id}`"
+                                    :href="attendances.url({ query: { entry: slot.entry.id } })"
                                     class="shrink-0 text-xs font-bold text-blue hover:underline"
                                 >
                                     Présences
@@ -257,7 +260,7 @@ function confirmDelete() {
                             </li>
                         </ul>
                         <div v-if="upcomingAssignmentsTotal > 5" class="border-t border-neutral-100 bg-white px-6 py-3">
-                            <a href="/agenda" class="text-xs font-bold text-blue hover:underline">
+                            <a :href="agenda.url()" class="text-xs font-bold text-blue hover:underline">
                                 Voir les {{ upcomingAssignmentsTotal }} devoirs & interros →
                             </a>
                         </div>
@@ -284,7 +287,7 @@ function confirmDelete() {
                                 <p class="truncate text-xs text-stone-400">{{ group.school }}</p>
                                 <p class="truncate text-xs text-border-figma">{{ group.subjects.join(', ') }}</p>
                             </div>
-                            <Badge :href="`/classlist/${group.slug}`">
+                            <Badge :href="showClasslist.url({ group: group.slug })">
                                 {{ group.grade }}{{ group.name }}
                             </Badge>
                         </li>

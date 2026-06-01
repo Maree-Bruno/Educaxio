@@ -7,22 +7,25 @@ use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\LessonNoteController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClassListController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LessonNoteController;
 use App\Http\Controllers\PendingController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ScheduleEntryController;
 use App\Http\Controllers\ScheduleSlotController;
 use App\Http\Controllers\StudentController;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Features;
 
-Route::middleware('guest')->post('register/validate', function (\Illuminate\Http\Request $request) {
+Route::middleware('guest')->post('register/validate', function (Request $request) {
     $request->validate([
-        'name'     => ['required', 'string', 'max:255'],
-        'email'    => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique(\App\Models\User::class)],
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
         'password' => ['required', 'string', Password::default(), 'confirmed'],
     ]);
 

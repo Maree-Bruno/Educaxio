@@ -4,6 +4,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import { useToasterStore } from '@/stores/toaster';
 import type { LessonOption, ScheduleEntry, SlotRow } from '@/types';
+import { store } from '@/routes/schedule-entries';
 
 const props = defineProps<{
     open: boolean;
@@ -167,7 +168,7 @@ function save() {
         position: selectedSlot.value!.position,
         day_of_week: selectedDay.value,
         classroom: data.classroom || null,
-    })).post('/schedule-entries', {
+    })).post(store.url(), {
         preserveScroll: true,
         onSuccess: () => {
             emit('close');

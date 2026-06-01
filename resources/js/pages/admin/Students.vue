@@ -2,6 +2,9 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { computed, nextTick, ref, watch } from 'vue';
+import { index as adminStudentsIndex, store as adminStudentsStore, destroy as adminStudentsDestroy } from '@/routes/admin/students';
+import { show as showClasslist } from '@/routes/classlist';
+import { show as showStudent } from '@/routes/students';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
@@ -32,8 +35,6 @@ const props = defineProps<{
 
 setPageTitle('Élèves');
 
-const base = `/schools/${props.school.slug}/students`;
-
 const groupOptions = props.groups.map((g) => ({ value: String(g.id), label: `${g.grade}${g.name}` }));
 
 const filterGroup = ref<string>(props.filters.group ?? '');
@@ -42,7 +43,7 @@ const sortDir     = ref<'asc' | 'desc'>(props.filters.dir === 'desc' ? 'desc' : 
 const search      = ref(props.filters.search ?? '');
 
 function applyFilters() {
-    router.get(base, {
+    router.get(adminStudentsIndex.url({ school: props.school.slug }), {
         group:  filterGroup.value || undefined,
         sort:   sortCol.value !== 'lastname' ? sortCol.value : undefined,
         dir:    sortDir.value === 'desc' ? 'desc' : undefined,
@@ -106,7 +107,7 @@ function save() {
         ...data,
         email:     data.email || null,
         group_ids: data.group_ids.map(Number),
-    })).post(base, {
+    })).post(adminStudentsStore.url({ school: props.school.slug }), {
         preserveScroll: true,
         onSuccess: () => {
             closeModal();
@@ -131,7 +132,7 @@ function confirmDelete() {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `${firstname} ${lastname} supprimé`,
-        () => router.delete(`${base}/${id}`, { preserveScroll: true }),
+        () => router.delete(adminStudentsDestroy.url({ school: props.school.slug, student: id }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
@@ -190,7 +191,7 @@ function confirmDelete() {
                             <Badge
                                 v-for="g in student.groups"
                                 :key="g.id"
-                                :href="`/classlist/${g.slug}`"
+                                :href="showClasslist.url({ group: g.slug })"
                             >
                                 {{ g.grade }}{{ g.name }}
                             </Badge>
@@ -199,7 +200,7 @@ function confirmDelete() {
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2 flex-col">
-                    <LinkButton :href="`/students/${student.id}`" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
+                    <LinkButton :href="showStudent.url({ student: student.id })" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
                         <template #icon><Eye :size="16" :stroke-width="2" aria-hidden="true" /></template>
                     </LinkButton>
                     <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = student">
@@ -243,7 +244,7 @@ function confirmDelete() {
                                 <Badge
                                     v-for="g in student.groups"
                                     :key="g.id"
-                                    :href="`/classlist/${g.slug}`"
+                                    :href="showClasslist.url({ group: g.slug })"
                                 >
                                     {{ g.grade }}{{ g.name }}
                                 </Badge>
@@ -253,7 +254,7 @@ function confirmDelete() {
                         <td class="px-6 py-5 text-sm text-text-base">{{ student.email ?? '—' }}</td>
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-2">
-                                <LinkButton :href="`/students/${student.id}`" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
+                                <LinkButton :href="showStudent.url({ student: student.id })" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
                                     <template #icon><Eye :size="16" :stroke-width="2" aria-hidden="true" /></template>
                                 </LinkButton>
                                 <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = student">

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { schedules as schedulesRoute } from '@/routes';
+import { destroy as destroyScheduleEntry } from '@/routes/schedule-entries';
+import { updateType } from '@/routes/schedule-slots';
 import Button from '@/components/widgets/Button.vue';
 import ScheduleSlotModal from '@/components/widgets/ScheduleSlotModal.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
@@ -31,7 +34,7 @@ const filterYear = ref<string | null>(props.filters.year ?? null);
 const yearOptions = props.academicYears.map((y) => ({ value: String(y.id), label: y.year }));
 
 watch(filterYear, () => {
-    router.get('/schedules', { year: filterYear.value ?? undefined }, { preserveState: true, replace: true });
+    router.get(schedulesRoute.url(), { year: filterYear.value ?? undefined }, { preserveState: true, replace: true });
 });
 
 const selectedDay = ref(todayDow >= 1 && todayDow <= 5 ? todayDow : 1);
@@ -64,13 +67,13 @@ function onDeleteEntry(entryId: number) {
     hiddenEntryIds.value = new Set([...hiddenEntryIds.value, entryId]);
     toaster.deletable(
         'Créneau supprimé',
-        () => router.delete(`/schedule-entries/${entryId}`, { preserveScroll: true }),
+        () => router.delete(destroyScheduleEntry.url({ scheduleEntry: entryId }), { preserveScroll: true }),
         () => { hiddenEntryIds.value.delete(entryId); hiddenEntryIds.value = new Set(hiddenEntryIds.value); },
     );
 }
 
 function toggleSlotType(row: SlotRow) {
-    router.patch('/schedule-slots-type', {
+    router.patch(updateType.url(), {
         id: row.id,
         type: row.type === 'lunch' ? 'slot' : 'lunch',
     }, { preserveState: true });

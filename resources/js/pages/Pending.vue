@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { useToasterStore } from '@/stores/toaster';
+import { destroy as destroyJoinRequest } from '@/routes/pending/join-requests';
 import Badge from '@/components/widgets/Badge.vue';
 import SchoolJoinForm from '@/components/widgets/SchoolJoinForm.vue';
 import SubjectPicker from '@/components/widgets/SubjectPicker.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
-import { User } from '@/types';
+import { useToasterStore } from '@/stores/toaster';
+import type { User } from '@/types';
 
 interface School   { id: number; name: string }
 interface Request_ { id: number; school: School; status: 'pending' | 'approved' | 'rejected' }
@@ -40,7 +41,7 @@ function cancelRequest(id: number) {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         'Demande annulée',
-        () => router.delete(`/pending/join-requests/${id}`),
+        () => router.delete(destroyJoinRequest.url({ joinRequest: id })),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
