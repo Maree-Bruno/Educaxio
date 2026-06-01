@@ -10,7 +10,7 @@ import Home from '@/components/widgets/svg/Home.vue';
 import Schedule from '@/components/widgets/svg/Schedule.vue';
 import SchoolAgenda from '@/components/widgets/svg/SchoolAgenda.vue';
 import { useAuthStore } from '@/stores/auth';
-import { dashboard, classlist, attendances, schedules } from '@/routes';
+import { agenda, dashboard, classlist, attendances, schedules } from '@/routes';
 import NavItem from './NavItem.vue';
 
 const { collapsed = false } = defineProps<{
@@ -25,6 +25,7 @@ const allNavItems: { title: string; href: string; icon: Component }[] = [
     { title: 'Classes', href: classlist.url(), icon: ClassesList },
     { title: 'Présences', href: attendances.url(), icon: Attendance },
     { title: 'Horaires', href: schedules.url(), icon: Schedule },
+    { title: 'Journal', href: agenda.url(), icon: SchoolAgenda },
 ];
 
 const navItems = computed(() =>
@@ -32,7 +33,8 @@ const navItems = computed(() =>
         ? allNavItems.filter(
               (item) =>
                   item.href !== attendances.url() &&
-                  item.href !== schedules.url(),
+                  item.href !== schedules.url() &&
+                  item.href !== agenda.url(),
           )
         : allNavItems,
 );

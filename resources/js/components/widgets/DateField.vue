@@ -26,7 +26,7 @@ function onChange(event: Event) {
         <label
             v-if="label"
             :for="id"
-            class="text-xs font-bold uppercase leading-4 tracking-wide text-border-figma"
+            class="font-manrope text-xs font-bold uppercase leading-4 tracking-widest text-border-figma"
         >
             {{ label }}
         </label>
@@ -36,7 +36,7 @@ function onChange(event: Event) {
             :value="modelValue"
             :max="max"
             :min="min"
-            class="rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline -outline-offset-1 outline-border-figma focus:outline-blue"
+            class="w-full rounded-2xl border border-border-figma bg-white px-3 py-3 font-manrope text-sm font-semibold text-text-base outline-none transition-all duration-150 focus:border-blue focus:ring-2 focus:ring-blue/20"
             @change="onChange"
         />
     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Assignment;
 use App\Models\Lesson;
 use App\Models\ScheduleEntry;
 use App\Models\ScheduleSlot;
@@ -112,8 +113,6 @@ class DashboardController extends Controller
         $request = request();
         $today = $request->filled('date') ? Carbon::parse($request->date) : now();
         $dow = $today->dayOfWeekIso;
-
-        // Entrées du prof aujourd'hui
         $todayEntries = ScheduleEntry::where('schedule_entries.day_of_week', $dow)
             ->whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
             ->join('schedule_slots', 'schedule_entries.schedule_slot_id', '=', 'schedule_slots.id')
@@ -150,29 +149,55 @@ class DashboardController extends Controller
                 ];
             });
 
-        $groups = $user->lessons()
+        $lessons = $user->lessons()
             ->with([
                 'group:id,grade,name,slug,school_id',
                 'group.school:id,name',
                 'subject:id,name',
             ])
             ->get()
+            ->keyBy('id');
+
+        $lessonIds = $lessons->keys()->toArray();
+
+        $groups = $lessons
             ->groupBy('group_id')
-            ->map(fn ($lessons) => [
-                'id' => $lessons->first()->group->id,
-                'grade' => $lessons->first()->group->grade,
-                'name' => $lessons->first()->group->name,
-                'slug' => $lessons->first()->group->slug,
-                'school' => $lessons->first()->group->school->name,
-                'subjects' => $lessons->map(fn ($l) => $l->subject->name)->unique()->values(),
+            ->map(fn ($ls) => [
+                'id' => $ls->first()->group->id,
+                'grade' => $ls->first()->group->grade,
+                'name' => $ls->first()->group->name,
+                'slug' => $ls->first()->group->slug,
+                'school' => $ls->first()->group->school->name,
+                'subjects' => $ls->map(fn ($l) => $l->subject->name)->unique()->values(),
             ])
             ->values();
+
+        $assignmentQuery = Assignment::whereIn('lesson_id', $lessonIds)
+            ->where('scheduled_date', '>=', now()->toDateString());
+
+        $upcomingAssignmentsTotal = $assignmentQuery->count();
+
+        $upcomingAssignments = $assignmentQuery
+            ->orderBy('scheduled_date')
+            ->limit(5)
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'type' => $a->type,
+                'title' => $a->title,
+                'scheduled_date' => $a->scheduled_date->toDateString(),
+                'description' => $a->description,
+                'group' => $lessons[$a->lesson_id]->group->grade.$lessons[$a->lesson_id]->group->name,
+                'subject' => $lessons[$a->lesson_id]->subject->name,
+            ]);
 
         return Inertia::render('TeacherDashboard', [
             'slots' => $slots,
             'groups' => $groups,
             'date' => $today->locale('fr')->isoFormat('dddd D MMMM YYYY'),
             'selectedDate' => $today->toDateString(),
+            'upcomingAssignments' => $upcomingAssignments,
+            'upcomingAssignmentsTotal' => $upcomingAssignmentsTotal,
             'user' => $user,
         ]);
     }

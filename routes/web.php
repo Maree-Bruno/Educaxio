@@ -4,7 +4,10 @@ use App\Http\Controllers\Admin\JoinRequestController as AdminJoinRequestControll
 use App\Http\Controllers\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
+use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\LessonNoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClassListController;
 use App\Http\Controllers\PendingController;
@@ -64,9 +67,17 @@ Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
         Route::post('schedule-entries', [ScheduleEntryController::class, 'store'])->name('schedule-entries.store');
         Route::delete('schedule-entries/{scheduleEntry}', [ScheduleEntryController::class, 'destroy'])->name('schedule-entries.destroy');
 
+        Route::get('agenda', AgendaController::class)->name('agenda');
+
         Route::get('attendances', [AttendanceController::class, 'index'])->name('attendances');
         Route::post('attendances', [AttendanceController::class, 'store'])->name('attendances.store');
         Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy');
+
+        Route::post('lesson-notes', [LessonNoteController::class, 'store'])->name('lesson-notes.store');
+
+        Route::post('assignments', [AssignmentController::class, 'store'])->name('assignments.store');
+        Route::patch('assignments/{assignment}', [AssignmentController::class, 'update'])->name('assignments.update');
+        Route::delete('assignments/{assignment}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
     });
 
     // Admin — school-scoped

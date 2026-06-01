@@ -30,6 +30,8 @@ class ClassSession extends Model
 
     protected function casts(): array
     {
-        return [];
+        return [
+            'date' => 'date',
+        ];
     }
 }
