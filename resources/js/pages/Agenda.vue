@@ -37,6 +37,8 @@ const props = defineProps<{
         search: string;
         group: string;
         school: string;
+        sort_field: 'date' | 'group' | 'subject';
+        sort_dir: 'asc' | 'desc';
     };
 }>();
 
@@ -54,8 +56,8 @@ const showPast = ref(false);
 
 // ── Filtres client (type + tri sur les devoirs) ───────────────────────────
 const filterType = ref<'' | 'homework' | 'test'>('');
-const sortField = ref<'date' | 'group' | 'subject'>('date');
-const sortDir = ref<'asc' | 'desc'>('asc');
+const sortField  = ref<'date' | 'group' | 'subject'>(props.filters.sort_field);
+const sortDir    = ref<'asc' | 'desc'>(props.filters.sort_dir);
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -99,20 +101,31 @@ function applyServerFilters() {
     router.get(
         '/agenda',
         {
-            search: search.value || undefined,
-            group: filterGroup.value || undefined,
-            school: filterSchool.value || undefined,
+            search:      search.value || undefined,
+            group:       filterGroup.value || undefined,
+            school:      filterSchool.value || undefined,
+            sort_field:  sortField.value !== 'date' ? sortField.value : undefined,
+            sort_dir:    sortDir.value !== 'desc' ? sortDir.value : undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true },
     );
 }
 
 watch(search, () => {
-    if (searchTimer) clearTimeout(searchTimer);
+    if (searchTimer) {
+        clearTimeout(searchTimer);
+    }
+
     searchTimer = setTimeout(applyServerFilters, 300);
 });
 
 watch([filterGroup, filterSchool], applyServerFilters);
+
+watch([sortField, sortDir], () => {
+    if (activeTab.value === 'journal') {
+        applyServerFilters();
+    }
+});
 
 // ── Assignments filtrés + triés (client) ──────────────────────────────────
 const filteredAssignments = computed(() => {
@@ -139,7 +152,7 @@ const upcomingAssignments = computed(() =>
     filteredAssignments.value.filter((a) => a.scheduled_date >= today),
 );
 const pastAssignments = computed(() =>
-    filteredAssignments.value.filter((a) => a.scheduled_date < today).reverse(),
+    filteredAssignments.value.filter((a) => a.scheduled_date < today),
 );
 
 // ── Édition ───────────────────────────────────────────────────────────────
@@ -207,37 +220,26 @@ function goToAttendance(entry: AgendaJournalEntry) {
     <!-- Barre de filtres -->
     <FilterBar :active-count="activeFilterCount">
         <template #action>
-            <div class="flex gap-1 rounded-xl bg-stone-100 p-1">
-                <button
-                    type="button"
-                    class="rounded-lg px-3 py-1.5 text-sm font-bold transition-colors"
-                    :class="
-                        activeTab === 'journal'
-                            ? 'bg-white text-stone-900 shadow-sm'
-                            : 'text-stone-500 hover:text-stone-800'
-                    "
+            <div class="flex w-full gap-2 sm:w-auto">
+                <Button
+                    size="sm"
+                    :variant="activeTab === 'journal' ? 'primary' : 'ghost'"
+                    class="flex-1 sm:flex-none"
                     @click="activeTab = 'journal'"
                 >
                     Journal
-                    <span class="ml-1 text-[10px] font-normal text-stone-400">{{
-                        journalEntries.total
-                    }}</span>
-                </button>
-                <button
-                    type="button"
-                    class="rounded-lg px-3 py-1.5 text-sm font-bold transition-colors"
-                    :class="
-                        activeTab === 'assignments'
-                            ? 'bg-white text-stone-900 shadow-sm'
-                            : 'text-stone-500 hover:text-stone-800'
-                    "
+                    <span class="ml-1 text-[10px] font-normal opacity-60">{{ journalEntries.total }}</span>
+                </Button>
+                <Button
+                    size="sm"
+                    :variant="activeTab === 'assignments' ? 'primary' : 'ghost'"
+                    class="flex-1 sm:flex-none"
                     @click="activeTab = 'assignments'"
                 >
-                    Devoirs & Interros
-                    <span class="ml-1 text-[10px] font-normal text-stone-400">{{
-                        filteredAssignments.length
-                    }}</span>
-                </button>
+                    <span class="sm:hidden">Devoirs</span>
+                    <span class="hidden sm:inline">Devoirs & Interros</span>
+                    <span class="ml-1 text-[10px] font-normal opacity-60">{{ filteredAssignments.length }}</span>
+                </Button>
             </div>
         </template>
 
@@ -247,10 +249,8 @@ function goToAttendance(entry: AgendaJournalEntry) {
                 placeholder="Tous les types"
                 :options="typeOptions"
                 :model-value="filterType || null"
-                class="w-40"
-                @update:model-value="
-                    (v) => (filterType = (v as '' | 'homework' | 'test') ?? '')
-                "
+                class="w-full lg:w-40"
+                @update:model-value="(v) => (filterType = (v as '' | 'homework' | 'test') ?? '')"
             />
 
             <SelectField
@@ -258,7 +258,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
                 placeholder="Toutes les classes"
                 :options="groupSelectOptions"
                 :model-value="filterGroup || null"
-                class="w-44 flex-1"
+                class="w-full lg:w-44 lg:flex-1"
                 @update:model-value="(v) => (filterGroup = (v as string) ?? '')"
             />
 
@@ -267,31 +267,23 @@ function goToAttendance(entry: AgendaJournalEntry) {
                 placeholder="Toutes les écoles"
                 :options="schoolSelectOptions"
                 :model-value="filterSchool || null"
-                class="w-44 flex-1"
-                @update:model-value="
-                    (v) => (filterSchool = (v as string) ?? '')
-                "
+                class="w-full lg:w-44 lg:flex-1"
+                @update:model-value="(v) => (filterSchool = (v as string) ?? '')"
             />
+
             <SearchInput
                 v-model="search"
-                :placeholder="
-                    activeTab === 'journal'
-                        ? 'Matière, classe, note…'
-                        : 'Titre, matière, classe…'
-                "
-                class="flex-1"
+                :placeholder="activeTab === 'journal' ? 'Matière, classe, note…' : 'Titre, matière, classe…'"
+                class="w-full lg:flex-1"
             />
-            <div class="flex items-end gap-2">
+
+            <div class="flex w-full items-end gap-2 lg:w-auto">
                 <SelectField
                     placeholder="Trier par…"
                     :options="sortOptions"
                     :model-value="sortField"
-                    class="w-36 flex-1"
-                    @update:model-value="
-                        (v) =>
-                            (sortField =
-                                (v as 'date' | 'group' | 'subject') ?? 'date')
-                    "
+                    class="flex-1 lg:w-36"
+                    @update:model-value="(v) => (sortField = (v as 'date' | 'group' | 'subject') ?? 'date')"
                 />
                 <button
                     type="button"

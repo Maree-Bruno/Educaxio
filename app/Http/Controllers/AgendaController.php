@@ -14,11 +14,15 @@ class AgendaController extends Controller
     {
         $user = auth()->user();
 
-        $search = $request->input('search', '');
-        $group = $request->input('group', '');
-        $school = $request->input('school', '');
-
-        // Load every lesson the user teaches, with all needed relationships, once.
+        $search  = $request->input('search', '');
+        $group   = $request->input('group', '');
+        $school  = $request->input('school', '');
+        $sortField = in_array($request->input('sort_field'), ['date', 'group', 'subject'])
+            ? $request->input('sort_field')
+            : 'date';
+        $sortDir = in_array($request->input('sort_dir'), ['asc', 'desc'])
+            ? $request->input('sort_dir')
+            : 'desc';
         $lessons = $user->lessons()
             ->with([
                 'group:id,grade,name,slug,school_id',
@@ -28,39 +32,53 @@ class AgendaController extends Controller
             ])
             ->get()
             ->keyBy('id');
-
-        // Filter lesson IDs by group / school (PHP-side — no extra queries).
         $filteredLessons = $lessons
             ->when($group, fn ($col) => $col->filter(fn ($l) => $l->group->grade.$l->group->name === $group))
             ->when($school, fn ($col) => $col->filter(fn ($l) => $l->group->school->name === $school));
 
         $lessonIds = $filteredLessons->keys()->toArray();
-
-        // Lesson IDs whose metadata (subject / group name) match the search term.
         $searchLessonIds = $search
-            ? $filteredLessons->filter(fn ($l) => str_contains(mb_strtolower($l->subject->name), mb_strtolower($search)) ||
+            ? $filteredLessons->filter(fn ($l) => str_contains(mb_strtolower($l->subject->name),
+                mb_strtolower($search)) ||
                 str_contains(mb_strtolower($l->group->grade.$l->group->name), mb_strtolower($search))
             )->keys()->toArray()
             : null;
 
-        $journalEntries = LessonNote::whereIn('lesson_id', $lessonIds)
+        $journalQuery = LessonNote::whereIn('lesson_notes.lesson_id', $lessonIds)
             ->when($search, fn ($q) => $q->where(fn ($q) => $q
-                ->where('notes', 'like', "%{$search}%")
-                ->orWhereIn('lesson_id', $searchLessonIds ?? [])
-            ))
-            ->orderByDesc('date')
-            ->paginate(25)
+                ->where('lesson_notes.notes', 'like', "%{$search}%")
+                ->orWhereIn('lesson_notes.lesson_id', $searchLessonIds ?? [])
+            ));
+
+        if ($sortField === 'group') {
+            $journalQuery = $journalQuery
+                ->join('lessons', 'lesson_notes.lesson_id', '=', 'lessons.id')
+                ->join('groups', 'lessons.group_id', '=', 'groups.id')
+                ->orderByRaw("CONCAT(groups.grade, groups.name) {$sortDir}")
+                ->select('lesson_notes.*');
+        } elseif ($sortField === 'subject') {
+            $journalQuery = $journalQuery
+                ->join('lessons', 'lesson_notes.lesson_id', '=', 'lessons.id')
+                ->join('subjects', 'lessons.subject_id', '=', 'subjects.id')
+                ->orderBy('subjects.name', $sortDir)
+                ->select('lesson_notes.*');
+        } else {
+            $journalQuery = $journalQuery->orderBy('lesson_notes.date', $sortDir);
+        }
+
+        $journalEntries = $journalQuery
+            ->paginate(10)
             ->through(function ($n) use ($lessons) {
                 $lesson = $lessons[$n->lesson_id];
 
                 return [
-                    'id'         => $n->id,
-                    'date'       => $n->date->toDateString(),
-                    'notes'      => $n->notes,
-                    'group'      => $lesson->group->grade.$lesson->group->name,
+                    'id' => $n->id,
+                    'date' => $n->date->toDateString(),
+                    'notes' => $n->notes,
+                    'group' => $lesson->group->grade.$lesson->group->name,
                     'group_slug' => $lesson->group->slug,
-                    'subject'    => $lesson->subject->name,
-                    'school'     => $lesson->group->school->name,
+                    'subject' => $lesson->subject->name,
+                    'school' => $lesson->group->school->name,
                 ];
             });
 
@@ -99,9 +117,11 @@ class AgendaController extends Controller
             'groupOptions' => $groupOptions,
             'schoolOptions' => $schoolOptions,
             'filters' => [
-                'search' => $search,
-                'group' => $group,
-                'school' => $school,
+                'search'     => $search,
+                'group'      => $group,
+                'school'     => $school,
+                'sort_field' => $sortField,
+                'sort_dir'   => $sortDir,
             ],
         ]);
     }

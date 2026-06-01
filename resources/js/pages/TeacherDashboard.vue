@@ -2,6 +2,7 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
+import Trash from '@/components/widgets/svg/Trash.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import DateField from '@/components/widgets/DateField.vue';
@@ -240,7 +241,7 @@ function confirmDelete() {
                                     class="shrink-0 text-stone-300 opacity-0 transition-all group-hover:opacity-100 hover:text-red-500"
                                     title="Supprimer"
                                     @click.stop="requestDelete(a.id)"
-                                >✕</button>
+                                ><Trash :size="16" /></button>
                             </li>
                         </ul>
                         <div v-if="upcomingAssignmentsTotal > 5" class="border-t border-neutral-100 bg-white px-6 py-3">

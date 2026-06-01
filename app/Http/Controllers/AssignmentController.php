@@ -11,14 +11,15 @@ use Illuminate\Validation\Rule;
 class AssignmentController extends Controller
 {
     use ComputesNextOccurrence;
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'lesson_id'      => ['required', 'exists:lessons,id'],
-            'type'           => ['required', Rule::in(['homework', 'test'])],
-            'title'          => ['required', 'string', 'max:255'],
+            'lesson_id' => ['required', 'exists:lessons,id'],
+            'type' => ['required', Rule::in(['homework', 'test'])],
+            'title' => ['required', 'string', 'max:255'],
             'scheduled_date' => ['nullable', 'date'],
-            'description'    => ['nullable', 'string', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $lesson = Lesson::with('scheduleEntries')->findOrFail($validated['lesson_id']);
@@ -34,10 +35,10 @@ class AssignmentController extends Controller
     public function update(Request $request, Assignment $assignment)
     {
         $validated = $request->validate([
-            'type'           => ['required', Rule::in(['homework', 'test'])],
-            'title'          => ['required', 'string', 'max:255'],
+            'type' => ['required', Rule::in(['homework', 'test'])],
+            'title' => ['required', 'string', 'max:255'],
             'scheduled_date' => ['required', 'date'],
-            'description'    => ['nullable', 'string', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $assignment->update($validated);
@@ -51,5 +52,4 @@ class AssignmentController extends Controller
 
         return back();
     }
-
 }

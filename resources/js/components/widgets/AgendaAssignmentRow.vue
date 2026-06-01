@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Badge from '@/components/widgets/Badge.vue';
+import Trash from '@/components/widgets/svg/Trash.vue';
 
 export interface AgendaAssignment {
     id: number;
@@ -72,6 +73,6 @@ function shortDate(dateStr: string): string {
             class="shrink-0 text-stone-300 transition-colors hover:text-red-500"
             title="Supprimer"
             @click.stop="emit('delete', assignment.id)"
-        >✕</button>
+        ><Trash :size="16" /></button>
     </li>
 </template>
