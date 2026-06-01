@@ -12,6 +12,7 @@ import ArrowUpDown from '@/components/widgets/svg/ArrowUpDown.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useAuthStore } from '@/stores/auth';
 import { useGroupsStore } from '@/stores/groups';
+import { useToasterStore } from '@/stores/toaster';
 import type { AcademicYear, Group, Lesson, School } from '@/types';
 
 setPageTitle('Liste des classes');
@@ -32,7 +33,9 @@ const props = defineProps<{
 }>();
 
 const groupsStore = useGroupsStore();
-const auth = useAuthStore();
+const auth        = useAuthStore();
+const toaster     = useToasterStore();
+const hiddenIds   = ref(new Set<number>());
 
 const canCreate = computed(() => auth.adminSchools.length > 0);
 
@@ -45,7 +48,7 @@ watchEffect(() => groupsStore.setGroups(props.groups));
 type GroupLesson = { group: Group; lesson: Lesson | null };
 
 const flatItems = computed<GroupLesson[]>(() =>
-    groupsStore.groups.flatMap((group): GroupLesson[] => {
+    groupsStore.groups.filter((g) => !hiddenIds.value.has(g.id)).flatMap((group): GroupLesson[] => {
         if (auth.isPureAdmin || group.lessons.length === 0) return [{ group, lesson: null }];
         return group.lessons.map((lesson) => ({ group, lesson }));
     }),
@@ -71,16 +74,15 @@ function confirmDelete() {
         return;
     }
 
-    deleteLoading.value = true;
-    router.delete(`/classlist/${pendingDelete.value.slug}`, {
-        onSuccess: () => {
-            groupsStore.removeGroup(pendingDelete.value!.id);
-            pendingDelete.value = null;
-        },
-        onFinish: () => {
-            deleteLoading.value = false;
-        },
-    });
+    const { id, slug, name } = pendingDelete.value;
+
+    pendingDelete.value = null;
+    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    toaster.deletable(
+        `Classe ${name} supprimée`,
+        () => router.delete(`/classlist/${slug}`, { onSuccess: () => groupsStore.removeGroup(id) }),
+        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+    );
 }
 
 const filterSchool = ref<string | null>(props.filters.school ?? null);

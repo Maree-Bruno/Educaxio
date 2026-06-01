@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { useToasterStore } from '@/stores/toaster';
 import Badge from '@/components/widgets/Badge.vue';
 import SchoolJoinForm from '@/components/widgets/SchoolJoinForm.vue';
 import SubjectPicker from '@/components/widgets/SubjectPicker.vue';
@@ -20,6 +21,8 @@ const {user} = defineProps<{
 
 setPageTitle(`Bonjour ${user.name}`);
 const addingSchool = ref(false);
+const toaster      = useToasterStore();
+const hiddenIds    = ref(new Set<number>());
 
 const statusLabel: Record<string, string> = {
     pending:  'En attente',
@@ -34,7 +37,12 @@ const statusVariant: Record<string, 'neutral' | 'blue'> = {
 };
 
 function cancelRequest(id: number) {
-    router.delete(`/pending/join-requests/${id}`);
+    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    toaster.deletable(
+        'Demande annulée',
+        () => router.delete(`/pending/join-requests/${id}`),
+        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+    );
 }
 </script>
 
@@ -61,9 +69,9 @@ function cancelRequest(id: number) {
                 </button>
             </div>
 
-            <ul v-if="requests.length > 0" class="divide-y divide-neutral-100">
+            <ul v-if="requests.filter((r) => !hiddenIds.has(r.id)).length > 0" class="divide-y divide-neutral-100">
                 <li
-                    v-for="req in requests"
+                    v-for="req in requests.filter((r) => !hiddenIds.has(r.id))"
                     :key="req.id"
                     class="flex items-center justify-between gap-3 px-6 py-4"
                 >

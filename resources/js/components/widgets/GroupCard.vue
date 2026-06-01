@@ -120,7 +120,7 @@ const emit = defineEmits<{
                 </template>
             </LinkButton>
 
-            <LinkButton
+<!--            <LinkButton
                 v-if="gradesHref"
                 :href="gradesHref"
                 variant="secondary"
@@ -136,7 +136,7 @@ const emit = defineEmits<{
                         aria-hidden="true"
                     />
                 </template>
-            </LinkButton>
+            </LinkButton>-->
 
             <Button
                 v-if="canDelete"

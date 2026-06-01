@@ -162,7 +162,7 @@ function attachSelected() {
                         label="Ajouter"
                         @click="openAddModal"
                     />
-                    <LinkButton
+<!--                    <LinkButton
                         v-if="isTeacher"
                         :href="`/classlist/${group.slug}/grades`"
                         variant="primary"
@@ -172,7 +172,7 @@ function attachSelected() {
                         <template #icon>
                             <ClipboardCheck :size="16" :stroke-width="2" aria-hidden="true" />
                         </template>
-                    </LinkButton>
+                    </LinkButton>-->
                     <LinkButton
                         v-if="isTeacher"
                         :href="`/attendances?group=${group.slug}`"

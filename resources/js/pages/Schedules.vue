@@ -5,6 +5,7 @@ import Button from '@/components/widgets/Button.vue';
 import ScheduleSlotModal from '@/components/widgets/ScheduleSlotModal.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { useToasterStore } from '@/stores/toaster';
 import type { AcademicYear, LessonOption, ScheduleEntry, School, SlotRow } from '@/types';
 
 setPageTitle('Horaire hebdomadaire annuel');
@@ -18,6 +19,9 @@ const props = defineProps<{
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     filters: { year?: string };
 }>();
+
+const toaster = useToasterStore();
+const hiddenEntryIds = ref(new Set<number>());
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'];
 const todayDow = new Date().getDay(); // 0=dim, 1=lun … 5=ven, 6=sam
@@ -45,6 +49,24 @@ function openCell(slot: SlotRow, dayIndex: number) {
     const dayOfWeek = dayIndex + 1;
     const entry = props.entries[slot.position]?.[dayOfWeek] ?? null;
     modalState.value = { slot, dayOfWeek, dayLabel: DAY_NAMES[dayIndex], entry };
+}
+
+function getEntry(position: number, day: number): ScheduleEntry | null {
+    const entry = props.entries[position]?.[day] ?? null;
+    if (!entry || hiddenEntryIds.value.has(entry.id)) {
+        return null;
+    }
+
+    return entry;
+}
+
+function onDeleteEntry(entryId: number) {
+    hiddenEntryIds.value = new Set([...hiddenEntryIds.value, entryId]);
+    toaster.deletable(
+        'Créneau supprimé',
+        () => router.delete(`/schedule-entries/${entryId}`, { preserveScroll: true }),
+        () => { hiddenEntryIds.value.delete(entryId); hiddenEntryIds.value = new Set(hiddenEntryIds.value); },
+    );
 }
 
 function toggleSlotType(row: SlotRow) {
@@ -109,15 +131,15 @@ function toggleSlotType(row: SlotRow) {
                         @click="openCell(row, selectedDay - 1)"
                     >
                         <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ row.label }}</span>
-                        <template v-if="entries[row.position]?.[selectedDay]">
+                        <template v-if="getEntry(row.position, selectedDay)">
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-extrabold text-black">
-                                    {{ entries[row.position][selectedDay].grade }}
-                                    · {{ entries[row.position][selectedDay].subject }}
+                                    {{ getEntry(row.position, selectedDay)!.grade }}
+                                    · {{ getEntry(row.position, selectedDay)!.subject }}
                                 </p>
                                 <p class="truncate text-xs text-border-figma">
-                                    {{ entries[row.position][selectedDay].room ?? '–' }}
-                                    · {{ entries[row.position][selectedDay].school }}
+                                    {{ getEntry(row.position, selectedDay)!.room ?? '–' }}
+                                    · {{ getEntry(row.position, selectedDay)!.school }}
                                 </p>
                             </div>
                         </template>
@@ -170,23 +192,23 @@ function toggleSlotType(row: SlotRow) {
                         @click="openCell(row, colIndex)"
                     >
                         <div
-                            v-if="entries[row.position]?.[colIndex + 1]"
+                            v-if="getEntry(row.position, colIndex + 1)"
                             class="flex h-full flex-col justify-between rounded-lg bg-white p-2 transition-shadow hover:shadow-sm"
                         >
                             <div class="flex items-start justify-between gap-1">
                                 <span class="shrink-0 text-xs font-extrabold leading-4 text-black">
-                                    {{ entries[row.position][colIndex + 1].grade }}
+                                    {{ getEntry(row.position, colIndex + 1)!.grade }}
                                 </span>
                                 <span class="line-clamp-1 text-right text-xs font-extrabold leading-4 text-black">
-                                    {{ entries[row.position][colIndex + 1].subject }}
+                                    {{ getEntry(row.position, colIndex + 1)!.subject }}
                                 </span>
                             </div>
                             <div class="flex items-center justify-between gap-1">
                                 <span class="shrink-0 text-xs font-extrabold leading-4 text-black">
-                                    {{ entries[row.position][colIndex + 1].room ?? '–' }}
+                                    {{ getEntry(row.position, colIndex + 1)!.room ?? '–' }}
                                 </span>
                                 <span class="line-clamp-1 text-right text-xs font-extrabold leading-4 text-black">
-                                    {{ entries[row.position][colIndex + 1].school }}
+                                    {{ getEntry(row.position, colIndex + 1)!.school }}
                                 </span>
                             </div>
                         </div>
@@ -224,5 +246,6 @@ function toggleSlotType(row: SlotRow) {
         :slots="slots"
         :entries="entries"
         @close="modalState = null"
+        @delete-entry="onDeleteEntry"
     />
 </template>

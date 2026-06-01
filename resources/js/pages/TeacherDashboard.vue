@@ -9,6 +9,7 @@ import DateField from '@/components/widgets/DateField.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { useToasterStore } from '@/stores/toaster';
 import type { User } from '@/types';
 
 interface Entry {
@@ -100,6 +101,8 @@ const editingAssignment = ref<UpcomingAssignment | null>(null);
 
 const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const pendingDelete    = ref<{ id: number; title: string } | null>(null);
+const hiddenIds        = ref(new Set<number>());
+const toaster          = useToasterStore();
 const editForm = useForm({
     type:           'homework' as 'homework' | 'test',
     title:          '',
@@ -123,7 +126,10 @@ function submitEdit() {
 
     editForm.patch(`/assignments/${editingAssignment.value.id}`, {
         preserveScroll: true,
-        onSuccess: () => editModalRef.value?.close(),
+        onSuccess: () => {
+            editModalRef.value?.close();
+            toaster.success('Devoir modifié');
+        },
     });
 }
 
@@ -143,10 +149,16 @@ function confirmDelete() {
         return;
     }
 
-    router.delete(`/assignments/${pendingDelete.value.id}`, {
-        preserveScroll: true,
-        onSuccess: () => confirmDeleteRef.value?.close(),
-    });
+    const { id, title } = pendingDelete.value;
+
+    confirmDeleteRef.value?.close();
+    pendingDelete.value = null;
+    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    toaster.deletable(
+        `« ${title} » supprimé`,
+        () => router.delete(`/assignments/${id}`, { preserveScroll: true }),
+        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+    );
 }
 </script>
 
@@ -222,7 +234,7 @@ function confirmDelete() {
                     <template v-else>
                         <ul class="divide-y divide-neutral-100 bg-white">
                             <li
-                                v-for="a in upcomingAssignments"
+                                v-for="a in upcomingAssignments.filter((a) => !hiddenIds.has(a.id))"
                                 :key="a.id"
                                 class="group flex cursor-pointer items-start gap-3 px-6 py-4 transition-colors hover:bg-gray-50"
                                 @click="openEdit(a)"

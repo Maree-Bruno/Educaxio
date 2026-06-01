@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { useToasterStore } from '@/stores/toaster';
 import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
 import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
 import AgendaJournalRow from '@/components/widgets/AgendaJournalRow.vue';
@@ -129,7 +130,7 @@ watch([sortField, sortDir], () => {
 
 // ── Assignments filtrés + triés (client) ──────────────────────────────────
 const filteredAssignments = computed(() => {
-    let list = [...props.assignments];
+    let list = props.assignments.filter((a) => !hiddenIds.value.has(a.id));
 
     if (filterType.value)
         list = list.filter((a) => a.type === filterType.value);
@@ -161,6 +162,8 @@ const editingAssignment = ref<AgendaAssignment | null>(null);
 
 const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const pendingDelete    = ref<{ id: number; title: string } | null>(null);
+const hiddenIds        = ref(new Set<number>());
+const toaster          = useToasterStore();
 const editForm = useForm({
     type: 'homework' as 'homework' | 'test',
     title: '',
@@ -185,7 +188,10 @@ function submitEdit() {
 
     editForm.patch(`/assignments/${editingAssignment.value.id}`, {
         preserveScroll: true,
-        onSuccess: () => editModalRef.value?.close(),
+        onSuccess: () => {
+            editModalRef.value?.close();
+            toaster.success('Devoir modifié');
+        },
     });
 }
 
@@ -205,10 +211,16 @@ function confirmDelete() {
         return;
     }
 
-    router.delete(`/assignments/${pendingDelete.value.id}`, {
-        preserveScroll: true,
-        onSuccess: () => confirmDeleteRef.value?.close(),
-    });
+    const { id, title } = pendingDelete.value;
+
+    confirmDeleteRef.value?.close();
+    pendingDelete.value = null;
+    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    toaster.deletable(
+        `« ${title} » supprimé`,
+        () => router.delete(`/assignments/${id}`, { preserveScroll: true }),
+        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+    );
 }
 
 function goToAttendance(entry: AgendaJournalEntry) {
