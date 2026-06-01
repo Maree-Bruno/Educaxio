@@ -137,26 +137,31 @@ const filteredAssignments = computed(() => {
     if (filterType.value)
         list = list.filter((a) => a.type === filterType.value);
 
-    list.sort((a, b) => {
-        let cmp = 0;
-        if (sortField.value === 'date')
-            cmp = a.scheduled_date.localeCompare(b.scheduled_date);
-        if (sortField.value === 'group') cmp = a.group.localeCompare(b.group);
-        if (sortField.value === 'subject')
-            cmp = a.subject.localeCompare(b.subject);
-
-        return sortDir.value === 'desc' ? -cmp : cmp;
-    });
+    if (sortField.value !== 'date') {
+        list.sort((a, b) => {
+            let cmp = 0;
+            if (sortField.value === 'group') cmp = a.group.localeCompare(b.group);
+            if (sortField.value === 'subject') cmp = a.subject.localeCompare(b.subject);
+            return sortDir.value === 'desc' ? -cmp : cmp;
+        });
+    }
 
     return list;
 });
 
-const upcomingAssignments = computed(() =>
-    filteredAssignments.value.filter((a) => a.scheduled_date >= today),
-);
-const pastAssignments = computed(() =>
-    filteredAssignments.value.filter((a) => a.scheduled_date < today),
-);
+const upcomingAssignments = computed(() => {
+    const list = filteredAssignments.value.filter((a) => a.scheduled_date >= today);
+    if (sortField.value === 'date')
+        return [...list].sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date));
+    return list;
+});
+
+const pastAssignments = computed(() => {
+    const list = filteredAssignments.value.filter((a) => a.scheduled_date < today);
+    if (sortField.value === 'date')
+        return [...list].sort((a, b) => b.scheduled_date.localeCompare(a.scheduled_date));
+    return list;
+});
 
 // ── Édition ───────────────────────────────────────────────────────────────
 const editModalRef = ref<InstanceType<typeof BaseModal> | null>(null);

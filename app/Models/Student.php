@@ -7,17 +7,39 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Student extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'slug',
         'lastname',
         'firstname',
         'email',
         'school_id',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Student $student) {
+            $base = Str::slug($student->firstname . '-' . $student->lastname);
+            $slug = $base;
+            $n = 2;
+            while (static::where('slug', $slug)->exists()) {
+                $slug = $base . '-' . $n++;
+            }
+            $student->slug = $slug;
+        });
+    }
 
     public function school(): BelongsTo
     {

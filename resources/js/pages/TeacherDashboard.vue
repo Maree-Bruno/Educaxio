@@ -49,6 +49,7 @@ interface UpcomingAssignment {
     description: string | null;
     group: string;
     subject: string;
+    school: string;
 }
 
 const { user, selectedDate, upcomingAssignments } = defineProps<{
@@ -248,7 +249,7 @@ function confirmDelete() {
                                 >{{ a.type === 'test' ? 'Interro' : 'Devoir' }}</span>
                                 <div class="min-w-0 flex-1">
                                     <p class="truncate text-sm font-medium text-text-base">{{ a.title }}</p>
-                                    <p class="truncate text-xs text-stone-400">{{ a.group }} · {{ a.subject }}</p>
+                                    <p class="truncate text-xs text-stone-400">{{ a.group }} · {{ a.subject }} · {{ a.school }}</p>
                                     <p class="text-xs font-medium text-border-figma">{{ formatDate(a.scheduled_date) }}</p>
                                 </div>
                                 <button

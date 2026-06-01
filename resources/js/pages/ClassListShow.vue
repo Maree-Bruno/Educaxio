@@ -74,14 +74,14 @@ function sortBy(col: string) {
 
 // --- Add student modal ---
 const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const addTab = ref<'new' | 'existing'>('new');
+const addTab = ref<'new' | 'existing'>('existing');
 const addForm    = useForm({ lastname: '', firstname: '', email: '' });
 const attachForm = useForm({ student_ids: [] as number[] });
 const studentSearch = ref('');
 const selectedStudentIds = ref<number[]>([]);
 
 function openAddModal() {
-    addTab.value = 'new';
+    addTab.value = 'existing';
     addForm.reset();
     studentSearch.value = '';
     selectedStudentIds.value = [];
@@ -213,7 +213,7 @@ function attachSelected() {
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
                         <LinkButton
-                            :href="showStudent.url({ student: student.id })"
+                            :href="showStudent.url({ student: student.slug })"
                             variant="secondary"
                             size="sm"
                             :icon-only="true"
@@ -225,7 +225,7 @@ function attachSelected() {
                         </LinkButton>
                         <LinkButton
                             v-if="canManage"
-                            :href="showStudent.url({ student: student.id })"
+                            :href="showStudent.url({ student: student.slug })"
                             method="delete"
                             variant="danger"
                             size="sm"
@@ -296,7 +296,7 @@ function attachSelected() {
                             <td class="px-6 py-5">
                                 <div class="flex items-center justify-center gap-2">
                                     <LinkButton
-                                        :href="showStudent.url({ student: student.id })"
+                                        :href="showStudent.url({ student: student.slug })"
                                         variant="secondary"
                                         size="sm"
                                         :icon-only="true"
@@ -308,7 +308,7 @@ function attachSelected() {
                                     </LinkButton>
                                     <LinkButton
                                         v-if="canManage"
-                                        :href="showStudent.url({ student: student.id })"
+                                        :href="showStudent.url({ student: student.slug })"
                                         method="delete"
                                         variant="danger"
                                         size="sm"

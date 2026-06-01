@@ -24,7 +24,7 @@ import type { Paginator } from '@/types';
 
 interface School  { id: number; name: string; slug: string }
 interface Group   { id: number; grade: string; name: string; slug: string }
-interface Student { id: number; lastname: string; firstname: string; email: string | null; school_id: number; groups: Group[] }
+interface Student { id: number; slug: string; lastname: string; firstname: string; email: string | null; school_id: number; groups: Group[] }
 
 const props = defineProps<{
     school:   School;
@@ -126,13 +126,13 @@ function confirmDelete() {
         return;
     }
 
-    const { id, firstname, lastname } = pendingDelete.value;
+    const { id, slug, firstname, lastname } = pendingDelete.value;
 
     pendingDelete.value = null;
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `${firstname} ${lastname} supprimé`,
-        () => router.delete(adminStudentsDestroy.url({ school: props.school.slug, student: id }), { preserveScroll: true }),
+        () => router.delete(adminStudentsDestroy.url({ school: props.school.slug, student: slug }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
@@ -200,7 +200,7 @@ function confirmDelete() {
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2 flex-col">
-                    <LinkButton :href="showStudent.url({ student: student.id })" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
+                    <LinkButton :href="showStudent.url({ student: student.slug })" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
                         <template #icon><Eye :size="16" :stroke-width="2" aria-hidden="true" /></template>
                     </LinkButton>
                     <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = student">
@@ -254,7 +254,7 @@ function confirmDelete() {
                         <td class="px-6 py-5 text-sm text-text-base">{{ student.email ?? '—' }}</td>
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-2">
-                                <LinkButton :href="showStudent.url({ student: student.id })" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
+                                <LinkButton :href="showStudent.url({ student: student.slug })" variant="secondary" size="sm" :icon-only="true" title="Voir / modifier l'élève">
                                     <template #icon><Eye :size="16" :stroke-width="2" aria-hidden="true" /></template>
                                 </LinkButton>
                                 <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = student">

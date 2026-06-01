@@ -22,6 +22,7 @@ export interface Subject {
 
 export interface Student {
     id: number;
+    slug: string;
     school_id: number;
     school?: Pick<School, 'id' | 'name'>;
     firstname: string;

@@ -109,7 +109,7 @@ const emit = defineEmits<{
             <LinkButton
                 v-if="viewHref"
                 :href="viewHref"
-                variant="primary"
+                variant="secondary"
                 size="sm"
                 :icon-only="true"
                 label="Voir la classe"

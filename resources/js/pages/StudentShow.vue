@@ -74,7 +74,7 @@ function openEdit() {
 
 function save() {
     form.transform((data) => ({ ...data, email: data.email || null }))
-        .patch(updateStudent.url({ student: props.student.id }), {
+        .patch(updateStudent.url({ student: props.student.slug }), {
             preserveScroll: true,
             onSuccess: () => modalRef.value?.close(),
         });
@@ -239,7 +239,14 @@ function save() {
 
     <div v-else class="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white">
         <div class="border-b border-neutral-300/10 px-6 py-5">
-            <h3 class="text-xl font-bold text-text-base">Evaluations</h3>
+            <h3 class="text-xl font-bold text-text-base">Évaluations</h3>
+        </div>
+        <div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
+            <svg class="size-10 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <p class="text-sm font-bold text-stone-400">Fonctionnalité à venir</p>
+            <p class="text-xs text-stone-300">Le suivi des évaluations sera disponible prochainement.</p>
         </div>
     </div>
 
