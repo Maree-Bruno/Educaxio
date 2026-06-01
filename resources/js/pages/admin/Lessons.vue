@@ -2,6 +2,9 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, nextTick, ref, watch } from 'vue';
+import { store as adminLessonsStore, destroy as adminLessonsDestroy } from '@/routes/admin/lessons';
+import { sync as syncLessonTeachers } from '@/routes/admin/lessons/teachers';
+import { create, show as showClasslist } from '@/routes/classlist';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
@@ -55,8 +58,6 @@ const props = defineProps<{
 }>();
 
 setPageTitle(`Attribution des cours`);
-
-const base = `/schools/${props.school.slug}/lessons`;
 
 // ── Filtres ───────────────────────────────────────────────────────────────
 const search        = ref('');
@@ -153,7 +154,7 @@ function syncTeachers() {
     }
 
     const lessonId = editingLesson.value.id;
-    teacherForm.put(`${base}/${lessonId}/teachers`, {
+    teacherForm.put(syncLessonTeachers.url({ school: props.school.slug, lesson: lessonId }), {
         preserveScroll: true,
         onSuccess: () => {
             closeTeachers();
@@ -215,7 +216,7 @@ function submitAdd() {
 
     const groupId = addingToGroup.value.id;
     addForm.transform((data) => ({ ...data, group_id: groupId }))
-        .post(base, {
+        .post(adminLessonsStore.url({ school: props.school.slug }), {
             preserveScroll: true,
             onSuccess: () => {
                 closeAdd();
@@ -239,7 +240,7 @@ function confirmDelete() {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `${subject.name} · ${group.grade}${group.name} supprimé`,
-        () => router.delete(`${base}/${id}`, { preserveScroll: true }),
+        () => router.delete(adminLessonsDestroy.url({ school: props.school.slug, lesson: id }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
@@ -283,7 +284,7 @@ function confirmDelete() {
         </template>
         <template #action>
             <LinkButton
-                :href="`/classlist/create?school=${school.slug}&from=lessons`"
+                :href="create.url({ query: { school: school.slug, from: 'lessons' } })"
                 variant="primary"
                 size="sm"
                 label="Nouvelle classe"
@@ -313,7 +314,7 @@ function confirmDelete() {
                 </button>
                 <div class="flex shrink-0 items-center gap-2">
                     <LinkButton
-                        :href="`/classlist/${group.slug}`"
+                        :href="showClasslist.url({ group: group.slug })"
                         variant="secondary"
                         size="sm"
                         label="Modifier la classe"

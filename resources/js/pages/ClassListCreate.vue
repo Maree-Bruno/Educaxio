@@ -4,6 +4,7 @@ import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import type { AcademicYear, Subject } from '@/types';
+import { store } from '@/routes/classlist';
 
 setPageTitle('Nouvelle classe');
 
@@ -33,7 +34,7 @@ defineProps<{
         <div class="flex w-full shrink-0 flex-col gap-4 xl:w-80 sticky top-20">
             <ClassGroupForm
                 mode="create"
-                action="/classlist"
+                :action="store.url()"
                 :academic-years="academicYears"
                 :subjects="subjects"
                 :initial-data="{

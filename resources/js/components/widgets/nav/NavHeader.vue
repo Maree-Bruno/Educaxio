@@ -10,7 +10,10 @@ import Home from '@/components/widgets/svg/Home.vue';
 import Schedule from '@/components/widgets/svg/Schedule.vue';
 import SchoolAgenda from '@/components/widgets/svg/SchoolAgenda.vue';
 import { useAuthStore } from '@/stores/auth';
-import { agenda, dashboard, classlist, attendances, schedules } from '@/routes';
+import { agenda, dashboard, classlist, attendances, schedules, pending } from '@/routes';
+import { index as adminStudentsIndex } from '@/routes/admin/students';
+import { index as adminTeachersIndex } from '@/routes/admin/teachers';
+import { index as adminLessonsIndex } from '@/routes/admin/lessons';
 import NavItem from './NavItem.vue';
 
 const { collapsed = false } = defineProps<{
@@ -50,9 +53,9 @@ function isActive(href: string): boolean {
 
         <ul v-if="auth.isPending" class="space-y-1">
             <NavItem
-                href="/pending"
+                :href="pending.url()"
                 title="En attente"
-                :active="isActive('/pending')"
+                :active="isActive(pending.url())"
                 :collapsed="collapsed"
             >
                 <template #icon>
@@ -77,9 +80,9 @@ function isActive(href: string): boolean {
             <template v-if="auth.adminSchools.length > 0">
                 <template v-for="school in auth.adminSchools" :key="school.slug">
                     <NavItem
-                        :href="`/schools/${school.slug}/students`"
+                        :href="adminStudentsIndex.url({ school: school.slug })"
                         title="Élèves"
-                        :active="isActive(`/schools/${school.slug}/students`)"
+                        :active="isActive(adminStudentsIndex.url({ school: school.slug }))"
                         :collapsed="collapsed"
                     >
                         <template #icon>
@@ -87,9 +90,9 @@ function isActive(href: string): boolean {
                         </template>
                     </NavItem>
                     <NavItem
-                        :href="`/schools/${school.slug}/teachers`"
+                        :href="adminTeachersIndex.url({ school: school.slug })"
                         title="Professeurs"
-                        :active="isActive(`/schools/${school.slug}/teachers`)"
+                        :active="isActive(adminTeachersIndex.url({ school: school.slug }))"
                         :collapsed="collapsed"
                     >
                         <template #icon>
@@ -97,9 +100,9 @@ function isActive(href: string): boolean {
                         </template>
                     </NavItem>
                     <NavItem
-                        :href="`/schools/${school.slug}/lessons`"
+                        :href="adminLessonsIndex.url({ school: school.slug })"
                         title="Attribution"
-                        :active="isActive(`/schools/${school.slug}/lessons`)"
+                        :active="isActive(adminLessonsIndex.url({ school: school.slug }))"
                         :collapsed="collapsed"
                     >
                         <template #icon>

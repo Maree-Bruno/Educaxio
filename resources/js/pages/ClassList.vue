@@ -2,6 +2,8 @@
 import { router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { computed, ref, watch, watchEffect } from 'vue';
+import { classlist } from '@/routes';
+import { create, show, destroy } from '@/routes/classlist';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import FilterBar from '@/components/widgets/FilterBar.vue';
 import GroupCard from '@/components/widgets/GroupCard.vue';
@@ -80,7 +82,7 @@ function confirmDelete() {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `Classe ${name} supprimée`,
-        () => router.delete(`/classlist/${slug}`, { onSuccess: () => groupsStore.removeGroup(id) }),
+        () => router.delete(destroy.url({ group: slug }), { onSuccess: () => groupsStore.removeGroup(id) }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
@@ -123,7 +125,7 @@ const classOptions = computed(() => {
 
 function applyFilters() {
     router.get(
-        '/classlist',
+        classlist.url(),
         {
             school: filterSchool.value ?? undefined,
             class: filterClass.value ?? undefined,
@@ -225,7 +227,7 @@ watch(sortDir, applyFilters);
         </template>
         <template v-if="canCreate" #action>
             <LinkButton
-                href="/classlist/create"
+                :href="create.url()"
                 variant="primary"
                 size="sm"
                 label="Nouvelle classe"
@@ -260,7 +262,7 @@ watch(sortDir, applyFilters);
                     v-bind="groupProps(group)"
                     :lesson="lesson"
                     :can-delete="canDeleteGroup(group.school_id)"
-                    :view-href="`/classlist/${group.slug}`"
+                    :view-href="show.url({ group: group.slug })"
                     :grades-href="lesson ? `/classlist/${group.slug}/lessons/${lesson.id}/grades` : undefined"
                     @delete="requestDelete"
                 />

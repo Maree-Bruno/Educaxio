@@ -3,6 +3,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import NoScriptWarning from '@/components/widgets/NoScriptWarning.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SubjectGrid from '@/components/widgets/SubjectGrid.vue';
 import { login } from '@/routes';
@@ -139,6 +140,8 @@ watch(
 
 <template>
     <Head title="Inscription" />
+
+    <NoScriptWarning />
 
     <div class="mb-1 flex items-center gap-1.5">
         <div

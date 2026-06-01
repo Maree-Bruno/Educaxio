@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import Button from './Button.vue';
 import SubjectGrid from './SubjectGrid.vue';
 import { useToasterStore } from '@/stores/toaster';
+import { sync } from '@/routes/pending/subjects';
 
 const props = defineProps<{
     subjects:   { id: number; name: string }[];
@@ -20,7 +21,7 @@ function onUpdate(ids: number[]) {
 }
 
 function save() {
-    form.patch('/pending/subjects', {
+    form.patch(sync.url(), {
         onSuccess: () => {
             dirty.value = false;
             toaster.success('Matières enregistrées');

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { store } from '@/routes/attendances';
 import AttendanceStatusButton from '@/components/widgets/AttendanceStatusButton.vue';
 import Button from '@/components/widgets/Button.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
@@ -64,7 +65,7 @@ function save() {
         lesson_id: entry.lesson_id,
         date: props.date,
         statuses,
-    })).post('/attendances', { preserveScroll: true });
+    })).post(store.url(), { preserveScroll: true });
 }
 
 const PAGE_SIZE = 10;

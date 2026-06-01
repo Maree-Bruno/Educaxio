@@ -5,6 +5,7 @@ import Button from '@/components/widgets/Button.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import { useToasterStore } from '@/stores/toaster';
 import type { AcademicYear, Subject } from '@/types';
+import { classlist } from '@/routes';
 
 const props = defineProps<{
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
@@ -60,7 +61,7 @@ function submit() {
 
 function cancel() {
     if (props.mode === 'create') {
-        router.visit('/classlist');
+        router.visit(classlist.url());
     } else {
         form.reset();
     }

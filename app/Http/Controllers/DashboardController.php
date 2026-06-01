@@ -184,6 +184,7 @@ class DashboardController extends Controller
                 'description' => $a->description,
                 'group' => $lessons[$a->lesson_id]->group->grade.$lessons[$a->lesson_id]->group->name,
                 'subject' => $lessons[$a->lesson_id]->subject->name,
+                'school' => $lessons[$a->lesson_id]->group->school->name,
             ]);
 
         return Inertia::render('TeacherDashboard', [

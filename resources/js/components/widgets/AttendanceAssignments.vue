@@ -2,6 +2,7 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { useToasterStore } from '@/stores/toaster';
+import { store, update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
@@ -108,7 +109,7 @@ function openCreate() {
 }
 
 function submitCreate() {
-    form.post('/assignments', {
+    form.post(store.url(), {
         preserveScroll: true,
         onSuccess: () => {
             createModalRef.value?.close();
@@ -131,7 +132,7 @@ function submitEdit() {
         return;
     }
 
-    editForm.patch(`/assignments/${editingAssignment.value.id}`, {
+    editForm.patch(updateAssignment.url({ assignment: editingAssignment.value.id }), {
         preserveScroll: true,
         onSuccess: () => {
             editModalRef.value?.close();
@@ -157,7 +158,7 @@ function confirmDelete() {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `« ${title} » supprimé`,
-        () => router.delete(`/assignments/${id}`, { preserveScroll: true }),
+        () => router.delete(destroyAssignment.url({ assignment: id }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }

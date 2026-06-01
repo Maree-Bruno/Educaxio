@@ -1,66 +1,64 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
-import InputError from '@/components/InputError.vue';
-import TextLink from '@/components/TextLink.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import Button from '@/components/widgets/Button.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import NoScriptWarning from '@/components/widgets/NoScriptWarning.vue';
 import { login } from '@/routes';
-import { email } from '@/routes/password';
+import { email as sendResetLink } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Forgot password',
-        description: 'Enter your email to receive a password reset link',
+        title: 'Mot de passe oublié',
+        description: 'Recevez un lien de réinitialisation par email.',
     },
 });
 
 defineProps<{
     status?: string;
 }>();
+
+const page = usePage();
+const serverErrors = computed(() => page.props.errors);
+
+const form = useForm({ email: '' });
+
+function submit() {
+    form.post(sendResetLink.url());
+}
 </script>
 
 <template>
-    <Head title="Forgot password" />
+    <Head title="Mot de passe oublié" />
 
-    <div
-        v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
-    >
+    <NoScriptWarning />
+
+    <div v-if="status" class="text-sm font-medium text-green-600 text-center">
         {{ status }}
     </div>
 
-    <div class="space-y-6">
-        <Form v-bind="email.form()" v-slot="{ errors, processing }">
-            <div class="grid gap-2">
-                <Label for="email">Email address</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    autocomplete="off"
-                    autofocus
-                    placeholder="email@example.com"
-                />
-                <InputError :message="errors.email" />
-            </div>
+    <form method="post" :action="sendResetLink.url()" class="flex flex-col gap-5" @submit.prevent="submit">
+        <input type="hidden" name="_token" :value="page.props.csrf_token" />
+        <InputLabel
+            v-model="form.email"
+            label="Adresse email"
+            type="email"
+            placeholder="email@exemple.com"
+            :error="form.errors.email || serverErrors.email"
+        />
 
-            <div class="my-6 flex items-center justify-start">
-                <Button
-                    class="w-full"
-                    :disabled="processing"
-                    data-test="email-password-reset-link-button"
-                >
-                    <Spinner v-if="processing" />
-                    Email password reset link
-                </Button>
-            </div>
-        </Form>
+        <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            label="Envoyer le lien"
+            :loading="form.processing"
+            class="w-full"
+        />
 
-        <div class="space-x-1 text-center text-sm text-muted-foreground">
-            <span>Or, return to</span>
-            <TextLink :href="login()">log in</TextLink>
-        </div>
-    </div>
+        <p class="text-center text-sm">
+            <span class="text-neutral-500">Retour à la </span>
+            <a :href="login.url()" class="font-medium text-blue hover:underline">connexion</a>
+        </p>
+    </form>
 </template>

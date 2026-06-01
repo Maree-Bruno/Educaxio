@@ -14,9 +14,9 @@ class AgendaController extends Controller
     {
         $user = auth()->user();
 
-        $search  = $request->input('search', '');
-        $group   = $request->input('group', '');
-        $school  = $request->input('school', '');
+        $search = $request->input('search', '');
+        $group = $request->input('group', '');
+        $school = $request->input('school', '');
         $sortField = in_array($request->input('sort_field'), ['date', 'group', 'subject'])
             ? $request->input('sort_field')
             : 'date';
@@ -117,11 +117,11 @@ class AgendaController extends Controller
             'groupOptions' => $groupOptions,
             'schoolOptions' => $schoolOptions,
             'filters' => [
-                'search'     => $search,
-                'group'      => $group,
-                'school'     => $school,
+                'search' => $search,
+                'group' => $group,
+                'school' => $school,
                 'sort_field' => $sortField,
-                'sort_dir'   => $sortDir,
+                'sort_dir' => $sortDir,
             ],
         ]);
     }

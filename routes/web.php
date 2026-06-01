@@ -7,22 +7,25 @@ use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\LessonNoteController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClassListController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LessonNoteController;
 use App\Http\Controllers\PendingController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\ScheduleEntryController;
 use App\Http\Controllers\ScheduleSlotController;
 use App\Http\Controllers\StudentController;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Features;
 
-Route::middleware('guest')->post('register/validate', function (\Illuminate\Http\Request $request) {
+Route::middleware('guest')->post('register/validate', function (Request $request) {
     $request->validate([
-        'name'     => ['required', 'string', 'max:255'],
-        'email'    => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique(\App\Models\User::class)],
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
         'password' => ['required', 'string', Password::default(), 'confirmed'],
     ]);
 
@@ -35,70 +38,89 @@ Route::inertia('/', 'Welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Accessible sans école approuvée
-    Route::get('pending', [PendingController::class, 'index'])->name('pending');
-    Route::post('pending/join-requests', [PendingController::class, 'requestSchool'])->name('pending.join-requests.store');
-    Route::delete('pending/join-requests/{joinRequest}', [PendingController::class, 'cancelRequest'])->name('pending.join-requests.destroy');
-    Route::patch('pending/subjects', [PendingController::class, 'syncSubjects'])->name('pending.subjects.sync');
+    Route::get('en-attente', [PendingController::class, 'index'])->name('pending');
+    Route::post('en-attente/demandes', [PendingController::class, 'requestSchool'])->name('pending.join-requests.store');
+    Route::delete('en-attente/demandes/{joinRequest}', [PendingController::class, 'cancelRequest'])->name('pending.join-requests.destroy');
+    Route::patch('en-attente/matieres', [PendingController::class, 'syncSubjects'])->name('pending.subjects.sync');
+
+    // Redirections GET anglais → français
+    Route::redirect('pending', '/en-attente', 301);
 });
 
 Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
-    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('tableau-de-bord', DashboardController::class)->name('dashboard');
 
-    // Class list
-    Route::get('classlist', [ClassListController::class, 'index'])->name('classlist');
-    Route::get('classlist/create', [ClassListController::class, 'create'])->name('classlist.create');
-    Route::get('classlist/{group}', [ClassListController::class, 'show'])->name('classlist.show');
-    Route::post('classlist', [ClassListController::class, 'store'])->name('classlist.store');
-    Route::patch('classlist/{group}', [ClassListController::class, 'update'])->name('classlist.update');
-    Route::delete('classlist/{group}', [ClassListController::class, 'destroy'])->name('classlist.destroy');
-    Route::post('classlist/{group}/students', [ClassListController::class, 'attachStudent'])->name('classlist.students.attach');
+    // Classes
+    Route::get('classes', [ClassListController::class, 'index'])->name('classlist');
+    Route::get('classes/creer', [ClassListController::class, 'create'])->name('classlist.create');
+    Route::get('classes/{group}', [ClassListController::class, 'show'])->name('classlist.show');
+    Route::post('classes', [ClassListController::class, 'store'])->name('classlist.store');
+    Route::patch('classes/{group}', [ClassListController::class, 'update'])->name('classlist.update');
+    Route::delete('classes/{group}', [ClassListController::class, 'destroy'])->name('classlist.destroy');
+    Route::post('classes/{group}/eleves', [ClassListController::class, 'attachStudent'])->name('classlist.students.attach');
 
-    // Students
-    Route::post('students', [StudentController::class, 'store'])->name('students.store');
-    Route::get('students/{student}', [StudentController::class, 'show'])->name('students.show');
-    Route::get('students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
-    Route::patch('students/{student}', [StudentController::class, 'update'])->name('students.update');
-    Route::delete('students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+    // Élèves
+    Route::post('eleves', [StudentController::class, 'store'])->name('students.store');
+    Route::get('eleves/{student}', [StudentController::class, 'show'])->name('students.show');
+    Route::get('eleves/{student}/modifier', [StudentController::class, 'edit'])->name('students.edit');
+    Route::patch('eleves/{student}', [StudentController::class, 'update'])->name('students.update');
+    Route::delete('eleves/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+
+    // Redirections GET anglais → français
+    Route::redirect('dashboard', '/tableau-de-bord', 301);
+    Route::redirect('classlist', '/classes', 301);
+    Route::redirect('classlist/create', '/classes/creer', 301);
+    Route::get('classlist/{group}', fn ($group) => redirect("/classes/{$group}", 301));
+    Route::get('students/{student}', fn ($student) => redirect("/eleves/{$student}", 301));
 
     // Teacher-only
     Route::middleware('role.teacher')->group(function () {
-        Route::get('schedules', [ScheduleController::class, 'index'])->name('schedules');
-        Route::patch('schedule-slots-type', [ScheduleSlotController::class, 'updateType'])->name('schedule-slots.update-type');
-        Route::post('schedule-entries', [ScheduleEntryController::class, 'store'])->name('schedule-entries.store');
-        Route::delete('schedule-entries/{scheduleEntry}', [ScheduleEntryController::class, 'destroy'])->name('schedule-entries.destroy');
+        Route::get('horaires', [ScheduleController::class, 'index'])->name('schedules');
+        Route::patch('creneaux-type', [ScheduleSlotController::class, 'updateType'])->name('schedule-slots.update-type');
+        Route::post('creneaux', [ScheduleEntryController::class, 'store'])->name('schedule-entries.store');
+        Route::delete('creneaux/{scheduleEntry}', [ScheduleEntryController::class, 'destroy'])->name('schedule-entries.destroy');
 
         Route::get('agenda', AgendaController::class)->name('agenda');
 
-        Route::get('attendances', [AttendanceController::class, 'index'])->name('attendances');
-        Route::post('attendances', [AttendanceController::class, 'store'])->name('attendances.store');
-        Route::delete('attendances/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy');
+        Route::get('presences', [AttendanceController::class, 'index'])->name('attendances');
+        Route::post('presences', [AttendanceController::class, 'store'])->name('attendances.store');
+        Route::delete('presences/{attendance}', [AttendanceController::class, 'destroy'])->name('attendances.destroy');
 
-        Route::post('lesson-notes', [LessonNoteController::class, 'store'])->name('lesson-notes.store');
+        Route::post('notes-cours', [LessonNoteController::class, 'store'])->name('lesson-notes.store');
 
-        Route::post('assignments', [AssignmentController::class, 'store'])->name('assignments.store');
-        Route::patch('assignments/{assignment}', [AssignmentController::class, 'update'])->name('assignments.update');
-        Route::delete('assignments/{assignment}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
+        Route::post('devoirs', [AssignmentController::class, 'store'])->name('assignments.store');
+        Route::patch('devoirs/{assignment}', [AssignmentController::class, 'update'])->name('assignments.update');
+        Route::delete('devoirs/{assignment}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
+
+        // Redirections GET anglais → français
+        Route::redirect('schedules', '/horaires', 301);
+        Route::redirect('attendances', '/presences', 301);
     });
 
     // Admin — school-scoped
-    Route::prefix('schools/{school:slug}')
+    Route::prefix('ecoles/{school:slug}')
         ->middleware('school.admin')
         ->name('admin.')
         ->group(function () {
-            Route::get('students', [AdminStudentController::class, 'index'])->name('students.index');
-            Route::post('students', [AdminStudentController::class, 'store'])->name('students.store');
-            Route::patch('students/{student}', [AdminStudentController::class, 'update'])->name('students.update');
-            Route::delete('students/{student}', [AdminStudentController::class, 'destroy'])->name('students.destroy');
+            Route::get('eleves', [AdminStudentController::class, 'index'])->name('students.index');
+            Route::post('eleves', [AdminStudentController::class, 'store'])->name('students.store');
+            Route::patch('eleves/{student}', [AdminStudentController::class, 'update'])->name('students.update');
+            Route::delete('eleves/{student}', [AdminStudentController::class, 'destroy'])->name('students.destroy');
 
-            Route::get('teachers', [AdminTeacherController::class, 'index'])->name('teachers.index');
-            Route::patch('join-requests/{joinRequest}/approve', [AdminJoinRequestController::class, 'approve'])->name('join-requests.approve');
-            Route::patch('join-requests/{joinRequest}/reject', [AdminJoinRequestController::class, 'reject'])->name('join-requests.reject');
+            Route::get('professeurs', [AdminTeacherController::class, 'index'])->name('teachers.index');
+            Route::patch('demandes/{joinRequest}/approuver', [AdminJoinRequestController::class, 'approve'])->name('join-requests.approve');
+            Route::patch('demandes/{joinRequest}/refuser', [AdminJoinRequestController::class, 'reject'])->name('join-requests.reject');
 
-            Route::get('lessons', [AdminLessonController::class, 'index'])->name('lessons.index');
-            Route::post('lessons', [AdminLessonController::class, 'store'])->name('lessons.store');
-            Route::put('lessons/{lesson}/teachers', [AdminLessonController::class, 'syncTeachers'])->name('lessons.teachers.sync');
-            Route::delete('lessons/{lesson}', [AdminLessonController::class, 'destroy'])->name('lessons.destroy');
+            Route::get('cours', [AdminLessonController::class, 'index'])->name('lessons.index');
+            Route::post('cours', [AdminLessonController::class, 'store'])->name('lessons.store');
+            Route::put('cours/{lesson}/professeurs', [AdminLessonController::class, 'syncTeachers'])->name('lessons.teachers.sync');
+            Route::delete('cours/{lesson}', [AdminLessonController::class, 'destroy'])->name('lessons.destroy');
         });
+
+    // Redirections GET admin anglais → français
+    Route::get('schools/{school}/students', fn ($school) => redirect("/ecoles/{$school}/eleves", 301));
+    Route::get('schools/{school}/teachers', fn ($school) => redirect("/ecoles/{$school}/professeurs", 301));
+    Route::get('schools/{school}/lessons', fn ($school) => redirect("/ecoles/{$school}/cours", 301));
 });
 
 require __DIR__.'/settings.php';

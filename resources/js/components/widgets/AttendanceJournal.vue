@@ -2,6 +2,7 @@
 import { useForm } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { ref, watch } from 'vue';
+import { store } from '@/routes/lesson-notes';
 
 const props = defineProps<{
     lessonNote:    { id: number; notes: string | null; savedAt: string | null } | null;
@@ -20,7 +21,7 @@ const save = useDebounceFn(() => {
     form.lesson_id = props.lessonId;
     form.date = props.date;
     form.notes = journalNotes.value;
-    form.post('/lesson-notes', { preserveState: true, preserveScroll: true });
+    form.post(store.url(), { preserveState: true, preserveScroll: true });
 }, 800);
 </script>
 

@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import Button from './Button.vue';
 import SearchInput from './SearchInput.vue';
 import { useToasterStore } from '@/stores/toaster';
+import { store as storeJoinRequest } from '@/routes/pending/join-requests';
 
 const props = defineProps<{
     schools: { id: number; name: string }[];
@@ -31,7 +32,7 @@ function submit() {
     }
 
     form.school_id = selectedId.value;
-    form.post('/pending/join-requests', {
+    form.post(storeJoinRequest.url(), {
         onSuccess: () => {
             selectedId.value = null;
             search.value = '';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { attendances } from '@/routes';
 import AttendanceAssignments from '@/components/widgets/AttendanceAssignments.vue';
 import type { Assignment } from '@/components/widgets/AttendanceAssignments.vue';
 import AttendanceJournal from '@/components/widgets/AttendanceJournal.vue';
@@ -41,7 +42,7 @@ const props = defineProps<{
 }>();
 
 function nav(params: Record<string, string | number | null | undefined>) {
-    router.get('/attendances', params, { preserveState: false });
+    router.get(attendances.url(), params, { preserveState: false });
 }
 
 const entryOptions = computed(() =>

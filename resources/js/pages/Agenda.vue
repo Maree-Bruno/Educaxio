@@ -2,6 +2,8 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { useToasterStore } from '@/stores/toaster';
+import { agenda, attendances } from '@/routes';
+import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
 import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
 import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
 import AgendaJournalRow from '@/components/widgets/AgendaJournalRow.vue';
@@ -100,7 +102,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 function applyServerFilters() {
     router.get(
-        '/agenda',
+        agenda.url(),
         {
             search:      search.value || undefined,
             group:       filterGroup.value || undefined,
@@ -135,26 +137,31 @@ const filteredAssignments = computed(() => {
     if (filterType.value)
         list = list.filter((a) => a.type === filterType.value);
 
-    list.sort((a, b) => {
-        let cmp = 0;
-        if (sortField.value === 'date')
-            cmp = a.scheduled_date.localeCompare(b.scheduled_date);
-        if (sortField.value === 'group') cmp = a.group.localeCompare(b.group);
-        if (sortField.value === 'subject')
-            cmp = a.subject.localeCompare(b.subject);
-
-        return sortDir.value === 'desc' ? -cmp : cmp;
-    });
+    if (sortField.value !== 'date') {
+        list.sort((a, b) => {
+            let cmp = 0;
+            if (sortField.value === 'group') cmp = a.group.localeCompare(b.group);
+            if (sortField.value === 'subject') cmp = a.subject.localeCompare(b.subject);
+            return sortDir.value === 'desc' ? -cmp : cmp;
+        });
+    }
 
     return list;
 });
 
-const upcomingAssignments = computed(() =>
-    filteredAssignments.value.filter((a) => a.scheduled_date >= today),
-);
-const pastAssignments = computed(() =>
-    filteredAssignments.value.filter((a) => a.scheduled_date < today),
-);
+const upcomingAssignments = computed(() => {
+    const list = filteredAssignments.value.filter((a) => a.scheduled_date >= today);
+    if (sortField.value === 'date')
+        return [...list].sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date));
+    return list;
+});
+
+const pastAssignments = computed(() => {
+    const list = filteredAssignments.value.filter((a) => a.scheduled_date < today);
+    if (sortField.value === 'date')
+        return [...list].sort((a, b) => b.scheduled_date.localeCompare(a.scheduled_date));
+    return list;
+});
 
 // ── Édition ───────────────────────────────────────────────────────────────
 const editModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
@@ -186,7 +193,7 @@ function openEdit(id: number) {
 function submitEdit() {
     if (!editingAssignment.value) return;
 
-    editForm.patch(`/assignments/${editingAssignment.value.id}`, {
+    editForm.patch(updateAssignment.url({ assignment: editingAssignment.value.id }), {
         preserveScroll: true,
         onSuccess: () => {
             editModalRef.value?.close();
@@ -218,13 +225,13 @@ function confirmDelete() {
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
         `« ${title} » supprimé`,
-        () => router.delete(`/assignments/${id}`, { preserveScroll: true }),
+        () => router.delete(destroyAssignment.url({ assignment: id }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
 }
 
 function goToAttendance(entry: AgendaJournalEntry) {
-    router.get('/attendances', { date: entry.date, group: entry.group_slug });
+    router.get(attendances.url(), { date: entry.date, group: entry.group_slug });
 }
 </script>
 

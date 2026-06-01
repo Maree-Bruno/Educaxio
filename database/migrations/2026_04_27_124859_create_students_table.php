@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
             $table->string('lastname');
             $table->string('firstname');
+            $table->string('slug')->unique();
             $table->string('email')->nullable();
             $table->unique(['school_id', 'email']);
             $table->timestamps();

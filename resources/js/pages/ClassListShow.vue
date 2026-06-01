@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, nextTick, ref, watch } from 'vue';
+import { classlist, attendances } from '@/routes';
+import { show as showClasslist, update as updateClasslist } from '@/routes/classlist';
+import { attach } from '@/routes/classlist/students';
+import { show as showStudent } from '@/routes/students';
+import { index as adminLessonsIndex } from '@/routes/admin/lessons';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
@@ -58,7 +63,7 @@ function sortBy(col: string) {
     }
 
     router.get(
-        `/classlist/${props.group.slug}`,
+        showClasslist.url({ group: props.group.slug }),
         {
             sort: sortCol.value,
             dir: sortDir.value === 'desc' ? 'desc' : undefined,
@@ -69,14 +74,14 @@ function sortBy(col: string) {
 
 // --- Add student modal ---
 const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const addTab = ref<'new' | 'existing'>('new');
+const addTab = ref<'new' | 'existing'>('existing');
 const addForm    = useForm({ lastname: '', firstname: '', email: '' });
 const attachForm = useForm({ student_ids: [] as number[] });
 const studentSearch = ref('');
 const selectedStudentIds = ref<number[]>([]);
 
 function openAddModal() {
-    addTab.value = 'new';
+    addTab.value = 'existing';
     addForm.reset();
     studentSearch.value = '';
     selectedStudentIds.value = [];
@@ -105,7 +110,7 @@ const filteredSchoolStudents = computed(() => {
 
 function submitNew() {
     addForm.transform((data) => ({ ...data, email: data.email || null }))
-        .post(`/classlist/${props.group.slug}/students`, {
+        .post(attach.url({ group: props.group.slug }), {
             preserveScroll: true,
             onSuccess: closeAddModal,
         });
@@ -117,7 +122,7 @@ function attachSelected() {
     }
 
     attachForm.student_ids = [...selectedStudentIds.value];
-    attachForm.post(`/classlist/${props.group.slug}/students`, {
+    attachForm.post(attach.url({ group: props.group.slug }), {
         preserveScroll: true,
         onSuccess: closeAddModal,
     });
@@ -128,7 +133,7 @@ function attachSelected() {
 <template>
     <Breadcrumb
         :items="[
-            { label: 'Liste de classe', href: '/classlist' },
+            { label: 'Liste de classe', href: classlist.url() },
             { label: `${className} — ${group.school.name}` },
         ]"
     />
@@ -150,7 +155,7 @@ function attachSelected() {
                 <div class="flex flex-wrap justify-end gap-2">
                     <LinkButton
                         v-if="canManage"
-                        :href="`/schools/${group.school.slug}/lessons`"
+                        :href="adminLessonsIndex.url({ school: group.school.slug })"
                         variant="secondary"
                         size="sm"
                         label="Attribution des cours"
@@ -175,7 +180,7 @@ function attachSelected() {
                     </LinkButton>-->
                     <LinkButton
                         v-if="isTeacher"
-                        :href="`/attendances?group=${group.slug}`"
+                        :href="attendances.url({ query: { group: group.slug } })"
                         variant="secondary"
                         size="sm"
                         label="Présence"
@@ -208,7 +213,7 @@ function attachSelected() {
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
                         <LinkButton
-                            :href="`/students/${student.id}`"
+                            :href="showStudent.url({ student: student.slug })"
                             variant="secondary"
                             size="sm"
                             :icon-only="true"
@@ -220,7 +225,7 @@ function attachSelected() {
                         </LinkButton>
                         <LinkButton
                             v-if="canManage"
-                            :href="`/students/${student.id}`"
+                            :href="showStudent.url({ student: student.slug })"
                             method="delete"
                             variant="danger"
                             size="sm"
@@ -291,7 +296,7 @@ function attachSelected() {
                             <td class="px-6 py-5">
                                 <div class="flex items-center justify-center gap-2">
                                     <LinkButton
-                                        :href="`/students/${student.id}`"
+                                        :href="showStudent.url({ student: student.slug })"
                                         variant="secondary"
                                         size="sm"
                                         :icon-only="true"
@@ -303,7 +308,7 @@ function attachSelected() {
                                     </LinkButton>
                                     <LinkButton
                                         v-if="canManage"
-                                        :href="`/students/${student.id}`"
+                                        :href="showStudent.url({ student: student.slug })"
                                         method="delete"
                                         variant="danger"
                                         size="sm"
@@ -347,7 +352,7 @@ function attachSelected() {
 
             <ClassGroupForm
                 mode="edit"
-                :action="`/classlist/${group.slug}`"
+                :action="updateClasslist.url({ group: group.slug })"
                 :academic-years="academicYears"
                 :subjects="subjects"
                 :initial-data="formData"
