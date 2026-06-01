@@ -118,36 +118,7 @@ class DashboardController extends Controller
             ->join('schedule_slots', 'schedule_entries.schedule_slot_id', '=', 'schedule_slots.id')
             ->orderBy('schedule_slots.position')
             ->select('schedule_entries.*')
-            ->with([
-                'lesson:id,group_id,subject_id',
-                'lesson.group:id,grade,name,slug,school_id',
-                'lesson.group.school:id,name,slug',
-                'lesson.subject:id,name',
-            ])
             ->get();
-
-        $entriesBySlotId = $todayEntries->keyBy('schedule_slot_id');
-
-        $slots = ScheduleSlot::orderBy('position')
-            ->get(['id', 'position', 'label', 'type'])
-            ->map(function ($s) use ($entriesBySlotId) {
-                $entry = $entriesBySlotId->get($s->id);
-
-                return [
-                    'id' => $s->id,
-                    'position' => $s->position,
-                    'label' => $s->label,
-                    'type' => $s->type,
-                    'entry' => $entry ? [
-                        'id' => $entry->id,
-                        'subject' => $entry->lesson->subject->name,
-                        'group' => $entry->lesson->group->grade.$entry->lesson->group->name,
-                        'groupSlug' => $entry->lesson->group->slug,
-                        'school' => $entry->lesson->group->school->name,
-                        'room' => $entry->classroom,
-                    ] : null,
-                ];
-            });
 
         $lessons = $user->lessons()
             ->with([
@@ -159,6 +130,30 @@ class DashboardController extends Controller
             ->keyBy('id');
 
         $lessonIds = $lessons->keys()->toArray();
+
+        $entriesBySlotId = $todayEntries->keyBy('schedule_slot_id');
+
+        $slots = ScheduleSlot::orderBy('position')
+            ->get(['id', 'position', 'label', 'type'])
+            ->map(function ($s) use ($entriesBySlotId, $lessons) {
+                $entry = $entriesBySlotId->get($s->id);
+                $lesson = $entry ? $lessons->get($entry->lesson_id) : null;
+
+                return [
+                    'id' => $s->id,
+                    'position' => $s->position,
+                    'label' => $s->label,
+                    'type' => $s->type,
+                    'entry' => ($entry && $lesson) ? [
+                        'id' => $entry->id,
+                        'subject' => $lesson->subject->name,
+                        'group' => $lesson->group->grade.$lesson->group->name,
+                        'groupSlug' => $lesson->group->slug,
+                        'school' => $lesson->group->school->name,
+                        'room' => $entry->classroom,
+                    ] : null,
+                ];
+            });
 
         $groups = $lessons
             ->groupBy('group_id')

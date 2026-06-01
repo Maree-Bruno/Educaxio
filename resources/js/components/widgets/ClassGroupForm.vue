@@ -3,6 +3,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import { watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
+import { useToasterStore } from '@/stores/toaster';
 import type { AcademicYear, Subject } from '@/types';
 
 const props = defineProps<{
@@ -43,11 +44,17 @@ watch(
     { deep: true },
 );
 
+const toaster = useToasterStore();
+
 function submit() {
     if (props.mode === 'create') {
-        form.post(props.action);
+        form.post(props.action, {
+            onSuccess: () => toaster.success('Classe créée'),
+        });
     } else {
-        form.patch(props.action);
+        form.patch(props.action, {
+            onSuccess: () => toaster.success('Classe modifiée'),
+        });
     }
 }
 

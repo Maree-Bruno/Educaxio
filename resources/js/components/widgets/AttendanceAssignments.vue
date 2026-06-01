@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { useToasterStore } from '@/stores/toaster';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
@@ -50,6 +51,8 @@ const editForm = useForm({
 // ── Suppression ───────────────────────────────────────────────────────────
 const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const pendingDelete    = ref<{ id: number; title: string } | null>(null);
+const hiddenIds        = ref(new Set<number>());
+const toaster          = useToasterStore();
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function isoDow(dateStr: string): number {
@@ -61,7 +64,9 @@ function isoDow(dateStr: string): number {
 const allowedDows = computed(() => new Set(props.schedulePattern.map((e) => e.day_of_week)));
 
 const slotsForDate = computed((): ScheduleEntry[] => {
-    if (!form.scheduled_date) return [];
+    if (!form.scheduled_date) {
+        return [];
+    }
 
     return props.schedulePattern.filter((e) => e.day_of_week === isoDow(form.scheduled_date));
 });
@@ -105,7 +110,10 @@ function openCreate() {
 function submitCreate() {
     form.post('/assignments', {
         preserveScroll: true,
-        onSuccess: () => createModalRef.value?.close(),
+        onSuccess: () => {
+            createModalRef.value?.close();
+            toaster.success('Devoir créé');
+        },
     });
 }
 
@@ -119,11 +127,16 @@ function openEdit(a: Assignment) {
 }
 
 function submitEdit() {
-    if (!editingAssignment.value) return;
+    if (!editingAssignment.value) {
+        return;
+    }
 
     editForm.patch(`/assignments/${editingAssignment.value.id}`, {
         preserveScroll: true,
-        onSuccess: () => editModalRef.value?.close(),
+        onSuccess: () => {
+            editModalRef.value?.close();
+            toaster.success('Devoir modifié');
+        },
     });
 }
 
@@ -133,12 +146,20 @@ function requestDelete(a: Assignment) {
 }
 
 function confirmDelete() {
-    if (!pendingDelete.value) return;
+    if (!pendingDelete.value) {
+        return;
+    }
 
-    router.delete(`/assignments/${pendingDelete.value.id}`, {
-        preserveScroll: true,
-        onSuccess: () => confirmDeleteRef.value?.close(),
-    });
+    const { id, title } = pendingDelete.value;
+
+    confirmDeleteRef.value?.close();
+    pendingDelete.value = null;
+    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    toaster.deletable(
+        `« ${title} » supprimé`,
+        () => router.delete(`/assignments/${id}`, { preserveScroll: true }),
+        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+    );
 }
 </script>
 
@@ -158,7 +179,7 @@ function confirmDelete() {
 
         <ul v-else class="flex flex-col gap-3">
             <li
-                v-for="a in assignments"
+                v-for="a in assignments.filter((a) => !hiddenIds.has(a.id))"
                 :key="a.id"
                 class="flex cursor-pointer items-start gap-2 rounded-xl p-1 -mx-1 transition-colors hover:bg-stone-50"
                 @click="openEdit(a)"

@@ -16,6 +16,7 @@ import SortTh from '@/components/widgets/SortTh.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { useToasterStore } from '@/stores/toaster';
 import type { Paginator } from '@/types';
 
 interface School  { id: number; name: string; slug: string }
@@ -105,9 +106,17 @@ function save() {
         ...data,
         email:     data.email || null,
         group_ids: data.group_ids.map(Number),
-    })).post(base, { preserveScroll: true, onSuccess: closeModal });
+    })).post(base, {
+        preserveScroll: true,
+        onSuccess: () => {
+            closeModal();
+            toaster.success('Élève créé');
+        },
+    });
 }
 
+const toaster       = useToasterStore();
+const hiddenIds     = ref(new Set<number>());
 const pendingDelete = ref<Student | null>(null);
 const deleteLoading = ref(false);
 
@@ -116,16 +125,15 @@ function confirmDelete() {
         return;
     }
 
-    deleteLoading.value = true;
-    router.delete(`${base}/${pendingDelete.value.id}`, {
-        preserveScroll: true,
-        onSuccess: () => {
-            pendingDelete.value = null;
-        },
-        onFinish: () => {
-            deleteLoading.value = false;
-        },
-    });
+    const { id, firstname, lastname } = pendingDelete.value;
+
+    pendingDelete.value = null;
+    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    toaster.deletable(
+        `${firstname} ${lastname} supprimé`,
+        () => router.delete(`${base}/${id}`, { preserveScroll: true }),
+        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+    );
 }
 </script>
 
@@ -166,7 +174,7 @@ function confirmDelete() {
         </div>
         <ul class="sm:hidden divide-y divide-neutral-100 bg-white">
             <li
-                v-for="(student, index) in students.data"
+                v-for="(student, index) in students.data.filter((s) => !hiddenIds.has(s.id))"
                 :key="student.id"
                 class="flex items-start justify-between gap-3 px-4 py-4"
             >
@@ -215,7 +223,7 @@ function confirmDelete() {
                 </thead>
                 <tbody class="divide-y divide-neutral-100">
                     <tr
-                        v-for="(student, index) in students.data"
+                        v-for="(student, index) in students.data.filter((s) => !hiddenIds.has(s.id))"
                         :key="student.id"
                         class="transition-colors hover:bg-gray-50"
                     >

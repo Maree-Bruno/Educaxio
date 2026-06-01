@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
+import { useToasterStore } from '@/stores/toaster';
 import type { LessonOption, ScheduleEntry, SlotRow } from '@/types';
 
 const props = defineProps<{
@@ -18,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     close: [];
+    'delete-entry': [entryId: number];
 }>();
 
 const dialogRef = ref<HTMLDialogElement | null>(null);
@@ -38,6 +40,7 @@ const selectedSlotId   = ref<number | null>(null);
 const form             = useForm({ classroom: '' });
 const confirmingDelete = ref(false);
 const syncing          = ref(false);
+const toaster          = useToasterStore();
 
 const selectedDayLabel = computed(() => DAY_OPTIONS.find((d) => d.value === selectedDay.value)?.label ?? '');
 const selectedSlot     = computed(() => props.slots.find((s) => s.id === selectedSlotId.value) ?? null);
@@ -166,17 +169,21 @@ function save() {
         classroom: data.classroom || null,
     })).post('/schedule-entries', {
         preserveScroll: true,
-        onSuccess: () => emit('close'),
+        onSuccess: () => {
+            emit('close');
+            toaster.success('Créneau enregistré');
+        },
     });
 }
 
 function deleteEntry() {
     const entry = currentEntry.value;
-    if (!entry) return;
-    router.delete(`/schedule-entries/${entry.id}`, {
-        preserveScroll: true,
-        onSuccess: () => emit('close'),
-    });
+    if (!entry) {
+        return;
+    }
+
+    emit('close');
+    emit('delete-entry', entry.id);
 }
 </script>
 

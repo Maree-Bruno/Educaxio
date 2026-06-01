@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import Button from './Button.vue';
 import SearchInput from './SearchInput.vue';
+import { useToasterStore } from '@/stores/toaster';
 
 const props = defineProps<{
     schools: { id: number; name: string }[];
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 const search     = ref('');
 const selectedId = ref<number | null>(null);
 const form       = useForm({ school_id: null as number | null });
+const toaster    = useToasterStore();
 
 const filtered = computed(() => {
     const q = search.value.trim().toLowerCase();
@@ -34,6 +36,7 @@ function submit() {
             selectedId.value = null;
             search.value = '';
             form.reset();
+            toaster.success('Demande envoyée');
             emit('success');
         },
     });

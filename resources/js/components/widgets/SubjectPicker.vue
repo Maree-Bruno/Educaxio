@@ -3,14 +3,16 @@ import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import Button from './Button.vue';
 import SubjectGrid from './SubjectGrid.vue';
+import { useToasterStore } from '@/stores/toaster';
 
 const props = defineProps<{
     subjects:   { id: number; name: string }[];
     modelValue: number[];
 }>();
 
-const form  = useForm({ subject_ids: [...props.modelValue] as number[] });
-const dirty = ref(false);
+const form    = useForm({ subject_ids: [...props.modelValue] as number[] });
+const dirty   = ref(false);
+const toaster = useToasterStore();
 
 function onUpdate(ids: number[]) {
     form.subject_ids = ids;
@@ -19,7 +21,10 @@ function onUpdate(ids: number[]) {
 
 function save() {
     form.patch('/pending/subjects', {
-        onSuccess: () => { dirty.value = false; },
+        onSuccess: () => {
+            dirty.value = false;
+            toaster.success('Matières enregistrées');
+        },
     });
 }
 </script>

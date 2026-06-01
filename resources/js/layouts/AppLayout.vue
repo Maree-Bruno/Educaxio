@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import { usePageTitle } from '@/composables/usePageTitle';
 import { useNavigationStore } from '@/stores/navigation';
 import AppHeader from '@/components/widgets/nav/AppHeader.vue';
+import Toaster from '@/components/widgets/Toaster.vue';
 import TopBar from '@/components/widgets/nav/TopBar.vue';
 
 const title = usePageTitle();
@@ -28,4 +29,5 @@ const nav = useNavigationStore();
             </section>
         </main>
     </div>
+    <Toaster />
 </template>

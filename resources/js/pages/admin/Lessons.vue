@@ -15,6 +15,7 @@ import ChevronDown from '@/components/widgets/svg/ChevronDown.vue';
 import Edit from '@/components/widgets/svg/Edit.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { useToasterStore } from '@/stores/toaster';
 
 interface School {
     id: number;
@@ -82,7 +83,7 @@ const groupedLessons = computed(() => {
 
     return props.groups
         .map((group) => {
-            let lessons = props.lessons.filter((l) => l.group_id === group.id);
+            let lessons = props.lessons.filter((l) => l.group_id === group.id && !hiddenIds.value.has(l.id));
 
             if (subjectId !== null) lessons = lessons.filter((l) => l.subject_id === subjectId);
             if (teacherId !== null) lessons = lessons.filter((l) => l.users.some((u) => u.id === teacherId));
@@ -116,6 +117,9 @@ function toggleGroup(id: number) {
 function isGroupOpen(id: number): boolean {
     return openGroupIds.value.has(id) || hasActiveFilter.value;
 }
+
+const toaster   = useToasterStore();
+const hiddenIds = ref(new Set<number>());
 
 // ── Modal : gérer les profs d'un cours ───────────────────────────────────
 const teacherModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
@@ -151,7 +155,10 @@ function syncTeachers() {
     const lessonId = editingLesson.value.id;
     teacherForm.put(`${base}/${lessonId}/teachers`, {
         preserveScroll: true,
-        onSuccess: closeTeachers,
+        onSuccess: () => {
+            closeTeachers();
+            toaster.success('Profs enregistrés');
+        },
     });
 }
 
@@ -208,7 +215,13 @@ function submitAdd() {
 
     const groupId = addingToGroup.value.id;
     addForm.transform((data) => ({ ...data, group_id: groupId }))
-        .post(base, { preserveScroll: true, onSuccess: closeAdd });
+        .post(base, {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAdd();
+                toaster.success('Cours ajouté');
+            },
+        });
 }
 
 // ── Suppression ───────────────────────────────────────────────────────────
@@ -220,16 +233,15 @@ function confirmDelete() {
         return;
     }
 
-    deleteLoading.value = true;
-    router.delete(`${base}/${pendingDelete.value.id}`, {
-        preserveScroll: true,
-        onSuccess: () => {
-            pendingDelete.value = null;
-        },
-        onFinish: () => {
-            deleteLoading.value = false;
-        },
-    });
+    const { id, subject, group } = pendingDelete.value;
+
+    pendingDelete.value = null;
+    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    toaster.deletable(
+        `${subject.name} · ${group.grade}${group.name} supprimé`,
+        () => router.delete(`${base}/${id}`, { preserveScroll: true }),
+        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+    );
 }
 </script>
 
