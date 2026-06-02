@@ -31,11 +31,11 @@ class Student extends Model
         parent::boot();
 
         static::creating(function (Student $student) {
-            $base = Str::slug($student->firstname . '-' . $student->lastname);
+            $base = Str::slug($student->firstname.'-'.$student->lastname);
             $slug = $base;
             $n = 2;
             while (static::where('slug', $slug)->exists()) {
-                $slug = $base . '-' . $n++;
+                $slug = $base.'-'.$n++;
             }
             $student->slug = $slug;
         });

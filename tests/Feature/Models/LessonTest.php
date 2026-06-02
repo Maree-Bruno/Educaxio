@@ -5,6 +5,7 @@ use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\School;
 use App\Models\Subject;
+use Illuminate\Database\QueryException;
 
 beforeEach(function () {
     $school = School::create(['name' => 'École Test', 'slug' => 'ecole-test']);
@@ -46,5 +47,5 @@ it('enforces unique subject per group', function () {
         'name' => 'Doublon',
         'group_id' => $this->group->id,
         'subject_id' => $this->subject->id,
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
+    ]))->toThrow(QueryException::class);
 });

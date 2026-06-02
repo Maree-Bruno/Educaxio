@@ -114,6 +114,7 @@ Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
 
             Route::get('cours', [AdminLessonController::class, 'index'])->name('lessons.index');
             Route::post('cours', [AdminLessonController::class, 'store'])->name('lessons.store');
+            Route::patch('cours/{lesson}', [AdminLessonController::class, 'update'])->name('lessons.update');
             Route::put('cours/{lesson}/professeurs', [AdminLessonController::class, 'syncTeachers'])->name('lessons.teachers.sync');
             Route::delete('cours/{lesson}', [AdminLessonController::class, 'destroy'])->name('lessons.destroy');
 

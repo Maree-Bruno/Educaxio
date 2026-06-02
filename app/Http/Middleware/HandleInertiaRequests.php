@@ -40,9 +40,9 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user'        => $request->user(),
+                'user' => $request->user(),
                 'schoolRoles' => $request->user()?->loadMissing('schools')->schools->map(fn ($s) => [
-                    'id'   => $s->id,
+                    'id' => $s->id,
                     'name' => $s->name,
                     'slug' => $s->slug,
                     'role' => $s->pivot->role,
@@ -51,7 +51,7 @@ class HandleInertiaRequests extends Middleware
             'storage' => [
                 'users' => Storage::disk(config('images.disk'))->url(''),
             ],
-            'csrf_token'  => csrf_token(),
+            'csrf_token' => csrf_token(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

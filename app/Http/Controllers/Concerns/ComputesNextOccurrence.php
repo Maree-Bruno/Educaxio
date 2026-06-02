@@ -27,13 +27,13 @@ trait ComputesNextOccurrence
         $lesson->loadMissing('scheduleEntries.scheduleSlot');
 
         $results = [];
-        $date    = Carbon::tomorrow();
+        $date = Carbon::tomorrow();
 
         for ($day = 0; $day < 60 && count($results) < $count; $day++) {
             foreach ($lesson->scheduleEntries->sortBy('scheduleSlot.position') as $entry) {
                 if ($entry->day_of_week === $date->dayOfWeekIso) {
                     $results[] = [
-                        'date'  => $date->toDateString(),
+                        'date' => $date->toDateString(),
                         'label' => ucfirst($date->locale('fr_BE')->isoFormat('ddd D MMM'))
                                    .' · '.$entry->scheduleSlot->label,
                     ];

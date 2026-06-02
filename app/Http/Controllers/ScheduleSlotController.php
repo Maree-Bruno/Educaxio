@@ -12,7 +12,7 @@ class ScheduleSlotController extends Controller
     public function updateType(Request $request)
     {
         $validated = $request->validate([
-            'id'   => ['required', 'integer', 'exists:schedule_slots,id'],
+            'id' => ['required', 'integer', 'exists:schedule_slots,id'],
             'type' => ['required', Rule::enum(ScheduleSlotType::class)],
         ]);
 

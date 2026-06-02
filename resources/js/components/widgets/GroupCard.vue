@@ -2,6 +2,7 @@
 import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
+import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
@@ -71,7 +72,7 @@ const emit = defineEmits<{
                     <dd
                         class="line-clamp-1 text-base leading-5 font-bold text-text-base"
                     >
-                        {{ lesson?.name ?? '—' }}
+                        {{ lesson?.subject ? resolveSubjectLabel(lesson.subject.name, lesson.lm_level) : '—' }}
                     </dd>
                 </div>
             </div>

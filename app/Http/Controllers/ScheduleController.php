@@ -42,7 +42,7 @@ class ScheduleController extends Controller
             ->groupBy('school_id')
             ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
                 'start_time' => substr($r->start_time, 0, 5),
-                'end_time'   => substr($r->end_time, 0, 5),
+                'end_time' => substr($r->end_time, 0, 5),
             ]));
 
         // Use the first school that has configured slot times, else any school
@@ -54,15 +54,15 @@ class ScheduleController extends Controller
             ->map(function ($slot) use ($slotTimesForIndicator) {
                 $override = $slotTimesForIndicator[$slot->id] ?? null;
                 $globalStart = $slot->start_time ? substr($slot->start_time, 0, 5) : null;
-                $globalEnd   = $slot->end_time   ? substr($slot->end_time, 0, 5)   : null;
+                $globalEnd = $slot->end_time ? substr($slot->end_time, 0, 5) : null;
 
                 return [
-                    'id'         => $slot->id,
-                    'position'   => $slot->position,
-                    'label'      => $slot->label,
-                    'type'       => $slot->type->value,
+                    'id' => $slot->id,
+                    'position' => $slot->position,
+                    'label' => $slot->label,
+                    'type' => $slot->type->value,
                     'start_time' => $override['start_time'] ?? $globalStart,
-                    'end_time'   => $override['end_time']   ?? $globalEnd,
+                    'end_time' => $override['end_time'] ?? $globalEnd,
                 ];
             });
 
@@ -72,7 +72,7 @@ class ScheduleController extends Controller
                 'subject:id,name',
             ])
             ->whereHas('group', fn ($q) => $q->whereIn('school_id', $schoolIds))
-            ->get(['id', 'name', 'group_id', 'subject_id']);
+            ->get(['id', 'group_id', 'subject_id', 'lm_level']);
 
         $schoolsById = $userSchools->keyBy('id');
         $lessons->each(fn ($lesson) => $lesson->group->setRelation(
@@ -92,28 +92,28 @@ class ScheduleController extends Controller
                     }
                     $pos = $e->scheduleSlot->position;
                     $entries[$pos][$e->day_of_week] = [
-                        'id'        => $e->id,
+                        'id' => $e->id,
                         'lesson_id' => $e->lesson_id,
-                        'grade'     => $lesson->group->grade.$lesson->group->name,
-                        'subject'   => $lesson->subject->name,
-                        'room'      => $e->classroom,
-                        'school'    => $lesson->group->school->name,
+                        'grade' => $lesson->group->grade.$lesson->group->name,
+                        'subject' => $lesson->subjectLabel(),
+                        'room' => $e->classroom,
+                        'school' => $lesson->group->school->name,
                     ];
                 });
         }
 
         return Inertia::render('Schedules', [
-            'slots'        => $slots,
-            'entries'      => $entries,
-            'lessons'      => $lessons,
-            'schools'      => $userSchools,
-            'schedules'    => $schedules->map(fn ($s) => [
-                'id'        => $s->id,
+            'slots' => $slots,
+            'entries' => $entries,
+            'lessons' => $lessons,
+            'schools' => $userSchools,
+            'schedules' => $schedules->map(fn ($s) => [
+                'id' => $s->id,
                 'school_id' => $s->school_id,
-                'school'    => $schoolsById->get($s->school_id)?->name,
+                'school' => $schoolsById->get($s->school_id)?->name,
             ]),
             'academicYears' => $academicYears,
-            'filters'       => (object) ['year' => $selectedYearId ? (string) $selectedYearId : null],
+            'filters' => (object) ['year' => $selectedYearId ? (string) $selectedYearId : null],
         ]);
     }
 }

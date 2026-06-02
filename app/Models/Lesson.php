@@ -13,10 +13,21 @@ class Lesson extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
         'group_id',
         'subject_id',
+        'lm_level',
     ];
+
+    protected $casts = [
+        'lm_level' => 'integer',
+    ];
+
+    public function subjectLabel(): string
+    {
+        $name = $this->subject->name;
+
+        return $this->lm_level ? "LM{$this->lm_level} – {$name}" : $name;
+    }
 
     public function group(): BelongsTo
     {

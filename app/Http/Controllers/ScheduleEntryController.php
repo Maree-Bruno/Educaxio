@@ -15,10 +15,10 @@ class ScheduleEntryController extends Controller
 
         $validated = $request->validate([
             'schedule_id' => ['required', 'integer', 'exists:schedules,id'],
-            'lesson_id'   => ['required', 'integer', 'exists:lessons,id'],
-            'position'    => ['required', 'integer', 'min:1'],
+            'lesson_id' => ['required', 'integer', 'exists:lessons,id'],
+            'position' => ['required', 'integer', 'min:1'],
             'day_of_week' => ['required', 'integer', 'min:1', 'max:5'],
-            'classroom'   => ['nullable', 'string', 'max:50'],
+            'classroom' => ['nullable', 'string', 'max:50'],
         ]);
 
         $lesson = $user->lessons()->with('group:id,school_id')->findOrFail($validated['lesson_id']);

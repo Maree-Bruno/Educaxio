@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Lesson;
 use App\Models\ClassSession;
+use App\Models\Lesson;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 

@@ -7,8 +7,8 @@ use App\Http\Controllers\Concerns\ComputesNextOccurrence;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\ClassSession;
-use App\Models\LessonNote;
 use App\Models\Lesson;
+use App\Models\LessonNote;
 use App\Models\ScheduleEntry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,6 +18,7 @@ use Inertia\Inertia;
 class AttendanceController extends Controller
 {
     use ComputesNextOccurrence;
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -32,7 +33,7 @@ class AttendanceController extends Controller
             ->select('schedule_entries.*')
             ->with([
                 'scheduleSlot:id,label,position',
-                'lesson:id,group_id,subject_id',
+                'lesson:id,group_id,subject_id,lm_level',
                 'lesson.group:id,grade,name,slug,school_id',
                 'lesson.group.school:id,name,slug',
                 'lesson.subject:id,name',
@@ -87,7 +88,7 @@ class AttendanceController extends Controller
                 ->sortBy('scheduleSlot.position')
                 ->map(fn ($e) => [
                     'day_of_week' => $e->day_of_week,
-                    'slot_label'  => $e->scheduleSlot->label,
+                    'slot_label' => $e->scheduleSlot->label,
                 ])->values();
         }
 
@@ -96,7 +97,7 @@ class AttendanceController extends Controller
                 'id' => $e->id,
                 'label' => $e->scheduleSlot->label,
                 'lesson_id' => $e->lesson_id,
-                'subject' => $e->lesson->subject->name,
+                'subject' => $e->lesson->subjectLabel(),
                 'group' => $e->lesson->group->grade.$e->lesson->group->name,
                 'school' => $e->lesson->group->school->name,
             ])->values(),
@@ -108,9 +109,9 @@ class AttendanceController extends Controller
             'statuses' => $statuses,
             'attendanceId' => $attendanceId,
             'lastSavedAt' => $session?->updated_at?->format('d/m/Y H:i'),
-            'lessonNote'  => isset($lessonNote) && $lessonNote ? [
-                'id'      => $lessonNote->id,
-                'notes'   => $lessonNote->notes,
+            'lessonNote' => isset($lessonNote) && $lessonNote ? [
+                'id' => $lessonNote->id,
+                'notes' => $lessonNote->notes,
                 'savedAt' => $lessonNote->updated_at?->format('d/m/Y H:i'),
             ] : null,
             'lessonId' => $selected?->lesson_id,
@@ -121,8 +122,8 @@ class AttendanceController extends Controller
                 'scheduled_date' => $a->scheduled_date->toDateString(),
                 'description' => $a->description,
             ]),
-            'nextAssignmentDate'  => $nextAssignmentDate ?? null,
-            'schedulePattern'     => $schedulePattern ?? [],
+            'nextAssignmentDate' => $nextAssignmentDate ?? null,
+            'schedulePattern' => $schedulePattern ?? [],
         ]);
     }
 
@@ -167,5 +168,4 @@ class AttendanceController extends Controller
 
         return back();
     }
-
 }

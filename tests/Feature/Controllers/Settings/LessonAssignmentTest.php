@@ -1,10 +1,9 @@
 <?php
 
-use App\Models\Group;
+use App\Models\AcademicYear;
 use App\Models\Lesson;
 use App\Models\School;
 use App\Models\Subject;
-use App\Models\AcademicYear;
 
 beforeEach(function () {
     [$this->user, $this->school] = createUserWithSchool();

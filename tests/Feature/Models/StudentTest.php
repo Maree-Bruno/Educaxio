@@ -4,6 +4,7 @@ use App\Models\AcademicYear;
 use App\Models\Group;
 use App\Models\School;
 use App\Models\Student;
+use Illuminate\Database\QueryException;
 
 beforeEach(function () {
     $this->school = School::create(['name' => 'École Test', 'slug' => 'ecole-test']);
@@ -40,7 +41,7 @@ it('has a unique email per school', function () {
     expect(fn () => Student::factory()->create([
         'school_id' => $this->school->id,
         'email' => 'duplicate@test.com',
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
+    ]))->toThrow(QueryException::class);
 });
 
 it('the same email can exist in two different schools', function () {

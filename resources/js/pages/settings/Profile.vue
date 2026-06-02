@@ -10,6 +10,7 @@ import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SchoolJoinForm from '@/components/widgets/SchoolJoinForm.vue';
 import SubjectPicker from '@/components/widgets/SubjectPicker.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { useSlotTimeForms } from '@/composables/useSlotTimeForms';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useAuthStore } from '@/stores/auth';
@@ -146,7 +147,7 @@ function confirmDelete() {
                         >
                             <span class="min-w-0">
                                 <span class="block truncate text-sm font-semibold text-text-base">
-                                    {{ lesson.subject!.name }}
+                                    {{ resolveSubjectLabel(lesson.subject!.name, lesson.lm_level) }}
                                 </span>
                                 <span class="block text-xs text-stone-500">
                                     {{ lesson.group!.grade }}{{ lesson.group!.name }}

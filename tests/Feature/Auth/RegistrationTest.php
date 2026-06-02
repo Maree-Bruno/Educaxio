@@ -33,11 +33,11 @@ test('registering with subject_ids attaches subjects to the user', function () {
     $subjectB = Subject::firstOrCreate(['name' => 'Français']);
 
     $this->post(route('register.store'), [
-        'name'                  => 'Test User',
-        'email'                 => 'test@example.com',
-        'password'              => 'password',
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'password',
         'password_confirmation' => 'password',
-        'subject_ids'           => [$subjectA->id, $subjectB->id],
+        'subject_ids' => [$subjectA->id, $subjectB->id],
     ]);
 
     $user = User::where('email', 'test@example.com')->first();
@@ -51,11 +51,11 @@ test('registering with school_ids creates pending SchoolJoinRequests', function 
     $schoolB = School::create(['name' => "École B {$idB}", 'slug' => "ecole-b-{$idB}"]);
 
     $this->post(route('register.store'), [
-        'name'                  => 'Test User',
-        'email'                 => 'test@example.com',
-        'password'              => 'password',
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'password',
         'password_confirmation' => 'password',
-        'school_ids'            => [$schoolA->id, $schoolB->id],
+        'school_ids' => [$schoolA->id, $schoolB->id],
     ]);
 
     $user = User::where('email', 'test@example.com')->first();
@@ -67,9 +67,9 @@ test('registering with school_ids creates pending SchoolJoinRequests', function 
 
 test('registering without school_ids creates user with no join requests', function () {
     $this->post(route('register.store'), [
-        'name'                  => 'Test User',
-        'email'                 => 'test@example.com',
-        'password'              => 'password',
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'password',
         'password_confirmation' => 'password',
     ]);
 

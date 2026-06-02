@@ -138,7 +138,7 @@ class DashboardController extends Controller
             ->groupBy('school_id')
             ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
                 'start_time' => substr($r->start_time, 0, 5),
-                'end_time'   => substr($r->end_time, 0, 5),
+                'end_time' => substr($r->end_time, 0, 5),
             ]));
 
         $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $userSchoolIds->first();
@@ -149,20 +149,20 @@ class DashboardController extends Controller
             ->map(function ($s) use ($entriesBySlotId, $lessons, $slotTimesForIndicator) {
                 $override = $slotTimesForIndicator[$s->id] ?? null;
                 $globalStart = $s->start_time ? substr($s->start_time, 0, 5) : null;
-                $globalEnd   = $s->end_time   ? substr($s->end_time, 0, 5)   : null;
+                $globalEnd = $s->end_time ? substr($s->end_time, 0, 5) : null;
                 $entry = $entriesBySlotId->get($s->id);
                 $lesson = $entry ? $lessons->get($entry->lesson_id) : null;
 
                 return [
-                    'id'         => $s->id,
-                    'position'   => $s->position,
-                    'label'      => $s->label,
-                    'type'       => $s->type,
+                    'id' => $s->id,
+                    'position' => $s->position,
+                    'label' => $s->label,
+                    'type' => $s->type,
                     'start_time' => $override ? $override['start_time'] : $globalStart,
-                    'end_time'   => $override ? $override['end_time']   : $globalEnd,
+                    'end_time' => $override ? $override['end_time'] : $globalEnd,
                     'entry' => ($entry && $lesson) ? [
                         'id' => $entry->id,
-                        'subject' => $lesson->subject->name,
+                        'subject' => $lesson->subjectLabel(),
                         'group' => $lesson->group->grade.$lesson->group->name,
                         'groupSlug' => $lesson->group->slug,
                         'school' => $lesson->group->school->name,
@@ -179,7 +179,7 @@ class DashboardController extends Controller
                 'name' => $ls->first()->group->name,
                 'slug' => $ls->first()->group->slug,
                 'school' => $ls->first()->group->school->name,
-                'subjects' => $ls->map(fn ($l) => $l->subject->name)->unique()->values(),
+                'subjects' => $ls->map(fn ($l) => $l->subjectLabel())->unique()->values(),
             ])
             ->values();
 
@@ -199,7 +199,7 @@ class DashboardController extends Controller
                 'scheduled_date' => $a->scheduled_date->toDateString(),
                 'description' => $a->description,
                 'group' => $lessons[$a->lesson_id]->group->grade.$lessons[$a->lesson_id]->group->name,
-                'subject' => $lessons[$a->lesson_id]->subject->name,
+                'subject' => $lessons[$a->lesson_id]->subjectLabel(),
                 'school' => $lessons[$a->lesson_id]->group->school->name,
             ]);
 
