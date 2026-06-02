@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { computed, nextTick, ref, watch } from 'vue';
-import { index as adminStudentsIndex, store as adminStudentsStore, destroy as adminStudentsDestroy } from '@/routes/admin/students';
-import { show as showClasslist } from '@/routes/classlist';
-import { show as showStudent } from '@/routes/students';
+import { ref, watch } from 'vue';
+import CreateStudentModal from '@/components/admin/CreateStudentModal.vue';
 import Badge from '@/components/widgets/Badge.vue';
-import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
-import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
@@ -18,9 +14,13 @@ import SelectField from '@/components/widgets/SelectField.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
+import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
 import StudentCount from '@/components/widgets/StudentCount.vue';
+import { index as adminStudentsIndex, destroy as adminStudentsDestroy } from '@/routes/admin/students';
+import { show as showClasslist } from '@/routes/classlist';
+import { show as showStudent } from '@/routes/students';
 import { useToasterStore } from '@/stores/toaster';
 import type { Paginator } from '@/types';
 
@@ -55,63 +55,18 @@ function applyFilters() {
     }, { preserveState: true, replace: true });
 }
 
-const applyFiltersDebounced = useDebounceFn(applyFilters, 300);
-
-watch(search, applyFiltersDebounced);
+watch(search, useDebounceFn(applyFilters, 300));
 watch([sortCol, sortDir], applyFilters);
 
 function rowNumber(index: number): string {
     return studentRowNumber(index, props.students.current_page, props.students.per_page, props.students.total, sortDir.value);
 }
 
-const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const form = useForm({ lastname: '', firstname: '', email: '', group_ids: [] as string[] });
+const createModal = ref<InstanceType<typeof CreateStudentModal> | null>(null);
 
-const availableGroups = computed(() =>
-    props.groups.filter((g) => !form.group_ids.includes(String(g.id))),
-);
-
-function addGroup(e: Event) {
-    const id = (e.target as HTMLSelectElement).value;
-
-    if (id && !form.group_ids.includes(id)) {
-        form.group_ids.push(id);
-    }
-
-    (e.target as HTMLSelectElement).value = '';
-}
-
-function removeGroup(id: string) {
-    form.group_ids = form.group_ids.filter((gid) => gid !== id);
-}
-
-function openCreate() {
-    form.reset();
-    nextTick(() => modalRef.value?.open());
-}
-
-function closeModal() {
-    modalRef.value?.close();
-}
-
-function save() {
-    form.transform((data) => ({
-        ...data,
-        email:     data.email || null,
-        group_ids: data.group_ids.map(Number),
-    })).post(adminStudentsStore.url({ school: props.school.slug }), {
-        preserveScroll: true,
-        onSuccess: () => {
-            closeModal();
-            toaster.success('Élève créé');
-        },
-    });
-}
-
-const toaster       = useToasterStore();
-const hiddenIds     = ref(new Set<number>());
+const toaster = useToasterStore();
+const { hide, show, isHidden } = useHiddenIds();
 const pendingDelete = ref<Student | null>(null);
-const deleteLoading = ref(false);
 
 function confirmDelete() {
     if (!pendingDelete.value) {
@@ -121,11 +76,11 @@ function confirmDelete() {
     const { id, slug, firstname, lastname } = pendingDelete.value;
 
     pendingDelete.value = null;
-    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    hide(id);
     toaster.deletable(
         `${firstname} ${lastname} supprimé`,
         () => router.delete(adminStudentsDestroy.url({ school: props.school.slug, student: slug }), { preserveScroll: true }),
-        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+        () => show(id),
     );
 }
 </script>
@@ -134,11 +89,12 @@ function confirmDelete() {
     <ConfirmModal
         :open="pendingDelete !== null"
         :title="`Supprimer ${pendingDelete?.firstname} ${pendingDelete?.lastname}`"
-        message="L'élève sera retiré de tous ses groupes."
-        :loading="deleteLoading"
+        message="L'élève sera retiré de tous ses groupes et supprimé définitivement."
         @confirm="confirmDelete"
         @cancel="pendingDelete = null"
     />
+
+    <CreateStudentModal ref="createModal" :school="school" :groups="groups" />
 
     <div class="min-w-0 overflow-hidden rounded-2xl">
         <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-300/10 bg-white px-4 sm:px-6 py-4 sm:py-5">
@@ -148,7 +104,7 @@ function confirmDelete() {
                 </h2>
                 <p class="mt-0.5 text-xs text-stone-400">Gérez les élèves et leurs groupes.</p>
             </div>
-            <Button variant="primary" size="sm" label="Nouvel élève" class="mt-0.5 shrink-0" @click="openCreate" />
+            <Button variant="primary" size="sm" label="Nouvel élève" class="mt-0.5 shrink-0" @click="createModal?.open()" />
             <div class="flex w-full flex-col gap-2 sm:flex-row">
                 <SelectField
                     id="filter-group"
@@ -169,7 +125,7 @@ function confirmDelete() {
         </div>
         <ul class="sm:hidden divide-y divide-neutral-100 bg-white">
             <li
-                v-for="(student, index) in students.data.filter((s) => !hiddenIds.has(s.id))"
+                v-for="(student, index) in students.data.filter((s) => !isHidden(s.id))"
                 :key="student.id"
                 class="flex items-start justify-between gap-3 px-4 py-4"
             >
@@ -218,7 +174,7 @@ function confirmDelete() {
                 </thead>
                 <tbody class="divide-y divide-neutral-100">
                     <tr
-                        v-for="(student, index) in students.data.filter((s) => !hiddenIds.has(s.id))"
+                        v-for="(student, index) in students.data.filter((s) => !isHidden(s.id))"
                         :key="student.id"
                         class="transition-colors hover:bg-gray-50"
                     >
@@ -267,48 +223,4 @@ function confirmDelete() {
             <Pagination :links="students.links" :current-page="students.current_page" :last-page="students.last_page" />
         </div>
     </div>
-
-    <BaseModal ref="modalRef">
-        <form class="flex flex-col gap-5" @submit.prevent="save">
-            <h2 class="text-xl font-bold text-black">Nouvel élève</h2>
-            <InputLabel v-model="form.lastname" label="Nom" placeholder="Dupont" :error="form.errors.lastname" />
-            <InputLabel v-model="form.firstname" label="Prénom" placeholder="Marie" :error="form.errors.firstname" />
-            <InputLabel v-model="form.email" type="email" label="Email (optionnel)" placeholder="marie@exemple.be" :error="form.errors.email" />
-
-            <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
-                    Groupes <span class="normal-case font-normal">(optionnel)</span>
-                </label>
-                <div v-if="form.group_ids.length" class="flex flex-wrap gap-1.5">
-                    <Badge
-                        v-for="id in form.group_ids"
-                        :key="id"
-                        removable
-                        @remove="removeGroup(id)"
-                    >
-                        {{ groups.find((g) => String(g.id) === id)?.grade }}{{ groups.find((g) => String(g.id) === id)?.name }}
-                    </Badge>
-                </div>
-                <select
-                    v-if="availableGroups.length"
-                    class="w-full rounded-2xl bg-white px-3 py-3 text-sm text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
-                    @change="addGroup"
-                >
-                    <option value="">Ajouter un groupe…</option>
-                    <option v-for="g in availableGroups" :key="g.id" :value="String(g.id)">
-                        {{ g.grade }}{{ g.name }}
-                    </option>
-                </select>
-                <span v-else-if="groups.length && !availableGroups.length" class="text-xs text-border-figma">
-                    Tous les groupes sont assignés.
-                </span>
-            </div>
-
-            <div class="flex gap-3">
-                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1"
-                    :disabled="!form.lastname || !form.firstname" :loading="form.processing" />
-                <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeModal" />
-            </div>
-        </form>
-    </BaseModal>
 </template>

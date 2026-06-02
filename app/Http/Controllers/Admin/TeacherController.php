@@ -41,6 +41,7 @@ class TeacherController extends Controller
                 ->whereHas('group', fn ($sq) => $sq->where('school_id', $schoolId))
                 ->with('group:id,grade,name', 'subject:id,name')
                 ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id', 'lessons.lm_level'),
+            'subjects:id,name',
         ]);
 
         $joinRequests = SchoolJoinRequest::where('school_id', $school->id)
