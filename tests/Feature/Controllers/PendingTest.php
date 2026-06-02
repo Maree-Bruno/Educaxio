@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\School;
-use App\Models\SchoolJoinRequest;
 use App\Models\Subject;
 use App\Models\User;
 
@@ -30,9 +29,9 @@ test('user can request to join a school', function () {
     ])->assertRedirect();
 
     $this->assertDatabaseHas('school_join_requests', [
-        'user_id'   => $this->user->id,
+        'user_id' => $this->user->id,
         'school_id' => $school->id,
-        'status'    => 'pending',
+        'status' => 'pending',
     ]);
 });
 

@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\School;
+use App\Models\Student;
 use App\Models\Subject;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -47,9 +48,9 @@ class ClassListController extends Controller
         $userId = auth()->id();
         $lessonsLoad = $teacherSchoolIds->isNotEmpty()
             ? ['lessons' => fn ($q) => $q->whereHas('users', fn ($u) => $u->where('users.id', $userId))
-                    ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id')
-                    ->with('subject:id,name')]
-            : ['lessons:id,group_id,subject_id', 'lessons.subject:id,name'];
+                ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id', 'lessons.lm_level')
+                ->with('subject:id,name')]
+            : ['lessons:id,group_id,subject_id,lm_level', 'lessons.subject:id,name'];
 
         $query = $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)->with([
             'school:id,name',
@@ -115,19 +116,19 @@ class ClassListController extends Controller
     {
         $this->authorize('create', Group::class);
 
-        $adminSchools   = auth()->user()->schools()->wherePivot('role', 'admin')->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
+        $adminSchools = auth()->user()->schools()->wherePivot('role', 'admin')->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
         $adminSchoolIds = $adminSchools->pluck('id');
-        $academicYears  = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
+        $academicYears = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
             ->orderByDesc('year')->get(['id', 'year']);
 
         $defaultSchoolId = null;
-        $schoolSlug      = $request->string('school')->toString();
+        $schoolSlug = $request->string('school')->toString();
         if ($request->filled('school')) {
             $defaultSchoolId = $adminSchools->firstWhere('slug', $schoolSlug)?->id;
         }
         if (! $defaultSchoolId && $adminSchools->count() === 1) {
             $defaultSchoolId = $adminSchools->first()->id;
-            $schoolSlug      = $adminSchools->first()->slug;
+            $schoolSlug = $adminSchools->first()->slug;
         }
 
         $breadcrumb = match ($request->string('from')->toString()) {
@@ -143,24 +144,24 @@ class ClassListController extends Controller
 
         return Inertia::render('ClassListCreate', [
             'academicYears' => $academicYears,
-            'subjects'      => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
+            'subjects' => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
                 ->orderBy('name')->get(['id', 'name']),
-            'defaults'      => [
-                'school_id'        => $defaultSchoolId,
+            'defaults' => [
+                'school_id' => $defaultSchoolId,
                 'academic_year_id' => $academicYears->first()?->id,
             ],
-            'breadcrumb'    => $breadcrumb,
+            'breadcrumb' => $breadcrumb,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'grade'            => ['required', 'string', 'max:20'],
-            'name'             => ['required', 'string', 'max:10'],
-            'school_id'        => ['required', 'exists:schools,id'],
+            'grade' => ['required', 'string', 'max:20'],
+            'name' => ['required', 'string', 'max:10'],
+            'school_id' => ['required', 'exists:schools,id'],
             'academic_year_id' => ['required', 'exists:academic_years,id'],
-            'subject_id'       => ['nullable', 'exists:subjects,id'],
+            'subject_id' => ['nullable', 'exists:subjects,id'],
         ]);
 
         $school = School::findOrFail($validated['school_id']);
@@ -187,17 +188,17 @@ class ClassListController extends Controller
     public function show(Group $group, Request $request)
     {
         $userSchools = auth()->user()->loadMissing('schools')->schools;
-        $schoolIds   = $userSchools->pluck('id');
-        $userId      = auth()->id();
+        $schoolIds = $userSchools->pluck('id');
+        $userId = auth()->id();
 
-        $canManage   = $userSchools->contains(fn ($s) => $s->id === $group->school_id && $s->pivot->role === 'admin');
-        $isTeacher   = ! $canManage && $userSchools->contains(fn ($s) => $s->pivot->role === 'teacher');
+        $canManage = $userSchools->contains(fn ($s) => $s->id === $group->school_id && $s->pivot->role === 'admin');
+        $isTeacher = ! $canManage && $userSchools->contains(fn ($s) => $s->pivot->role === 'teacher');
         $lessonsLoad = $isTeacher
             ? ['lessons' => fn ($q) => $q->whereHas('users', fn ($u) => $u->where('users.id', $userId))]
             : ['lessons'];
         $group->load(['school', 'academicYear', ...$lessonsLoad]);
 
-        $dir     = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
+        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
         $sortCol = in_array($request->string('sort')->toString(), ['lastname', 'firstname'])
             ? $request->string('sort')->toString()
             : 'lastname';
@@ -205,7 +206,7 @@ class ClassListController extends Controller
         $group->students_count = $students->total();
 
         $schoolStudents = $canManage
-            ? \App\Models\Student::where('school_id', $group->school_id)
+            ? Student::where('school_id', $group->school_id)
                 ->whereNotIn('id', $group->students()->pluck('students.id'))
                 ->with('groups:id,grade,name')
                 ->orderBy('lastname')
@@ -213,15 +214,15 @@ class ClassListController extends Controller
             : [];
 
         return Inertia::render('ClassListShow', [
-            'group'          => $group,
-            'students'       => $students,
-            'canManage'      => $canManage,
-            'isTeacher'      => $isTeacher,
-            'academicYears'  => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'group' => $group,
+            'students' => $students,
+            'canManage' => $canManage,
+            'isTeacher' => $isTeacher,
+            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderByDesc('year')->get(['id', 'year']),
-            'subjects'       => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            'subjects' => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderBy('name')->get(['id', 'name']),
-            'filters'        => $request->only(['sort', 'dir']),
+            'filters' => $request->only(['sort', 'dir']),
             'schoolStudents' => $schoolStudents,
         ]);
     }
@@ -232,24 +233,24 @@ class ClassListController extends Controller
 
         if ($request->filled('student_ids')) {
             $validated = $request->validate([
-                'student_ids'   => ['required', 'array'],
+                'student_ids' => ['required', 'array'],
                 'student_ids.*' => ['integer', 'exists:students,id'],
             ]);
-            $ids = \App\Models\Student::whereIn('id', $validated['student_ids'])
+            $ids = Student::whereIn('id', $validated['student_ids'])
                 ->where('school_id', $group->school_id)
                 ->pluck('id');
             $group->students()->syncWithoutDetaching($ids->all());
         } else {
             // Create new student and attach
             $validated = $request->validate([
-                'lastname'  => ['required', 'string', 'max:100'],
+                'lastname' => ['required', 'string', 'max:100'],
                 'firstname' => ['required', 'string', 'max:100'],
-                'email'     => ['nullable', 'email', 'max:255'],
+                'email' => ['nullable', 'email', 'max:255'],
             ]);
-            $student = \App\Models\Student::create([
-                'lastname'  => $validated['lastname'],
+            $student = Student::create([
+                'lastname' => $validated['lastname'],
                 'firstname' => $validated['firstname'],
-                'email'     => $validated['email'] ?? null,
+                'email' => $validated['email'] ?? null,
                 'school_id' => $group->school_id,
             ]);
             $group->students()->attach($student->id);

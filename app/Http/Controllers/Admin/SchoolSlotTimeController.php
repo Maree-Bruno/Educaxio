@@ -12,10 +12,10 @@ class SchoolSlotTimeController extends Controller
     public function update(Request $request, School $school)
     {
         $validated = $request->validate([
-            'slots'              => ['required', 'array'],
-            'slots.*.slot_id'    => ['required', 'integer', 'exists:schedule_slots,id'],
+            'slots' => ['required', 'array'],
+            'slots.*.slot_id' => ['required', 'integer', 'exists:schedule_slots,id'],
             'slots.*.start_time' => ['required', 'date_format:H:i'],
-            'slots.*.end_time'   => ['required', 'date_format:H:i', 'after:slots.*.start_time'],
+            'slots.*.end_time' => ['required', 'date_format:H:i', 'after:slots.*.start_time'],
         ]);
 
         foreach ($validated['slots'] as $row) {

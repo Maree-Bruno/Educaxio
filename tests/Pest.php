@@ -2,7 +2,6 @@
 
 use App\Models\AcademicYear;
 use App\Models\Group;
-use App\Models\Lesson;
 use App\Models\School;
 use App\Models\SchoolJoinRequest;
 use App\Models\Subject;
@@ -58,8 +57,8 @@ function createGroup(School $school, AcademicYear $year, string $grade = '3', st
 function createJoinRequest(User $user, School $school, string $status = 'pending'): SchoolJoinRequest
 {
     return SchoolJoinRequest::create([
-        'user_id'   => $user->id,
+        'user_id' => $user->id,
         'school_id' => $school->id,
-        'status'    => $status,
+        'status' => $status,
     ]);
 }

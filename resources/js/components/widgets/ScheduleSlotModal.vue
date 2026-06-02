@@ -2,6 +2,7 @@
 import { useForm } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
+import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { useToasterStore } from '@/stores/toaster';
 import type { LessonOption, ScheduleEntry, SlotRow } from '@/types';
 import { store } from '@/routes/schedule-entries';
@@ -84,7 +85,7 @@ const coursOptions = computed(() =>
     (filterClasse.value
         ? props.lessons.filter((l) => l.group_id === filterClasse.value)
         : []
-    ).map((l) => ({ value: l.id, label: l.subject.name })),
+    ).map((l) => ({ value: l.id, label: resolveSubjectLabel(l.subject.name, l.lm_level) })),
 );
 
 watch(filterEcole, () => {

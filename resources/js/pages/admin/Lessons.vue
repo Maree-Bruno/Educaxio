@@ -18,6 +18,7 @@ import ChevronDown from '@/components/widgets/svg/ChevronDown.vue';
 import Edit from '@/components/widgets/svg/Edit.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { useToasterStore } from '@/stores/toaster';
 
 interface School {
@@ -44,6 +45,7 @@ interface Lesson {
     id: number;
     group_id: number;
     subject_id: number;
+    lm_level: number | null;
     group: Group;
     subject: Subject;
     users: Teacher[];
@@ -163,10 +165,19 @@ function syncTeachers() {
     });
 }
 
+// ── Mise à jour inline du niveau LM ──────────────────────────────────────
+function updateLmLevel(lesson: Lesson, lmLevel: string) {
+    router.patch(
+        adminLessonsDestroy.url({ school: props.school.slug, lesson: lesson.id }),
+        { lm_level: lmLevel === '' ? null : Number(lmLevel) },
+        { preserveScroll: true },
+    );
+}
+
 // ── Modal : ajouter une matière à un groupe ───────────────────────────────
 const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const addingToGroup = ref<Group | null>(null);
-const addForm = useForm<{ subject_id: string | number | null; teacher_ids: number[] }>({ subject_id: null, teacher_ids: [] });
+const addForm = useForm<{ subject_id: string | number | null; lm_level: string; teacher_ids: number[] }>({ subject_id: null, lm_level: '', teacher_ids: [] });
 const addSubjectOptions = computed(() =>
     addingToGroup.value ? availableSubjects(addingToGroup.value).map((s) => ({ value: s.id, label: s.name })) : [],
 );
@@ -179,6 +190,7 @@ const addTeacherOptions = computed(() =>
 
 watch(() => addForm.subject_id, () => {
     addForm.teacher_ids = [];
+    addForm.lm_level = '';
 });
 
 function availableSubjects(group: Group) {
@@ -215,7 +227,11 @@ function submitAdd() {
     }
 
     const groupId = addingToGroup.value.id;
-    addForm.transform((data) => ({ ...data, group_id: groupId }))
+    addForm.transform((data) => ({
+        ...data,
+        group_id: groupId,
+        lm_level: data.lm_level === '' ? null : Number(data.lm_level),
+    }))
         .post(adminLessonsStore.url({ school: props.school.slug }), {
             preserveScroll: true,
             onSuccess: () => {
@@ -234,12 +250,12 @@ function confirmDelete() {
         return;
     }
 
-    const { id, subject, group } = pendingDelete.value;
+    const { id, subject, group, lm_level } = pendingDelete.value;
 
     pendingDelete.value = null;
     hiddenIds.value = new Set([...hiddenIds.value, id]);
     toaster.deletable(
-        `${subject.name} · ${group.grade}${group.name} supprimé`,
+        `${resolveSubjectLabel(subject.name, lm_level)} · ${group.grade}${group.name} supprimé`,
         () => router.delete(adminLessonsDestroy.url({ school: props.school.slug, lesson: id }), { preserveScroll: true }),
         () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
     );
@@ -249,7 +265,7 @@ function confirmDelete() {
 <template>
     <ConfirmModal
         :open="pendingDelete !== null"
-        :title="`Supprimer ${pendingDelete?.subject.name} · ${pendingDelete?.group.grade}${pendingDelete?.group.name}`"
+        :title="`Supprimer ${pendingDelete ? resolveSubjectLabel(pendingDelete.subject.name, pendingDelete.lm_level) : ''} · ${pendingDelete?.group.grade}${pendingDelete?.group.name}`"
         message="Les créneaux horaires associés seront aussi supprimés."
         :loading="deleteLoading"
         @confirm="confirmDelete"
@@ -345,9 +361,21 @@ function confirmDelete() {
                         :key="lesson.id"
                         class="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-neutral-100 px-4 sm:px-6 py-3 last:border-b-0 hover:bg-gray-50"
                     >
-                        <span class="w-full text-sm font-bold text-text-base sm:w-40 sm:shrink-0">
-                            {{ lesson.subject.name }}
+                        <span class="flex w-full items-center gap-2 sm:w-40 sm:shrink-0">
+                            <span class="text-sm font-bold text-text-base">
+                                {{ resolveSubjectLabel(lesson.subject.name, lesson.lm_level) }}
+                            </span>
                         </span>
+                        <select
+                            class="h-7 rounded-lg border border-neutral-200 bg-white px-2 text-xs text-stone-500 focus:border-blue focus:outline-none"
+                            :value="lesson.lm_level ?? ''"
+                            @change="updateLmLevel(lesson, ($event.target as HTMLSelectElement).value)"
+                        >
+                            <option value="">—</option>
+                            <option value="1">LM1</option>
+                            <option value="2">LM2</option>
+                            <option value="3">LM3</option>
+                        </select>
 
                         <div class="flex min-w-0 flex-1 flex-wrap gap-1.5">
                             <Badge v-for="teacher in lesson.users" :key="teacher.id">
@@ -394,7 +422,7 @@ function confirmDelete() {
             <div>
                 <h2 class="text-xl font-bold text-black">Profs assignés</h2>
                 <p class="mt-1 text-sm font-bold text-border-figma">
-                    {{ editingLesson.subject.name }} · {{ editingLesson.group.grade }}{{ editingLesson.group.name }}
+                    {{ resolveSubjectLabel(editingLesson.subject.name, editingLesson.lm_level) }} · {{ editingLesson.group.grade }}{{ editingLesson.group.name }}
                 </p>
             </div>
 
@@ -440,6 +468,13 @@ function confirmDelete() {
                 label="Matière"
                 placeholder="Choisir une matière"
                 :options="addSubjectOptions"
+            />
+
+            <SelectField
+                v-model="addForm.lm_level"
+                label="Niveau LM (langue étrangère)"
+                placeholder="Sans niveau LM"
+                :options="[{ value: '1', label: 'LM1' }, { value: '2', label: 'LM2' }, { value: '3', label: 'LM3' }]"
             />
 
             <div v-if="addForm.subject_id" class="flex flex-col gap-2">

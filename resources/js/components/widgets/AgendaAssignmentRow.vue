@@ -40,9 +40,9 @@ function shortDate(dateStr: string): string {
 
 <template>
     <li
-        class="flex cursor-pointer items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50"
-        :class="past && 'opacity-60'"
-        @click="emit('edit', assignment.id)"
+        class="flex items-center gap-4 px-6 py-4 transition-colors"
+        :class="past ? 'opacity-60' : 'cursor-pointer hover:bg-gray-50'"
+        @click="!past && emit('edit', assignment.id)"
     >
         <!-- Date + jour -->
         <div class="w-20 shrink-0">
@@ -69,6 +69,7 @@ function shortDate(dateStr: string): string {
 
         <!-- Supprimer -->
         <button
+            v-if="!past"
             type="button"
             class="shrink-0 text-stone-300 transition-colors hover:text-red-500"
             title="Supprimer"

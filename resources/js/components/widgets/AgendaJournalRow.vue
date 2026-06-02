@@ -9,6 +9,7 @@ export interface AgendaJournalEntry {
     group_slug: string;
     subject: string;
     school: string;
+    slot_label: string | null;
 }
 
 defineProps<{ entry: AgendaJournalEntry }>();
@@ -39,6 +40,7 @@ defineEmits<{ click: [] }>();
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-sm font-bold text-stone-900">{{ entry.subject }}</span>
                 <Badge variant="neutral">{{ entry.group }}</Badge>
+                <Badge v-if="entry.slot_label" variant="neutral">{{ entry.slot_label }}</Badge>
                 <span class="text-xs text-stone-400">{{ entry.school }}</span>
             </div>
             <p class="mt-1 line-clamp-2 text-sm text-stone-500">{{ entry.notes }}</p>

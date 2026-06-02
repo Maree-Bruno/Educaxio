@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { useToasterStore } from '@/stores/toaster';
 import { agenda, attendances } from '@/routes';
@@ -31,9 +31,19 @@ interface PaginatedJournal {
     links: PaginationLink[];
 }
 
+interface PaginatedAssignments {
+    data: AgendaAssignment[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: PaginationLink[];
+}
+
 const props = defineProps<{
     journalEntries: PaginatedJournal;
-    assignments: AgendaAssignment[];
+    upcomingAssignments: PaginatedAssignments;
+    pastAssignments: PaginatedAssignments;
     groupOptions: string[];
     schoolOptions: string[];
     filters: {
@@ -42,12 +52,14 @@ const props = defineProps<{
         school: string;
         sort_field: 'date' | 'group' | 'subject';
         sort_dir: 'asc' | 'desc';
+        assignment_type: '' | 'homework' | 'test';
     };
 }>();
 
 // ── Tabs ─────────────────────────────────────────────────────────────────
 type Tab = 'journal' | 'assignments';
-const activeTab = ref<Tab>('journal');
+const initialTab = new URLSearchParams(usePage().url.split('?')[1] ?? '').get('tab');
+const activeTab = ref<Tab>(initialTab === 'assignments' ? 'assignments' : 'journal');
 
 // ── Filtres serveur ────────────────────────────────────────────────────────
 const search = ref(props.filters.search);
@@ -58,7 +70,7 @@ const filterSchool = ref(props.filters.school);
 const showPast = ref(false);
 
 // ── Filtres client (type + tri sur les devoirs) ───────────────────────────
-const filterType = ref<'' | 'homework' | 'test'>('');
+const filterType = ref<'' | 'homework' | 'test'>(props.filters.assignment_type);
 const sortField  = ref<'date' | 'group' | 'subject'>(props.filters.sort_field);
 const sortDir    = ref<'asc' | 'desc'>(props.filters.sort_dir);
 
@@ -104,11 +116,12 @@ function applyServerFilters() {
     router.get(
         agenda.url(),
         {
-            search:      search.value || undefined,
-            group:       filterGroup.value || undefined,
-            school:      filterSchool.value || undefined,
-            sort_field:  sortField.value !== 'date' ? sortField.value : undefined,
-            sort_dir:    sortDir.value !== 'desc' ? sortDir.value : undefined,
+            search:           search.value || undefined,
+            group:            filterGroup.value || undefined,
+            school:           filterSchool.value || undefined,
+            sort_field:       sortField.value !== 'date' ? sortField.value : undefined,
+            sort_dir:         sortDir.value !== 'desc' ? sortDir.value : undefined,
+            assignment_type:  filterType.value || undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true },
     );
@@ -122,46 +135,18 @@ watch(search, () => {
     searchTimer = setTimeout(applyServerFilters, 300);
 });
 
-watch([filterGroup, filterSchool], applyServerFilters);
+watch([filterGroup, filterSchool, filterType], applyServerFilters);
 
-watch([sortField, sortDir], () => {
-    if (activeTab.value === 'journal') {
-        applyServerFilters();
-    }
-});
+watch([sortField, sortDir], applyServerFilters);
 
-// ── Assignments filtrés + triés (client) ──────────────────────────────────
-const filteredAssignments = computed(() => {
-    let list = props.assignments.filter((a) => !hiddenIds.value.has(a.id));
+// ── Visibilité locale après suppression optimiste ─────────────────────────
+const visibleUpcoming = computed(() =>
+    props.upcomingAssignments.data.filter((a) => !hiddenIds.value.has(a.id)),
+);
 
-    if (filterType.value)
-        list = list.filter((a) => a.type === filterType.value);
-
-    if (sortField.value !== 'date') {
-        list.sort((a, b) => {
-            let cmp = 0;
-            if (sortField.value === 'group') cmp = a.group.localeCompare(b.group);
-            if (sortField.value === 'subject') cmp = a.subject.localeCompare(b.subject);
-            return sortDir.value === 'desc' ? -cmp : cmp;
-        });
-    }
-
-    return list;
-});
-
-const upcomingAssignments = computed(() => {
-    const list = filteredAssignments.value.filter((a) => a.scheduled_date >= today);
-    if (sortField.value === 'date')
-        return [...list].sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date));
-    return list;
-});
-
-const pastAssignments = computed(() => {
-    const list = filteredAssignments.value.filter((a) => a.scheduled_date < today);
-    if (sortField.value === 'date')
-        return [...list].sort((a, b) => b.scheduled_date.localeCompare(a.scheduled_date));
-    return list;
-});
+const visiblePast = computed(() =>
+    props.pastAssignments.data.filter((a) => !hiddenIds.value.has(a.id)),
+);
 
 // ── Édition ───────────────────────────────────────────────────────────────
 const editModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
@@ -179,8 +164,8 @@ const editForm = useForm({
 });
 
 function openEdit(id: number) {
-    const a = props.assignments.find((x) => x.id === id);
-    if (!a) return;
+    const a = props.upcomingAssignments.data.find((x) => x.id === id);
+    if (!a || a.scheduled_date < today) return;
 
     editingAssignment.value = a;
     editForm.type = a.type;
@@ -203,7 +188,7 @@ function submitEdit() {
 }
 
 function requestDelete(id: number) {
-    const a = props.assignments.find((x) => x.id === id);
+    const a = props.upcomingAssignments.data.find((x) => x.id === id);
 
     if (!a) {
         return;
@@ -257,7 +242,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
                 >
                     <span class="sm:hidden">Devoirs</span>
                     <span class="hidden sm:inline">Devoirs & Interros</span>
-                    <span class="ml-1 text-[10px] font-normal opacity-60">{{ filteredAssignments.length }}</span>
+                    <span class="ml-1 text-[10px] font-normal opacity-60">{{ upcomingAssignments.total + pastAssignments.total }}</span>
                 </Button>
             </div>
         </template>
@@ -360,7 +345,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
     <!-- Devoirs & Interros -->
     <template v-if="activeTab === 'assignments'">
         <EmptyState
-            v-if="filteredAssignments.length === 0"
+            v-if="upcomingAssignments.total + pastAssignments.total === 0"
             :message="
                 search || filterType || filterGroup || filterSchool
                     ? 'Aucun résultat pour ces filtres'
@@ -377,7 +362,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
                 <h2 class="text-xl font-bold text-text-base">
                     {{ showPast ? 'Passés' : 'À venir' }}
                     <span class="text-border-figma">
-                        ({{ showPast ? pastAssignments.length : upcomingAssignments.length }})
+                        ({{ showPast ? pastAssignments.total : upcomingAssignments.total }})
                     </span>
                 </h2>
                 <div class="flex gap-1 rounded-xl bg-stone-100 p-1">
@@ -388,7 +373,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
                         @click="showPast = false"
                     >
                         À venir
-                        <span class="ml-1 font-normal text-stone-400">{{ upcomingAssignments.length }}</span>
+                        <span class="ml-1 font-normal text-stone-400">{{ upcomingAssignments.total }}</span>
                     </button>
                     <button
                         type="button"
@@ -397,35 +382,51 @@ function goToAttendance(entry: AgendaJournalEntry) {
                         @click="showPast = true"
                     >
                         Passés
-                        <span class="ml-1 font-normal text-stone-400">{{ pastAssignments.length }}</span>
+                        <span class="ml-1 font-normal text-stone-400">{{ pastAssignments.total }}</span>
                     </button>
                 </div>
             </div>
             <template v-if="!showPast">
                 <ul class="divide-y divide-neutral-100">
                     <AgendaAssignmentRow
-                        v-for="a in upcomingAssignments"
+                        v-for="a in visibleUpcoming"
                         :key="a.id"
                         :assignment="a"
                         @edit="openEdit"
                         @delete="requestDelete"
                     />
                 </ul>
+                <div v-if="upcomingAssignments.last_page > 1" class="border-t border-neutral-100 px-6 py-4">
+                    <Pagination
+                        :links="upcomingAssignments.links"
+                        :current-page="upcomingAssignments.current_page"
+                        :last-page="upcomingAssignments.last_page"
+                        />
+                </div>
             </template>
             <template v-else>
-                <p v-if="pastAssignments.length === 0" class="px-6 py-8 text-center text-sm text-stone-400">
+                <p v-if="pastAssignments.total === 0" class="px-6 py-8 text-center text-sm text-stone-400">
                     Aucun devoir ni interrogation passé
                 </p>
-                <ul v-else class="divide-y divide-neutral-100">
-                    <AgendaAssignmentRow
-                        v-for="a in pastAssignments"
-                        :key="a.id"
-                        :assignment="a"
-                        :past="true"
-                        @edit="openEdit"
-                        @delete="requestDelete"
-                    />
-                </ul>
+                <template v-else>
+                    <ul class="divide-y divide-neutral-100">
+                        <AgendaAssignmentRow
+                            v-for="a in visiblePast"
+                            :key="a.id"
+                            :assignment="a"
+                            :past="true"
+                            @edit="openEdit"
+                            @delete="requestDelete"
+                        />
+                    </ul>
+                    <div v-if="pastAssignments.last_page > 1" class="border-t border-neutral-100 px-6 py-4">
+                        <Pagination
+                            :links="pastAssignments.links"
+                            :current-page="pastAssignments.current_page"
+                            :last-page="pastAssignments.last_page"
+                                />
+                    </div>
+                </template>
             </template>
         </div>
     </template>

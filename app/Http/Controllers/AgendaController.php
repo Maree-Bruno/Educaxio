@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Assignment;
 use App\Models\LessonNote;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 class AgendaController extends Controller
@@ -23,6 +25,8 @@ class AgendaController extends Controller
         $sortDir = in_array($request->input('sort_dir'), ['asc', 'desc'])
             ? $request->input('sort_dir')
             : 'desc';
+        $assignmentType = in_array($request->input('assignment_type'), ['homework', 'test'])
+            ? $request->input('assignment_type') : null;
         $lessons = $user->lessons()
             ->with([
                 'group:id,grade,name,slug,school_id',
@@ -70,6 +74,8 @@ class AgendaController extends Controller
             ->paginate(10)
             ->through(function ($n) use ($lessons) {
                 $lesson = $lessons[$n->lesson_id];
+                $dow = Carbon::parse($n->date)->dayOfWeekIso;
+                $entry = $lesson->scheduleEntries->first(fn ($e) => $e->day_of_week === $dow);
 
                 return [
                     'id' => $n->id,
@@ -77,43 +83,29 @@ class AgendaController extends Controller
                     'notes' => $n->notes,
                     'group' => $lesson->group->grade.$lesson->group->name,
                     'group_slug' => $lesson->group->slug,
-                    'subject' => $lesson->subject->name,
-                    'school' => $lesson->group->school->name,
-                ];
-            });
-
-        $assignments = Assignment::whereIn('lesson_id', $lessonIds)
-            ->when($search, fn ($q) => $q->where(fn ($q) => $q
-                ->where('title', 'like', "%{$search}%")
-                ->orWhereIn('lesson_id', $searchLessonIds ?? [])
-            ))
-            ->orderBy('scheduled_date')
-            ->get()
-            ->map(function ($a) use ($lessons) {
-                $lesson = $lessons[$a->lesson_id];
-                $dow = Carbon::parse($a->scheduled_date)->dayOfWeekIso;
-                $entry = $lesson->scheduleEntries->first(fn ($e) => $e->day_of_week === $dow);
-
-                return [
-                    'id' => $a->id,
-                    'type' => $a->type,
-                    'title' => $a->title,
-                    'scheduled_date' => $a->scheduled_date->toDateString(),
-                    'description' => $a->description,
-                    'group' => $lesson->group->grade.$lesson->group->name,
-                    'group_slug' => $lesson->group->slug,
-                    'subject' => $lesson->subject->name,
+                    'subject' => $lesson->subjectLabel(),
                     'school' => $lesson->group->school->name,
                     'slot_label' => $entry?->scheduleSlot?->label,
                 ];
             });
+
+        $today = now()->toDateString();
+
+        $upcomingAssignments = $this->buildAssignmentQuery($lessonIds, $search, $searchLessonIds, $assignmentType, $sortField, $sortDir, false, $today)
+            ->paginate(10, ['*'], 'upcoming_page')
+            ->through(fn ($a) => $this->formatAssignment($a, $lessons));
+
+        $pastAssignments = $this->buildAssignmentQuery($lessonIds, $search, $searchLessonIds, $assignmentType, $sortField, $sortDir, true, $today)
+            ->paginate(10, ['*'], 'past_page')
+            ->through(fn ($a) => $this->formatAssignment($a, $lessons));
 
         $groupOptions = $lessons->map(fn ($l) => $l->group->grade.$l->group->name)->unique()->sort()->values();
         $schoolOptions = $lessons->map(fn ($l) => $l->group->school->name)->unique()->sort()->values();
 
         return Inertia::render('Agenda', [
             'journalEntries' => $journalEntries,
-            'assignments' => $assignments,
+            'upcomingAssignments' => $upcomingAssignments,
+            'pastAssignments' => $pastAssignments,
             'groupOptions' => $groupOptions,
             'schoolOptions' => $schoolOptions,
             'filters' => [
@@ -122,7 +114,66 @@ class AgendaController extends Controller
                 'school' => $school,
                 'sort_field' => $sortField,
                 'sort_dir' => $sortDir,
+                'assignment_type' => $assignmentType ?? '',
             ],
         ]);
+    }
+
+    private function buildAssignmentQuery(
+        array $lessonIds,
+        string $search,
+        ?array $searchLessonIds,
+        ?string $assignmentType,
+        string $sortField,
+        string $sortDir,
+        bool $past,
+        string $today,
+    ): Builder {
+        $query = Assignment::whereIn('assignments.lesson_id', $lessonIds)
+            ->when($past,
+                fn ($q) => $q->where('assignments.scheduled_date', '<', $today),
+                fn ($q) => $q->where('assignments.scheduled_date', '>=', $today),
+            )
+            ->when($search, fn ($q) => $q->where(fn ($inner) => $inner
+                ->where('assignments.title', 'like', "%{$search}%")
+                ->orWhereIn('assignments.lesson_id', $searchLessonIds ?? [])
+            ))
+            ->when($assignmentType, fn ($q) => $q->where('assignments.type', $assignmentType));
+
+        if ($sortField === 'group') {
+            $query->join('lessons as al', 'assignments.lesson_id', '=', 'al.id')
+                ->join('groups as ag', 'al.group_id', '=', 'ag.id')
+                ->orderByRaw("CONCAT(ag.grade, ag.name) {$sortDir}")
+                ->select('assignments.*');
+        } elseif ($sortField === 'subject') {
+            $query->join('lessons as sl', 'assignments.lesson_id', '=', 'sl.id')
+                ->join('subjects as ss', 'sl.subject_id', '=', 'ss.id')
+                ->orderBy('ss.name', $sortDir)
+                ->select('assignments.*');
+        } else {
+            $query->orderBy('assignments.scheduled_date', $past ? 'desc' : 'asc');
+        }
+
+        return $query;
+    }
+
+    private function formatAssignment(Assignment $a, Collection $lessons): array
+    {
+        $lesson = $lessons[$a->lesson_id];
+        $dow = Carbon::parse($a->scheduled_date)->dayOfWeekIso;
+        $entry = $lesson->scheduleEntries->first(fn ($e) => $e->day_of_week === $dow);
+
+        return [
+            'id' => $a->id,
+            'type' => $a->type,
+            'title' => $a->title,
+            'scheduled_date' => $a->scheduled_date->toDateString(),
+            'description' => $a->description,
+            'group' => $lesson->group->grade.$lesson->group->name,
+            'group_slug' => $lesson->group->slug,
+            'subject' => $lesson->subjectLabel(),
+            'school' => $lesson->group->school->name,
+            'slot_label' => $entry?->scheduleSlot?->label,
+        ];
     }
 }

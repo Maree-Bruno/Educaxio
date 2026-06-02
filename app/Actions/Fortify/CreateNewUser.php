@@ -17,16 +17,16 @@ class CreateNewUser implements CreatesNewUsers
     {
         Validator::make($input, [
             ...$this->profileRules(),
-            'password'    => $this->passwordRules(),
-            'subject_ids'   => ['nullable', 'array'],
+            'password' => $this->passwordRules(),
+            'subject_ids' => ['nullable', 'array'],
             'subject_ids.*' => ['integer', 'exists:subjects,id'],
-            'school_ids'    => ['nullable', 'array'],
-            'school_ids.*'  => ['integer', 'exists:schools,id'],
+            'school_ids' => ['nullable', 'array'],
+            'school_ids.*' => ['integer', 'exists:schools,id'],
         ])->validate();
 
         $user = User::create([
-            'name'     => $input['name'],
-            'email'    => $input['email'],
+            'name' => $input['name'],
+            'email' => $input['email'],
             'password' => $input['password'],
         ]);
 
@@ -36,9 +36,9 @@ class CreateNewUser implements CreatesNewUsers
 
         foreach ($input['school_ids'] ?? [] as $schoolId) {
             SchoolJoinRequest::create([
-                'user_id'   => $user->id,
+                'user_id' => $user->id,
                 'school_id' => $schoolId,
-                'status'    => 'pending',
+                'status' => 'pending',
             ]);
         }
 

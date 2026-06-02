@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\School;
-use App\Models\SchoolJoinRequest;
 use App\Models\User;
 
 beforeEach(function () {

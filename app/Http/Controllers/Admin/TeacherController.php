@@ -39,7 +39,7 @@ class TeacherController extends Controller
             'lessons' => fn ($q) => $q
                 ->whereHas('group', fn ($sq) => $sq->where('school_id', $schoolId))
                 ->with('group:id,grade,name', 'subject:id,name')
-                ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id'),
+                ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id', 'lessons.lm_level'),
         ]);
 
         $joinRequests = SchoolJoinRequest::where('school_id', $school->id)
@@ -52,12 +52,12 @@ class TeacherController extends Controller
             ->get();
 
         return Inertia::render('admin/Teachers', [
-            'school'       => $school->only('id', 'name', 'slug'),
-            'teachers'     => $teachers,
-            'filters'      => (object) $request->only(['search', 'sort', 'dir']),
+            'school' => $school->only('id', 'name', 'slug'),
+            'teachers' => $teachers,
+            'filters' => (object) $request->only(['search', 'sort', 'dir']),
             'joinRequests' => $joinRequests->map(fn ($r) => [
-                'id'       => $r->id,
-                'user'     => ['id' => $r->user->id, 'name' => $r->user->name, 'email' => $r->user->email],
+                'id' => $r->id,
+                'user' => ['id' => $r->user->id, 'name' => $r->user->name, 'email' => $r->user->email],
                 'subjects' => $r->user->subjects->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             ]),
         ]);

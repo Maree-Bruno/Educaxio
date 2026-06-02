@@ -10,6 +10,7 @@ import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { approve, reject } from '@/routes/admin/join-requests';
 import { index as adminTeachersIndex } from '@/routes/admin/teachers';
 import type { Paginator } from '@/types';
@@ -17,7 +18,7 @@ import type { Paginator } from '@/types';
 interface School      { id: number; name: string; slug: string }
 interface Group       { id: number; grade: string; name: string }
 interface Subject     { id: number; name: string }
-interface Lesson      { id: number; group: Group; subject: Subject }
+interface Lesson      { id: number; group: Group; subject: Subject; lm_level: number | null }
 interface Teacher     { id: number; name: string; email: string; lessons: Lesson[] }
 interface JoinRequest { id: number; user: { id: number; name: string; email: string }; subjects: Subject[] }
 
@@ -111,7 +112,7 @@ function rejectRequest(id: number) {
                 <span v-if="teacher.email" class="pl-7 text-xs text-stone-400">{{ teacher.email }}</span>
                 <div class="flex flex-wrap gap-1.5 pl-7">
                     <Badge v-for="lesson in teacher.lessons" :key="lesson.id">
-                        {{ lesson.group.grade }}{{ lesson.group.name }} — {{ lesson.subject.name }}
+                        {{ lesson.group.grade }}{{ lesson.group.name }} — {{ resolveSubjectLabel(lesson.subject.name, lesson.lm_level) }}
                     </Badge>
                     <span v-if="teacher.lessons.length === 0" class="text-xs text-border-figma">Aucun cours attribué</span>
                 </div>
@@ -145,7 +146,7 @@ function rejectRequest(id: number) {
                         <td class="px-6 py-5">
                             <div class="flex flex-wrap gap-1.5">
                                 <Badge v-for="lesson in teacher.lessons" :key="lesson.id" variant="blue">
-                                    {{ lesson.group.grade }}{{ lesson.group.name }} — {{ lesson.subject.name }}
+                                    {{ lesson.group.grade }}{{ lesson.group.name }} — {{ resolveSubjectLabel(lesson.subject.name, lesson.lm_level) }}
                                 </Badge>
                                 <span v-if="teacher.lessons.length === 0" class="text-sm text-border-figma">—</span>
                             </div>

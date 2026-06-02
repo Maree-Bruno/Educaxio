@@ -276,7 +276,7 @@ function confirmDelete() {
                             </li>
                         </ul>
                         <div v-if="upcomingAssignmentsTotal > 5" class="border-t border-neutral-100 bg-white px-6 py-3">
-                            <a :href="agenda.url()" class="text-xs font-bold text-blue hover:underline">
+                            <a :href="agenda.url({ query: { tab: 'assignments' } })" class="text-xs font-bold text-blue hover:underline">
                                 Voir les {{ upcomingAssignmentsTotal }} devoirs & interros →
                             </a>
                         </div>

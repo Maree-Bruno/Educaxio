@@ -35,9 +35,9 @@ export interface Student {
 
 export interface Lesson {
     id: number;
-    name: string;
     subject_id: number;
     group_id: number;
+    lm_level: number | null;
     subject?: Subject;
     group?: {
         id: number;
@@ -109,6 +109,7 @@ export interface LessonOption {
     id: number;
     group_id: number;
     subject_id: number;
+    lm_level: number | null;
     group: {
         id: number;
         grade: string;

@@ -32,6 +32,7 @@ class StudentController extends Controller
         if ($isAdmin) {
             $absenceHistory = $student->attendanceStatuses()
                 ->with([
+                    'attendance.classsession.lesson:id,group_id,subject_id,lm_level',
                     'attendance.classsession.lesson.subject:id,name',
                     'attendance.classsession.lesson.group:id,grade,name',
                     'attendance.classsession.lesson.scheduleEntries.scheduleSlot:id,label,position',
@@ -42,7 +43,7 @@ class StudentController extends Controller
                 ->map(fn ($s) => [
                     'date' => $s->attendance?->classsession?->date,
                     'type' => $s->type,
-                    'subject' => $s->attendance?->classsession?->lesson?->subject?->name,
+                    'subject' => $s->attendance?->classsession?->lesson?->subjectLabel(),
                     'group' => $s->attendance?->classsession?->lesson?->group
                         ? $s->attendance->classsession->lesson->group->grade.$s->attendance->classsession->lesson->group->name
                         : null,
