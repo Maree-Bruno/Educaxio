@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { store } from '@/routes/attendances';
 import AttendanceStatusButton from '@/components/widgets/AttendanceStatusButton.vue';
 import Button from '@/components/widgets/Button.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
+import SearchInput from '@/components/widgets/SearchInput.vue';
+import SelectField from '@/components/widgets/SelectField.vue';
+import SortTh from '@/components/widgets/SortTh.vue';
+import StudentCount from '@/components/widgets/StudentCount.vue';
+import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
 import { attendanceStatusClasses, type AttendanceStatus, type PaginationLink } from '@/types';
 
 interface Student { id: number; lastname: string; firstname: string }
@@ -68,19 +73,59 @@ function save() {
     })).post(store.url(), { preserveScroll: true });
 }
 
+const search = ref('');
+const filterStatus = ref('');
+const { sortCol, sortDir, sortBy } = useStudentSort();
+
+const STATUS_FILTER_OPTIONS = [
+    { value: 'Present',  label: 'Présent'        },
+    { value: 'Absent',   label: 'Absent'          },
+    { value: 'Late',     label: 'Arrivée tardive' },
+    { value: 'Excluded', label: 'Exclu'           },
+];
+
+const filteredStudents = computed(() => {
+    const term = search.value.trim().toLowerCase();
+    let list = term
+        ? props.students.filter(
+            (s) => s.lastname.toLowerCase().includes(term) || s.firstname.toLowerCase().includes(term),
+          )
+        : [...props.students];
+
+    if (filterStatus.value) {
+        const target = filterStatus.value === 'Present' ? null : filterStatus.value as AttendanceStatus;
+        list = list.filter((s) => localStatuses.value[s.id] === target);
+    }
+
+    const primary   = sortCol.value === 'firstname' ? 'firstname' : 'lastname';
+    const secondary = primary === 'lastname' ? 'firstname' : 'lastname';
+    list.sort((a, b) => {
+        const cmp = a[primary].localeCompare(b[primary], 'fr') || a[secondary].localeCompare(b[secondary], 'fr');
+        return sortDir.value === 'desc' ? -cmp : cmp;
+    });
+
+    return list;
+});
+
 const PAGE_SIZE = 10;
 const currentPage = ref(1);
-const totalPages  = computed(() => Math.ceil(props.students.length / PAGE_SIZE));
+
+watch([search, filterStatus, sortCol, sortDir], () => { currentPage.value = 1; });
+
+const totalPages  = computed(() => Math.ceil(filteredStudents.value.length / PAGE_SIZE));
 const pageStudents = computed(() =>
-    props.students.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE),
+    filteredStudents.value.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE),
 );
 
 const paginationLinks = computed<PaginationLink[]>(() => {
     const links: PaginationLink[] = [{ url: null, label: 'Previous', active: false }];
+
     for (let i = 1; i <= totalPages.value; i++) {
         links.push({ url: null, label: String(i), active: i === currentPage.value });
     }
+
     links.push({ url: null, label: 'Next', active: false });
+
     return links;
 });
 
@@ -90,17 +135,40 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
 <template>
     <div class="min-w-0 flex-1 overflow-hidden rounded-2xl">
         <!-- En-tête -->
-        <div class="flex items-center justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
-            <h2 class="text-xl font-bold text-stone-900">Liste des élèves</h2>
-            <div v-if="students.length > 0" class="flex items-center gap-3">
-                <span v-if="lastSavedAt" class="hidden text-xs text-stone-400 sm:block">
-                    Enregistré le {{ lastSavedAt }}
-                </span>
-                <template v-if="isEditable">
-                    <Button variant="ghost" size="sm" @click="setAllPresent">Tous présent</Button>
-                    <Button variant="primary" size="sm" :loading="form.processing" @click="save">Valider</Button>
-                </template>
-                <span v-else class="text-xs font-bold text-stone-400">Lecture seule</span>
+        <div class="border-b border-neutral-300/10 bg-white px-6 py-5">
+            <div class="flex items-center justify-between gap-3">
+                <h2 class="text-xl font-bold text-stone-900">
+                    Liste des élèves
+                    <StudentCount
+                        v-if="students.length > 0"
+                        :total="students.length"
+                        :filtered="(search || filterStatus) ? filteredStudents.length : undefined"
+                    />
+                </h2>
+                <div v-if="students.length > 0" class="flex items-center gap-3">
+                    <span v-if="lastSavedAt" class="hidden text-xs text-stone-400 sm:block">
+                        Enregistré le {{ lastSavedAt }}
+                    </span>
+                    <template v-if="isEditable">
+                        <Button variant="ghost" size="sm" @click="setAllPresent">Tous présent</Button>
+                        <Button variant="primary" size="sm" :loading="form.processing" @click="save">Valider</Button>
+                    </template>
+                    <span v-else class="text-xs font-bold text-stone-400">Lecture seule</span>
+                </div>
+            </div>
+            <div v-if="students.length > 0" class="mt-3 flex gap-2">
+                <SelectField
+                    placeholder="Tous les statuts"
+                    :options="STATUS_FILTER_OPTIONS"
+                    :model-value="filterStatus || null"
+                    class="w-44 shrink-0"
+                    @update:model-value="filterStatus = ($event as string) ?? ''"
+                />
+                <SearchInput
+                    v-model="search"
+                    placeholder="Rechercher un élève…"
+                    class="flex-1"
+                />
             </div>
         </div>
 
@@ -120,7 +188,7 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                     class="flex items-center gap-3 px-4 py-3"
                 >
                     <span class="w-6 shrink-0 text-xs text-stone-400">
-                        {{ String((currentPage - 1) * PAGE_SIZE + index + 1).padStart(2, '0') }}
+                        {{ studentRowNumber(index, currentPage, PAGE_SIZE, filteredStudents.length, sortDir) }}
                     </span>
                     <span class="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
                         {{ student.lastname }} {{ student.firstname }}
@@ -148,7 +216,8 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                 <thead>
                     <tr class="bg-gray-100">
                         <th class="w-16 px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Nom de l'élève</th>
+                        <SortTh col="lastname" label="Nom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
+                        <SortTh col="firstname" label="Prénom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <th class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Statut</th>
                     </tr>
                 </thead>
@@ -159,11 +228,10 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                         class="transition-colors hover:bg-gray-50"
                     >
                         <td class="px-6 py-5 text-sm text-stone-400">
-                            {{ String((currentPage - 1) * PAGE_SIZE + index + 1).padStart(2, '0') }}
+                            {{ studentRowNumber(index, currentPage, PAGE_SIZE, filteredStudents.length, sortDir) }}
                         </td>
-                        <td class="px-6 py-5 text-base text-stone-900">
-                            {{ student.lastname }} {{ student.firstname }}
-                        </td>
+                        <td class="px-6 py-5 text-base font-medium text-stone-900">{{ student.lastname }}</td>
+                        <td class="px-6 py-5 text-base text-stone-900">{{ student.firstname }}</td>
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-center gap-1">
                                 <AttendanceStatusButton
@@ -180,17 +248,17 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                         </td>
                     </tr>
                     <tr v-if="students.length === 0">
-                        <td colspan="3"><EmptyState message="Aucun élève dans ce groupe" /></td>
+                        <td colspan="4"><EmptyState message="Aucun élève dans ce groupe" /></td>
                     </tr>
                 </tbody>
             </table>
 
             <div class="rounded-b-2xl bg-gray-100 px-6 py-4">
                 <div class="flex items-center justify-between">
-                    <p class="text-sm text-border-figma">
-                        {{ students.length }} élève{{ students.length > 1 ? 's' : '' }}
-                        <template v-if="signalCount > 0">· {{ signalCount }} signalement(s)</template>
+                    <p v-if="signalCount > 0" class="text-sm text-border-figma">
+                        {{ signalCount }} signalement{{ signalCount > 1 ? 's' : '' }}
                     </p>
+                    <span v-else />
                     <Pagination
                         :links="paginationLinks"
                         :current-page="currentPage"

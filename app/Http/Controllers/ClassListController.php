@@ -202,7 +202,16 @@ class ClassListController extends Controller
         $sortCol = in_array($request->string('sort')->toString(), ['lastname', 'firstname'])
             ? $request->string('sort')->toString()
             : 'lastname';
-        $students = $group->students()->orderBy($sortCol, $dir)->paginate(10);
+        $search = $request->string('search')->trim()->toString();
+
+        $students = $group->students()
+            ->when($search, fn ($q) => $q->where(fn ($inner) => $inner
+                ->where('lastname', 'like', "%{$search}%")
+                ->orWhere('firstname', 'like', "%{$search}%")
+            ))
+            ->orderBy($sortCol, $dir)
+            ->orderBy($sortCol === 'lastname' ? 'firstname' : 'lastname')
+            ->paginate(10);
         $group->students_count = $students->total();
 
         $schoolStudents = $canManage
@@ -222,7 +231,7 @@ class ClassListController extends Controller
                 ->orderByDesc('year')->get(['id', 'year']),
             'subjects' => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
                 ->orderBy('name')->get(['id', 'name']),
-            'filters' => $request->only(['sort', 'dir']),
+            'filters' => $request->only(['sort', 'dir', 'search']),
             'schoolStudents' => $schoolStudents,
         ]);
     }
@@ -256,6 +265,13 @@ class ClassListController extends Controller
             $group->students()->attach($student->id);
         }
 
+        return back();
+    }
+
+    public function detachStudent(Group $group, Student $student)
+    {
+        $this->authorize('detachStudent', $group);
+        $group->students()->detach($student->id);
         return back();
     }
 
