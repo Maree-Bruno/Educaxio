@@ -93,8 +93,8 @@ class DashboardController extends Controller
                 'stats' => [
                     'students' => $studentsCount,
                     'teachers' => $teachersCount,
-                    'pending' => $pendingCount,
-                    'lessons' => $lessonsCount,
+                    'pending'  => $pendingCount,
+                    'lessons'  => $lessonsCount,
                 ],
                 'joinRequests' => $joinRequests,
                 'recentStudents' => $recentStudents,

@@ -1,15 +1,19 @@
 <script setup lang="ts">
+import LinkButton from '@/components/widgets/LinkButton.vue';
+
 defineProps<{
     message: string;
-    size?: 'sm' | 'md';
+    size?:   'sm' | 'md';
+    action?: { label: string; href: string };
 }>();
 </script>
 
 <template>
-    <p
-        class="px-6 text-center text-sm font-bold text-border-figma"
+    <div
+        class="flex flex-col items-center gap-3 px-6 text-center"
         :class="size === 'sm' ? 'py-8' : 'py-16'"
     >
-        {{ message }}
-    </p>
+        <p class="text-sm font-bold text-border-figma">{{ message }}</p>
+        <LinkButton v-if="action" :href="action.href" variant="secondary" size="sm" :label="action.label" />
+    </div>
 </template>

@@ -55,7 +55,12 @@ const entryOptions = computed(() =>
 
 <template>
     <!-- Filtres -->
-    <div class="rounded-2xl bg-white px-6 py-5 shadow-sm outline -outline-offset-1 outline-neutral-300/10">
+    <div class="rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10">
+        <div class="border-b border-neutral-300/10 px-6 py-4">
+            <p class="text-sm font-bold text-text-base">Sélection de l'heure de cours</p>
+            <p class="mt-0.5 text-xs text-stone-400">Sélectionnez une date et un créneau pour afficher et saisir les présences</p>
+        </div>
+        <div class="px-6 py-5">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-6">
             <DateField
                 label="Date"
@@ -89,6 +94,7 @@ const entryOptions = computed(() =>
                     <span v-else class="text-border-figma">—</span>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 

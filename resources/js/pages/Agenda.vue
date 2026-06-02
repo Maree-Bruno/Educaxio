@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { useToasterStore } from '@/stores/toaster';
-import { agenda, attendances } from '@/routes';
-import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
 import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
 import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
 import AgendaJournalRow from '@/components/widgets/AgendaJournalRow.vue';
@@ -17,10 +14,13 @@ import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
-import type { PaginationLink } from '@/types';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { agenda, attendances } from '@/routes';
+import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
+import { useToasterStore } from '@/stores/toaster';
+import type { PaginationLink } from '@/types';
 
-setPageTitle('Journal & Devoirs');
+setPageTitle('Journal de classe');
 
 interface PaginatedJournal {
     data: AgendaJournalEntry[];
@@ -222,7 +222,11 @@ function goToAttendance(entry: AgendaJournalEntry) {
 
 <template>
     <!-- Barre de filtres -->
-    <FilterBar :active-count="activeFilterCount">
+    <FilterBar
+        title="Journal de classe"
+        description="Retrouvez les notes de cours et planifiez les devoirs et interrogations par classe."
+        :active-count="activeFilterCount"
+    >
         <template #action>
             <div class="flex w-full gap-2 sm:w-auto">
                 <Button
@@ -281,22 +285,25 @@ function goToAttendance(entry: AgendaJournalEntry) {
                 class="w-full lg:flex-1"
             />
 
-            <div class="flex w-full items-end gap-2 lg:w-auto">
-                <SelectField
-                    placeholder="Trier par…"
-                    :options="sortOptions"
-                    :model-value="sortField"
-                    class="flex-1 lg:w-36"
-                    @update:model-value="(v) => (sortField = (v as 'date' | 'group' | 'subject') ?? 'date')"
-                />
-                <button
-                    type="button"
-                    class="flex h-11.5 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma transition-colors hover:bg-gray-50"
-                    :title="sortDir === 'asc' ? 'Croissant' : 'Décroissant'"
-                    @click="toggleDir"
-                >
-                    {{ sortDir === 'asc' ? '↑' : '↓' }}
-                </button>
+            <div class="flex w-full flex-col gap-2 lg:w-auto">
+                <p class="text-xs font-bold uppercase tracking-wide text-border-figma">Trier</p>
+                <div class="flex items-center gap-2">
+                    <SelectField
+                        placeholder="Par défaut"
+                        :options="sortOptions"
+                        :model-value="sortField"
+                        class="flex-1 lg:w-36"
+                        @update:model-value="(v) => (sortField = (v as 'date' | 'group' | 'subject') ?? 'date')"
+                    />
+                    <button
+                        type="button"
+                        class="flex h-11.5 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma transition-colors hover:bg-gray-50"
+                        :title="sortDir === 'asc' ? 'Croissant' : 'Décroissant'"
+                        @click="toggleDir"
+                    >
+                        {{ sortDir === 'asc' ? '↑' : '↓' }}
+                    </button>
+                </div>
             </div>
         </template>
     </FilterBar>

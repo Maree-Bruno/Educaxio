@@ -32,7 +32,7 @@ class AttendanceController extends Controller
             ->orderBy('schedule_slots.position')
             ->select('schedule_entries.*')
             ->with([
-                'scheduleSlot:id,label,position',
+                'scheduleSlot:id,label,position,start_time,end_time',
                 'lesson:id,group_id,subject_id,lm_level',
                 'lesson.group:id,grade,name,slug,school_id',
                 'lesson.group.school:id,name,slug',
@@ -49,6 +49,37 @@ class AttendanceController extends Controller
             : ($groupSlug
                 ? $entries->first(fn ($e) => $e->lesson->group->slug === $groupSlug)
                 : null);
+
+        // Si group demandé mais pas trouvé aujourd'hui → rediriger vers la prochaine séance
+        if (!$selected && $groupSlug && !$entryId) {
+            $groupDows = ScheduleEntry::whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
+                ->whereHas('lesson.group', fn ($q) => $q->where('slug', $groupSlug))
+                ->pluck('day_of_week');
+
+            if ($groupDows->isNotEmpty()) {
+                $cursor = Carbon::parse($date)->subDay();
+                for ($i = 0; $i < 7; $i++) {
+                    if ($groupDows->contains($cursor->dayOfWeekIso)) {
+                        return redirect()->route('attendances', [
+                            'date'  => $cursor->toDateString(),
+                            'group' => $groupSlug,
+                        ]);
+                    }
+                    $cursor->subDay();
+                }
+            }
+        }
+
+        // Auto-sélection uniquement si l'heure actuelle tombe dans un créneau
+        if (!$selected && $entries->isNotEmpty() && $date === now()->toDateString()) {
+            $now = now()->format('H:i');
+
+            $selected = $entries->first(function ($e) use ($now) {
+                $start = $e->scheduleSlot->start_time ? substr($e->scheduleSlot->start_time, 0, 5) : null;
+                $end   = $e->scheduleSlot->end_time   ? substr($e->scheduleSlot->end_time,   0, 5) : null;
+                return $start && $end && $now >= $start && $now <= $end;
+            });
+        }
 
         $students = collect();
         $statuses = [];
@@ -141,9 +172,11 @@ class AttendanceController extends Controller
         $lesson = Lesson::findOrFail($validated['lesson_id']);
         $this->authorize('create', [Attendance::class, $lesson]);
 
-        $session = ClassSession::firstOrCreate(
-            ['lesson_id' => $validated['lesson_id'], 'date' => $validated['date']],
-        );
+        $date = Carbon::parse($validated['date'])->toDateString();
+
+        $session = ClassSession::where('lesson_id', $validated['lesson_id'])
+            ->whereDate('date', $date)
+            ->first() ?? ClassSession::create(['lesson_id' => $validated['lesson_id'], 'date' => $date]);
 
         $attendance = Attendance::firstOrCreate(
             ['classsession_id' => $session->id],

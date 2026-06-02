@@ -3,9 +3,10 @@ import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
-import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
+import AttendanceIcon from '@/components/widgets/svg/Attendance.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
+import { attendances } from '@/routes';
 import type { Group, Lesson } from '@/types';
 
 const props = defineProps<{
@@ -110,7 +111,7 @@ const emit = defineEmits<{
             <LinkButton
                 v-if="viewHref"
                 :href="viewHref"
-                variant="secondary"
+                variant="primary"
                 size="sm"
                 :icon-only="true"
                 label="Voir la classe"
@@ -118,6 +119,19 @@ const emit = defineEmits<{
             >
                 <template #icon>
                     <Eye :size="16" :stroke-width="2" aria-hidden="true" />
+                </template>
+            </LinkButton>
+
+            <LinkButton
+                :href="attendances.url({ query: { group: slug } })"
+                variant="secondary"
+                size="sm"
+                :icon-only="true"
+                label="Présences"
+                title="Aller aux présences"
+            >
+                <template #icon>
+                    <AttendanceIcon :size="16" :stroke-width="2" aria-hidden="true" />
                 </template>
             </LinkButton>
 

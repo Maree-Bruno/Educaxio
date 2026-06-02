@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('day_of_week'); // 1=lundi … 5=vendredi
             $table->string('classroom')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->unique(['schedule_id', 'schedule_slot_id', 'day_of_week']);
         });

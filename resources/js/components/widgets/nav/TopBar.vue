@@ -34,12 +34,12 @@ const nav = useNavigationStore();
         <!-- Actions droite -->
         <div class="flex items-center gap-4">
             <!-- Cloche notification -->
-            <button
+<!--            <button
                 class="rounded-full p-2 transition-colors hover:bg-hover-nav"
                 aria-label="Notifications"
             >
                 <Bell :size="20" :stroke-width="2" class="text-text-base" aria-hidden="true" />
-            </button>
+            </button>-->
 
             <!-- Séparateur -->
             <div class="hidden h-8 w-px bg-border-figma md:block" />

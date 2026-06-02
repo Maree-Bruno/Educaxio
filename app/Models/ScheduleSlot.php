@@ -24,4 +24,9 @@ class ScheduleSlot extends Model
     {
         return $this->hasMany(SchoolSlotTime::class);
     }
+
+    public function entries(): HasMany
+    {
+        return $this->hasMany(ScheduleEntry::class);
+    }
 }
