@@ -26,7 +26,7 @@ const props = defineProps<{
     nextAssignmentDate: string | null;
     schedulePattern:    ScheduleEntry[];
     groupName:          string | null;
-    selectedEntry:      number | null;
+    selectedEntry:      string | null;
 }>();
 
 // ── Création ──────────────────────────────────────────────────────────────

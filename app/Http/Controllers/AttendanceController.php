@@ -12,6 +12,7 @@ use App\Models\LessonNote;
 use App\Models\ScheduleEntry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -40,18 +41,20 @@ class AttendanceController extends Controller
             ])
             ->get();
 
-        // Sélection : ?entry=id prioritaire, puis ?group=slug (depuis ClassListShow)
-        $groupSlug = $request->string('group')->toString() ?: null;
-        $entryId = $request->integer('entry') ?: null;
+        // Sélection : ?creneau=slug prioritaire, puis ?group=slug (depuis ClassListShow)
+        $groupSlug   = $request->string('group')->toString() ?: null;
+        $creneauSlug = $request->string('creneau')->toString() ?: null;
 
-        $selected = $entryId
-            ? $entries->firstWhere('id', $entryId)
+        $entrySlug = fn ($e) => Str::slug($e->lesson->group->slug.'-'.$e->scheduleSlot->label);
+
+        $selected = $creneauSlug
+            ? $entries->first(fn ($e) => $entrySlug($e) === $creneauSlug)
             : ($groupSlug
                 ? $entries->first(fn ($e) => $e->lesson->group->slug === $groupSlug)
                 : null);
 
         // Si group demandé mais pas trouvé aujourd'hui → rediriger vers la prochaine séance
-        if (!$selected && $groupSlug && !$entryId) {
+        if (!$selected && $groupSlug && !$creneauSlug) {
             $groupDows = ScheduleEntry::whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
                 ->whereHas('lesson.group', fn ($q) => $q->where('slug', $groupSlug))
                 ->pluck('day_of_week');
@@ -125,14 +128,14 @@ class AttendanceController extends Controller
 
         return Inertia::render('Attendance', [
             'entries' => $entries->map(fn ($e) => [
-                'id' => $e->id,
-                'label' => $e->scheduleSlot->label,
+                'creneau'   => Str::slug($e->lesson->group->slug.'-'.$e->scheduleSlot->label),
+                'label'     => $e->scheduleSlot->label,
                 'lesson_id' => $e->lesson_id,
-                'subject' => $e->lesson->subjectLabel(),
-                'group' => $e->lesson->group->grade.$e->lesson->group->name,
-                'school' => $e->lesson->group->school->name,
+                'subject'   => $e->lesson->subjectLabel(),
+                'group'     => $e->lesson->group->grade.$e->lesson->group->name,
+                'school'    => $e->lesson->group->school->name,
             ])->values(),
-            'selectedEntry' => $selected?->id,
+            'selectedEntry' => $selected ? Str::slug($selected->lesson->group->slug.'-'.$selected->scheduleSlot->label) : null,
             'selectedSchool' => $selected?->lesson->group->school->name,
             'selectedGroup' => $selected ? ($selected->lesson->group->grade.$selected->lesson->group->name) : null,
             'date' => $date,

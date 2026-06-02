@@ -225,7 +225,7 @@ class ClassListController extends Controller
                 ->get(['id', 'lastname', 'firstname'])
             : [];
 
-        $attendanceStats = $this->groupAttendanceStats($group);
+        $attendanceStats = $this->groupAttendanceStats($group, $isTeacher ? $userId : null);
 
         return Inertia::render('ClassListShow', [
             'group' => $group,
@@ -281,9 +281,13 @@ class ClassListController extends Controller
         return back();
     }
 
-    private function groupAttendanceStats(Group $group): array
+    private function groupAttendanceStats(Group $group, ?int $teacherUserId = null): array
     {
-        $lessonIds    = Lesson::where('group_id', $group->id)->pluck('id');
+        $lessonIds = $teacherUserId
+            ? Lesson::where('group_id', $group->id)
+                ->whereHas('users', fn ($q) => $q->where('users.id', $teacherUserId))
+                ->pluck('id')
+            : Lesson::where('group_id', $group->id)->pluck('id');
         $sessionIds   = ClassSession::whereIn('lesson_id', $lessonIds)->pluck('id');
         $studentIds   = $group->students()->pluck('students.id');
         $sessions     = $sessionIds->count();

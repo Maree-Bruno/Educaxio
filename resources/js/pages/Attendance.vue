@@ -14,7 +14,7 @@ import { setPageTitle } from '@/composables/usePageTitle';
 setPageTitle('Présences');
 
 interface Entry {
-    id: number;
+    creneau: string;
     label: string;
     lesson_id: number;
     subject: string;
@@ -39,7 +39,7 @@ interface LessonNoteData {
 
 const props = defineProps<{
     entries: Entry[];
-    selectedEntry: number | null;
+    selectedEntry: string | null;
     selectedSchool: string | null;
     selectedGroup: string | null;
     date: string;
@@ -60,7 +60,7 @@ function nav(params: Record<string, string | number | null | undefined>) {
 
 const entryOptions = computed(() =>
     props.entries.map((e) => ({
-        value: e.id,
+        value: e.creneau,
         label: `${e.label} — ${e.subject} · ${e.group}`,
     })),
 );
@@ -119,7 +119,7 @@ const sessionStats = computed(() => {
                     :model-value="selectedEntry"
                     :disabled="entries.length === 0"
                     @update:model-value="
-                        (val) => val !== null && nav({ date, entry: val })
+                        (val) => val !== null && nav({ date, creneau: val })
                     "
                 />
 

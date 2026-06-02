@@ -9,7 +9,7 @@ const props = defineProps<{
     lessonNote:    { id: number; notes: string | null; savedAt: string | null } | null;
     lessonId:      number | null;
     date:          string;
-    selectedEntry: number | null;
+    selectedEntry: string | null;
 }>();
 
 const journalNotes = ref(props.lessonNote?.notes ?? '');

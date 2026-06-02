@@ -18,14 +18,14 @@ const emit = defineEmits<{
 }>();
 
 interface Student { id: number; lastname: string; firstname: string }
-interface Entry   { id: number; lesson_id: number }
+interface Entry   { creneau: string; lesson_id: number }
 interface Status  { student_id: number; type: string; motive: string | null }
 
 const props = defineProps<{
     students:      Student[];
     statuses:      Status[];
     entries:       Entry[];
-    selectedEntry: number | null;
+    selectedEntry: string | null;
     date:          string;
     lastSavedAt:   string | null;
 }>();
@@ -65,7 +65,7 @@ function setAllPresent() {
 }
 
 function save() {
-    const entry = props.entries.find((e) => e.id === props.selectedEntry);
+    const entry = props.entries.find((e) => e.creneau === props.selectedEntry);
     if (!entry) return;
 
     const statuses = Object.entries(localStatuses.value)

@@ -6,8 +6,9 @@ import { useHiddenIds } from '@/composables/useHiddenIds';
 import { dashboard, agenda, attendances } from '@/routes';
 import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
 import { show as showClasslist } from '@/routes/classlist';
+import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
+import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
 import Badge from '@/components/widgets/Badge.vue';
-import Trash from '@/components/widgets/svg/Trash.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import DateField from '@/components/widgets/DateField.vue';
@@ -18,7 +19,7 @@ import { useToasterStore } from '@/stores/toaster';
 import type { User } from '@/types';
 
 interface Entry {
-    id: number;
+    creneau: string;
     subject: string;
     group: string;
     groupSlug: string;
@@ -45,23 +46,12 @@ interface Group {
     subjects: string[];
 }
 
-interface UpcomingAssignment {
-    id: number;
-    type: 'homework' | 'test';
-    title: string;
-    scheduled_date: string;
-    description: string | null;
-    group: string;
-    subject: string;
-    school: string;
-}
-
 const { user, selectedDate, upcomingAssignments, slots } = defineProps<{
     slots: Slot[];
     groups: Group[];
     date: string;
     selectedDate: string;
-    upcomingAssignments: UpcomingAssignment[];
+    upcomingAssignments: AgendaAssignment[];
     upcomingAssignmentsTotal: number;
     user: User;
 }>();
@@ -103,14 +93,8 @@ onUnmounted(() => {
     if (midnightTimer) clearTimeout(midnightTimer);
 });
 
-function formatDate(dateStr: string): string {
-    const [y, m, d] = dateStr.split('-').map(Number);
-
-    return new Date(y, m - 1, d).toLocaleDateString('fr-BE', { weekday: 'short', day: 'numeric', month: 'short' });
-}
-
 const editModalRef      = ref<InstanceType<typeof BaseModal> | null>(null);
-const editingAssignment = ref<UpcomingAssignment | null>(null);
+const editingAssignment = ref<AgendaAssignment | null>(null);
 
 const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const pendingDelete = ref<{ id: number; title: string } | null>(null);
@@ -123,7 +107,13 @@ const editForm = useForm({
     description:    '',
 });
 
-function openEdit(a: UpcomingAssignment) {
+function openEdit(id: number) {
+    const a = upcomingAssignments.find((x) => x.id === id);
+
+    if (!a) {
+        return;
+    }
+
     editingAssignment.value = a;
     editForm.type           = a.type;
     editForm.title          = a.title;
@@ -185,107 +175,95 @@ function confirmDelete() {
             />
         </div>
         <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
-            <div class="min-w-0 flex-1 overflow-hidden rounded-2xl">
-                <div class="border-b border-zinc-400/10 bg-white px-6 py-5">
-                    <h3 class="text-base font-bold text-stone-900">Horaire du jour</h3>
-                    <p class="mt-0.5 text-xs text-stone-400">Cliquez sur « Présences » pour enregistrer les présences d'un cours.</p>
-                </div>
-                <EmptyState
-                    v-if="slots.length === 0"
-                    message="Pas de cours aujourd'hui"
-                    class="bg-white"
-                />
-                <div v-else>
-                    <template v-for="(slot, index) in slots" :key="slot.id">
-                        <div
-                            v-if="slot.type === 'lunch'"
-                            class="flex items-center justify-center border-b border-zinc-400/10 py-3"
-                            :class="[
-                                index === slots.length - 1 && 'border-b-0',
-                                isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
-                            ]"
-                        >
-                            <span class="text-xs font-bold tracking-wider text-zinc-400 uppercase">Pause</span>
-                        </div>
-                        <div
-                            v-else
-                            class="flex items-center gap-3 border-b border-zinc-400/10 px-6 py-4"
-                            :class="[
-                                index === slots.length - 1 && 'border-b-0',
-                                isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
-                            ]"
-                        >
-                            <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ slot.label }}</span>
-                            <template v-if="slot.entry">
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-extrabold text-text-base">
-                                        {{ slot.entry.group }} · {{ slot.entry.subject }}
-                                    </p>
-                                    <p class="truncate text-xs text-border-figma">
-                                        {{ slot.entry.room ?? '–' }} · {{ slot.entry.school }}
-                                    </p>
-                                </div>
-                                <a
-                                    v-if="isEditable"
-                                    :href="attendances.url({ query: { entry: slot.entry.id } })"
-                                    class="shrink-0 text-xs font-bold text-blue hover:underline"
-                                >
-                                    Présences
-                                </a>
-                            </template>
-                            <p v-else class="flex-1 text-sm text-zinc-300">Libre</p>
-                        </div>
-                    </template>
-                </div>
-            </div>
-            <div class="flex w-full shrink-0 flex-col gap-6 xl:w-72">
+            <!-- Colonne principale -->
+            <div class="flex min-w-0 flex-1 flex-col gap-6">
+                <!-- Horaire du jour -->
                 <div class="overflow-hidden rounded-2xl">
-                    <div class="flex items-start justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
+                    <div class="border-b border-zinc-400/10 bg-white px-6 py-5">
+                        <h3 class="text-base font-bold text-stone-900">Horaire du jour</h3>
+                        <p class="mt-0.5 text-xs text-stone-400">Cliquez sur « Présences » pour enregistrer les présences d'un cours.</p>
+                    </div>
+                    <EmptyState
+                        v-if="slots.length === 0"
+                        message="Pas de cours aujourd'hui"
+                        class="bg-white"
+                    />
+                    <div v-else>
+                        <template v-for="(slot, index) in slots" :key="slot.id">
+                            <div
+                                v-if="slot.type === 'lunch'"
+                                class="flex items-center justify-center border-b border-zinc-400/10 py-3"
+                                :class="[
+                                    index === slots.length - 1 && 'border-b-0',
+                                    isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
+                                ]"
+                            >
+                                <span class="text-xs font-bold tracking-wider text-zinc-400 uppercase">Pause</span>
+                            </div>
+                            <div
+                                v-else
+                                class="flex items-center gap-3 border-b border-zinc-400/10 px-6 py-4"
+                                :class="[
+                                    index === slots.length - 1 && 'border-b-0',
+                                    isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
+                                ]"
+                            >
+                                <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ slot.label }}</span>
+                                <template v-if="slot.entry">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-extrabold text-text-base">
+                                            {{ slot.entry.group }} · {{ slot.entry.subject }}
+                                        </p>
+                                        <p class="truncate text-xs text-border-figma">
+                                            {{ slot.entry.room ?? '–' }} · {{ slot.entry.school }}
+                                        </p>
+                                    </div>
+                                    <a
+                                        v-if="isEditable"
+                                        :href="attendances.url({ query: { creneau: slot.entry.creneau } })"
+                                        class="shrink-0 text-xs font-bold text-blue hover:underline"
+                                    >
+                                        Présences
+                                    </a>
+                                </template>
+                                <p v-else class="flex-1 text-sm text-zinc-300">Libre</p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Devoirs & Interros -->
+                <div class="overflow-hidden rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10">
+                    <div class="flex items-center justify-between border-b border-neutral-300/10 px-6 py-5">
                         <div>
                             <h3 class="text-base font-bold text-stone-900">Devoirs & Interros</h3>
                             <p class="mt-0.5 text-xs text-stone-400">Prochains devoirs et interrogations pour vos classes.</p>
                         </div>
-                        <span v-if="upcomingAssignmentsTotal > 0" class="mt-0.5 shrink-0 text-xs text-stone-400">
-                            {{ upcomingAssignmentsTotal }} à venir
-                        </span>
+                        <a
+                            v-if="upcomingAssignmentsTotal > 5"
+                            :href="agenda.url({ query: { tab: 'assignments' } })"
+                            class="text-xs font-bold text-blue hover:underline"
+                        >
+                            Voir tout →
+                        </a>
                     </div>
-
-                    <div v-if="upcomingAssignments.length === 0" class="bg-white px-6 py-8 text-center">
-                        <p class="text-xs italic text-stone-400">Aucun devoir ni interrogation à venir</p>
-                    </div>
-
-                    <template v-else>
-                        <ul class="divide-y divide-neutral-100 bg-white">
-                            <li
-                                v-for="a in upcomingAssignments.filter((a) => !isAssignmentHidden(a.id))"
-                                :key="a.id"
-                                class="group flex cursor-pointer items-start gap-3 px-6 py-4 transition-colors hover:bg-gray-50"
-                                @click="openEdit(a)"
-                            >
-                                <span
-                                    class="mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                                    :class="a.type === 'test' ? 'bg-red-100 text-red-600' : 'bg-blue/10 text-blue'"
-                                >{{ a.type === 'test' ? 'Interro' : 'Devoir' }}</span>
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-medium text-text-base">{{ a.title }}</p>
-                                    <p class="truncate text-xs text-stone-400">{{ a.group }} · {{ a.subject }} · {{ a.school }}</p>
-                                    <p class="text-xs font-medium text-border-figma">{{ formatDate(a.scheduled_date) }}</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    class="shrink-0 text-stone-300 opacity-0 transition-all group-hover:opacity-100 hover:text-red-500"
-                                    title="Supprimer"
-                                    @click.stop="requestDelete(a.id)"
-                                ><Trash :size="16" /></button>
-                            </li>
-                        </ul>
-                        <div v-if="upcomingAssignmentsTotal > 5" class="border-t border-neutral-100 bg-white px-6 py-3">
-                            <a :href="agenda.url({ query: { tab: 'assignments' } })" class="text-xs font-bold text-blue hover:underline">
-                                Voir les {{ upcomingAssignmentsTotal }} devoirs & interros →
-                            </a>
-                        </div>
-                    </template>
+                    <p v-if="upcomingAssignments.length === 0" class="px-6 py-8 text-center text-xs italic text-stone-400">
+                        Aucun devoir ni interrogation à venir
+                    </p>
+                    <ul v-else class="divide-y divide-neutral-100">
+                        <AgendaAssignmentRow
+                            v-for="a in upcomingAssignments.filter(({ id }) => !isAssignmentHidden(id))"
+                            :key="a.id"
+                            :assignment="a"
+                            @edit="openEdit"
+                            @delete="requestDelete"
+                        />
+                    </ul>
                 </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="flex w-full shrink-0 flex-col gap-6 xl:w-72">
                 <div class="overflow-hidden rounded-2xl">
                     <div class="border-b border-neutral-300/10 bg-white px-6 py-5">
                         <h3 class="text-base font-bold text-stone-900">Mes classes</h3>
