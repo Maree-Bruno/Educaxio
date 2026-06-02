@@ -10,6 +10,7 @@ use App\Models\SchoolJoinRequest;
 use App\Models\SchoolSlotTime;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -93,8 +94,8 @@ class DashboardController extends Controller
                 'stats' => [
                     'students' => $studentsCount,
                     'teachers' => $teachersCount,
-                    'pending' => $pendingCount,
-                    'lessons' => $lessonsCount,
+                    'pending'  => $pendingCount,
+                    'lessons'  => $lessonsCount,
                 ],
                 'joinRequests' => $joinRequests,
                 'recentStudents' => $recentStudents,
@@ -161,12 +162,12 @@ class DashboardController extends Controller
                     'start_time' => $override ? $override['start_time'] : $globalStart,
                     'end_time' => $override ? $override['end_time'] : $globalEnd,
                     'entry' => ($entry && $lesson) ? [
-                        'id' => $entry->id,
-                        'subject' => $lesson->subjectLabel(),
-                        'group' => $lesson->group->grade.$lesson->group->name,
+                        'creneau'   => Str::slug($lesson->group->slug.'-'.$s->label),
+                        'subject'   => $lesson->subjectLabel(),
+                        'group'     => $lesson->group->grade.$lesson->group->name,
                         'groupSlug' => $lesson->group->slug,
-                        'school' => $lesson->group->school->name,
-                        'room' => $entry->classroom,
+                        'school'    => $lesson->group->school->name,
+                        'room'      => $entry->classroom,
                     ] : null,
                 ];
             });
@@ -193,14 +194,16 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(fn ($a) => [
-                'id' => $a->id,
-                'type' => $a->type,
-                'title' => $a->title,
+                'id'             => $a->id,
+                'type'           => $a->type,
+                'title'          => $a->title,
                 'scheduled_date' => $a->scheduled_date->toDateString(),
-                'description' => $a->description,
-                'group' => $lessons[$a->lesson_id]->group->grade.$lessons[$a->lesson_id]->group->name,
-                'subject' => $lessons[$a->lesson_id]->subjectLabel(),
-                'school' => $lessons[$a->lesson_id]->group->school->name,
+                'description'    => $a->description,
+                'group'          => $lessons[$a->lesson_id]->group->grade.$lessons[$a->lesson_id]->group->name,
+                'group_slug'     => $lessons[$a->lesson_id]->group->slug,
+                'subject'        => $lessons[$a->lesson_id]->subjectLabel(),
+                'school'         => $lessons[$a->lesson_id]->group->school->name,
+                'slot_label'     => null,
             ]);
 
         return Inertia::render('TeacherDashboard', [

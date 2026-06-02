@@ -12,6 +12,7 @@ use App\Models\LessonNote;
 use App\Models\ScheduleEntry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -32,7 +33,7 @@ class AttendanceController extends Controller
             ->orderBy('schedule_slots.position')
             ->select('schedule_entries.*')
             ->with([
-                'scheduleSlot:id,label,position',
+                'scheduleSlot:id,label,position,start_time,end_time',
                 'lesson:id,group_id,subject_id,lm_level',
                 'lesson.group:id,grade,name,slug,school_id',
                 'lesson.group.school:id,name,slug',
@@ -40,15 +41,48 @@ class AttendanceController extends Controller
             ])
             ->get();
 
-        // Sélection : ?entry=id prioritaire, puis ?group=slug (depuis ClassListShow)
-        $groupSlug = $request->string('group')->toString() ?: null;
-        $entryId = $request->integer('entry') ?: null;
+        // Sélection : ?creneau=slug prioritaire, puis ?group=slug (depuis ClassListShow)
+        $groupSlug   = $request->string('group')->toString() ?: null;
+        $creneauSlug = $request->string('creneau')->toString() ?: null;
 
-        $selected = $entryId
-            ? $entries->firstWhere('id', $entryId)
+        $entrySlug = fn ($e) => Str::slug($e->lesson->group->slug.'-'.$e->scheduleSlot->label);
+
+        $selected = $creneauSlug
+            ? $entries->first(fn ($e) => $entrySlug($e) === $creneauSlug)
             : ($groupSlug
                 ? $entries->first(fn ($e) => $e->lesson->group->slug === $groupSlug)
                 : null);
+
+        // Si group demandé mais pas trouvé aujourd'hui → rediriger vers la prochaine séance
+        if (!$selected && $groupSlug && !$creneauSlug) {
+            $groupDows = ScheduleEntry::whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
+                ->whereHas('lesson.group', fn ($q) => $q->where('slug', $groupSlug))
+                ->pluck('day_of_week');
+
+            if ($groupDows->isNotEmpty()) {
+                $cursor = Carbon::parse($date)->subDay();
+                for ($i = 0; $i < 7; $i++) {
+                    if ($groupDows->contains($cursor->dayOfWeekIso)) {
+                        return redirect()->route('attendances', [
+                            'date'  => $cursor->toDateString(),
+                            'group' => $groupSlug,
+                        ]);
+                    }
+                    $cursor->subDay();
+                }
+            }
+        }
+
+        // Auto-sélection uniquement si l'heure actuelle tombe dans un créneau
+        if (!$selected && $entries->isNotEmpty() && $date === now()->toDateString()) {
+            $now = now()->format('H:i');
+
+            $selected = $entries->first(function ($e) use ($now) {
+                $start = $e->scheduleSlot->start_time ? substr($e->scheduleSlot->start_time, 0, 5) : null;
+                $end   = $e->scheduleSlot->end_time   ? substr($e->scheduleSlot->end_time,   0, 5) : null;
+                return $start && $end && $now >= $start && $now <= $end;
+            });
+        }
 
         $students = collect();
         $statuses = [];
@@ -94,14 +128,14 @@ class AttendanceController extends Controller
 
         return Inertia::render('Attendance', [
             'entries' => $entries->map(fn ($e) => [
-                'id' => $e->id,
-                'label' => $e->scheduleSlot->label,
+                'creneau'   => Str::slug($e->lesson->group->slug.'-'.$e->scheduleSlot->label),
+                'label'     => $e->scheduleSlot->label,
                 'lesson_id' => $e->lesson_id,
-                'subject' => $e->lesson->subjectLabel(),
-                'group' => $e->lesson->group->grade.$e->lesson->group->name,
-                'school' => $e->lesson->group->school->name,
+                'subject'   => $e->lesson->subjectLabel(),
+                'group'     => $e->lesson->group->grade.$e->lesson->group->name,
+                'school'    => $e->lesson->group->school->name,
             ])->values(),
-            'selectedEntry' => $selected?->id,
+            'selectedEntry' => $selected ? Str::slug($selected->lesson->group->slug.'-'.$selected->scheduleSlot->label) : null,
             'selectedSchool' => $selected?->lesson->group->school->name,
             'selectedGroup' => $selected ? ($selected->lesson->group->grade.$selected->lesson->group->name) : null,
             'date' => $date,
@@ -141,9 +175,11 @@ class AttendanceController extends Controller
         $lesson = Lesson::findOrFail($validated['lesson_id']);
         $this->authorize('create', [Attendance::class, $lesson]);
 
-        $session = ClassSession::firstOrCreate(
-            ['lesson_id' => $validated['lesson_id'], 'date' => $validated['date']],
-        );
+        $date = Carbon::parse($validated['date'])->toDateString();
+
+        $session = ClassSession::where('lesson_id', $validated['lesson_id'])
+            ->whereDate('date', $date)
+            ->first() ?? ClassSession::create(['lesson_id' => $validated['lesson_id'], 'date' => $date]);
 
         $attendance = Attendance::firstOrCreate(
             ['classsession_id' => $session->id],

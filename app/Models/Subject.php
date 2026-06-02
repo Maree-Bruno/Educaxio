@@ -13,6 +13,11 @@ class Subject extends Model
 
     protected $fillable = [
         'name',
+        'is_language',
+    ];
+
+    protected $casts = [
+        'is_language' => 'boolean',
     ];
 
     public function schools(): BelongsToMany

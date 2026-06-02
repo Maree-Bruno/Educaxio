@@ -30,6 +30,6 @@ const activeClasses = computed(
         "
         @click="$emit('click')"
     >
-        <abbr :title="title">{{ label }}</abbr>
+    <abbr :title="title">{{ label }}</abbr>
     </button>
 </template>

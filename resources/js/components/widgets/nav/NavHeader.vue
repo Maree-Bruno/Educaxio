@@ -28,7 +28,7 @@ const allNavItems: { title: string; href: string; icon: Component }[] = [
     { title: 'Classes', href: classlist.url(), icon: ClassesList },
     { title: 'Présences', href: attendances.url(), icon: Attendance },
     { title: 'Horaires', href: schedules.url(), icon: Schedule },
-    { title: 'Journal', href: agenda.url(), icon: SchoolAgenda },
+    { title: 'Journal de classe', href: agenda.url(), icon: SchoolAgenda },
 ];
 
 const navItems = computed(() =>

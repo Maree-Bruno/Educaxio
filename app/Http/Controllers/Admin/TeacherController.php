@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\SchoolJoinRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -40,6 +41,7 @@ class TeacherController extends Controller
                 ->whereHas('group', fn ($sq) => $sq->where('school_id', $schoolId))
                 ->with('group:id,grade,name', 'subject:id,name')
                 ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id', 'lessons.lm_level'),
+            'subjects:id,name',
         ]);
 
         $joinRequests = SchoolJoinRequest::where('school_id', $school->id)
@@ -61,5 +63,14 @@ class TeacherController extends Controller
                 'subjects' => $r->user->subjects->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             ]),
         ]);
+    }
+
+    public function destroy(School $school, User $user)
+    {
+        $this->authorize('update', $school);
+
+        $school->users()->detach($user->id);
+
+        return back();
     }
 }

@@ -95,13 +95,18 @@ class DatabaseSeeder extends Seeder
         }
 
         // ── Subjects (cours généraux FWB – enseignement secondaire) ───────────
+        $languageNames = ['Langue française', 'Langue néerlandaise', 'Langue anglaise', 'Langue allemande'];
+
         $subjects = collect([
             'Langue française', 'Langue néerlandaise', 'Langue anglaise', 'Langue allemande',
             'Mathématiques', 'Sciences', 'Biologie', 'Physique', 'Chimie',
             'Histoire', 'Géographie', 'Éducation physique',
             'Philosophie et citoyenneté', 'Économie', 'Sciences informatiques',
             'Arts plastiques', 'Latin',
-        ])->map(fn (string $name) => Subject::create(['name' => $name]));
+        ])->map(fn (string $name) => Subject::create([
+            'name'        => $name,
+            'is_language' => in_array($name, $languageNames),
+        ]));
 
         foreach ([$saintJoseph, $athenee] as $school) {
             $school->subjects()->attach($subjects->pluck('id'));

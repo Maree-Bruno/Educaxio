@@ -213,7 +213,7 @@ const className = `${props.group.grade}${props.group.name}`;
                             <div class="flex items-center justify-center gap-2">
                                 <LinkButton
                                     :href="showStudent.url({ student: student.slug })"
-                                    variant="secondary"
+                                    variant="primary"
                                     size="sm"
                                     :icon-only="true"
                                     :title="canManage ? 'Voir / modifier l\'élève' : 'Voir l\'élève'"

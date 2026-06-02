@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
-export function useStudentSort(initial?: { col?: string; dir?: 'asc' | 'desc' }) {
-    const sortCol = ref(initial?.col ?? 'lastname');
+export function useSort(initial?: { col?: string; dir?: 'asc' | 'desc' }) {
+    const sortCol = ref(initial?.col ?? 'name');
     const sortDir = ref<'asc' | 'desc'>(initial?.dir ?? 'asc');
 
     function sortBy(col: string) {
@@ -14,6 +14,10 @@ export function useStudentSort(initial?: { col?: string; dir?: 'asc' | 'desc' })
     }
 
     return { sortCol, sortDir, sortBy };
+}
+
+export function useStudentSort(initial?: { col?: string; dir?: 'asc' | 'desc' }) {
+    return useSort({ col: initial?.col ?? 'lastname', dir: initial?.dir ?? 'asc' });
 }
 
 export function studentRowNumber(

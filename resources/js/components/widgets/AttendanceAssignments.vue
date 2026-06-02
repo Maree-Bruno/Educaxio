@@ -26,7 +26,7 @@ const props = defineProps<{
     nextAssignmentDate: string | null;
     schedulePattern:    ScheduleEntry[];
     groupName:          string | null;
-    selectedEntry:      number | null;
+    selectedEntry:      string | null;
 }>();
 
 // ── Création ──────────────────────────────────────────────────────────────
@@ -166,12 +166,15 @@ function confirmDelete() {
 
 <template>
     <div class="flex flex-col gap-4 rounded-2xl bg-white p-6 outline -outline-offset-1 outline-neutral-300/10">
-        <div class="flex items-center justify-between">
-            <h3 class="text-base font-bold leading-6 text-stone-900">Devoirs & Interros</h3>
+        <div class="flex items-start justify-between gap-2">
+            <div>
+                <h3 class="text-base font-bold leading-6 text-stone-900">Devoirs & Interros</h3>
+                <p class="mt-0.5 text-xs text-stone-400">Planifiez les devoirs et interrogations pour cette classe.</p>
+            </div>
             <button
                 type="button"
                 :disabled="!selectedEntry"
-                class="flex h-6 w-6 items-center justify-center rounded-lg bg-orange text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-orange text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
                 @click="openCreate"
             >+</button>
         </div>

@@ -13,15 +13,19 @@ import StudentCount from '@/components/widgets/StudentCount.vue';
 import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
 import { attendanceStatusClasses, type AttendanceStatus, type PaginationLink } from '@/types';
 
+const emit = defineEmits<{
+    'update:localStatuses': [statuses: Record<number, AttendanceStatus | null>]
+}>();
+
 interface Student { id: number; lastname: string; firstname: string }
-interface Entry   { id: number; lesson_id: number }
+interface Entry   { creneau: string; lesson_id: number }
 interface Status  { student_id: number; type: string; motive: string | null }
 
 const props = defineProps<{
     students:      Student[];
     statuses:      Status[];
     entries:       Entry[];
-    selectedEntry: number | null;
+    selectedEntry: string | null;
     date:          string;
     lastSavedAt:   string | null;
 }>();
@@ -34,6 +38,8 @@ for (const s of props.students) {
     initialStatuses[s.id] = (found?.type as AttendanceStatus) ?? null;
 }
 const localStatuses = ref<Record<number, AttendanceStatus | null>>(initialStatuses);
+
+watch(localStatuses, (val) => emit('update:localStatuses', { ...val }), { deep: true });
 
 const form = useForm({});
 
@@ -59,7 +65,7 @@ function setAllPresent() {
 }
 
 function save() {
-    const entry = props.entries.find((e) => e.id === props.selectedEntry);
+    const entry = props.entries.find((e) => e.creneau === props.selectedEntry);
     if (!entry) return;
 
     const statuses = Object.entries(localStatuses.value)
@@ -136,16 +142,21 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
     <div class="min-w-0 flex-1 overflow-hidden rounded-2xl">
         <!-- En-tête -->
         <div class="border-b border-neutral-300/10 bg-white px-6 py-5">
-            <div class="flex items-center justify-between gap-3">
-                <h2 class="text-xl font-bold text-stone-900">
-                    Liste des élèves
-                    <StudentCount
-                        v-if="students.length > 0"
-                        :total="students.length"
-                        :filtered="(search || filterStatus) ? filteredStudents.length : undefined"
-                    />
-                </h2>
-                <div v-if="students.length > 0" class="flex items-center gap-3">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-900">
+                        Liste des élèves
+                        <StudentCount
+                            v-if="students.length > 0"
+                            :total="students.length"
+                            :filtered="(search || filterStatus) ? filteredStudents.length : undefined"
+                        />
+                    </h2>
+                    <p class="mt-0.5 text-xs text-stone-400">
+                        Les élèves non marqués sont considérés présents. Cliquez sur Valider pour enregistrer.
+                    </p>
+                </div>
+                <div v-if="students.length > 0" class="flex shrink-0 items-center gap-3">
                     <span v-if="lastSavedAt" class="hidden text-xs text-stone-400 sm:block">
                         Enregistré le {{ lastSavedAt }}
                     </span>
@@ -156,19 +167,22 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                     <span v-else class="text-xs font-bold text-stone-400">Lecture seule</span>
                 </div>
             </div>
-            <div v-if="students.length > 0" class="mt-3 flex gap-2">
-                <SelectField
-                    placeholder="Tous les statuts"
-                    :options="STATUS_FILTER_OPTIONS"
-                    :model-value="filterStatus || null"
-                    class="w-44 shrink-0"
-                    @update:model-value="filterStatus = ($event as string) ?? ''"
-                />
-                <SearchInput
-                    v-model="search"
-                    placeholder="Rechercher un élève…"
-                    class="flex-1"
-                />
+            <div v-if="students.length > 0" class="mt-4 flex flex-col gap-2">
+                <p class="text-xs font-bold uppercase tracking-wide text-border-figma">Filtrer</p>
+                <div class="flex gap-2">
+                    <SelectField
+                        placeholder="Tous les statuts"
+                        :options="STATUS_FILTER_OPTIONS"
+                        :model-value="filterStatus || null"
+                        class="w-44 shrink-0"
+                        @update:model-value="filterStatus = ($event as string) ?? ''"
+                    />
+                    <SearchInput
+                        v-model="search"
+                        placeholder="Rechercher un élève…"
+                        class="flex-1"
+                    />
+                </div>
             </div>
         </div>
 

@@ -5,6 +5,7 @@ import ScheduleCellCard from '@/components/widgets/ScheduleCellCard.vue';
 import ScheduleMobileRow from '@/components/widgets/ScheduleMobileRow.vue';
 import ScheduleSlotModal from '@/components/widgets/ScheduleSlotModal.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
+import ScheduleIcon from '@/components/widgets/svg/Schedule.vue';
 import { toMins, useCurrentSlot } from '@/composables/useCurrentSlot';
 import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
@@ -124,24 +125,34 @@ const indicatorTop = computed((): number | null => {
 </script>
 
 <template>
-    <div class="mb-6 flex flex-wrap items-end gap-4">
-        <SelectField
-            id="filter-year"
-            v-model="filterYear"
-            label="Année scolaire"
-            :options="yearOptions"
-            class="w-48"
-        />
-        <!--        <div class="ml-auto flex items-center gap-4">
-            <Button variant="primary" size="sm">Exporter</Button>
-        </div>-->
+    <div class="mb-6 rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10">
+        <div class="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-300/10 px-6 py-4">
+            <div>
+                <p class="text-sm font-bold text-text-base">Sélection de l'année académique</p>
+                <p class="mt-0.5 text-xs text-stone-400">Cliquer sur une cellule pour assigner un cours · Cliquer sur
+                    une étiquette (1ère heure) pour la basculer en pause</p>
+            </div>
+        </div>
+        <div class="px-6 py-5">
+            <SelectField
+                id="filter-year"
+                v-model="filterYear"
+                label="Année académique"
+                :options="yearOptions"
+                class="w-48"
+            />
+        </div>
     </div>
 
     <div
         v-if="slots.length === 0"
-        class="flex items-center justify-center rounded-3xl bg-white py-20"
+        class="flex flex-col items-center justify-center gap-3 rounded-3xl bg-white py-20"
     >
-        <p class="font-bold text-text-base">Aucun horaire configuré</p>
+        <ScheduleIcon :size="32" :stroke-width="1.5" class="text-stone-300" />
+        <div class="text-center">
+            <p class="font-bold text-text-base">Aucun créneau horaire configuré</p>
+            <p class="mt-1 text-xs text-stone-400">Les créneaux sont définis dans les paramètres de l'établissement.</p>
+        </div>
     </div>
 
     <div v-else>
@@ -206,12 +217,14 @@ const indicatorTop = computed((): number | null => {
                     <button
                         type="button"
                         role="rowheader"
-                        class="group flex cursor-pointer items-center justify-center border-r border-b border-zinc-400/10 bg-white transition-colors hover:bg-blue/5"
+                        class="group flex cursor-pointer flex-col items-center justify-center gap-0.5 border-r border-b border-zinc-400/10 bg-white transition-colors hover:bg-blue/5"
                         :class="rowIndex === lastRowIndex && 'rounded-bl-3xl'"
                         :aria-label="`${row.label} — basculer en pause`"
+                        title="Cliquer pour basculer en pause"
                         @click="toggleSlotType(row)"
                     >
                         <span class="text-xs leading-4 font-extrabold text-border-figma" aria-hidden="true">{{ row.label }}</span>
+                        <span class="text-[8px] text-stone-300 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">pause</span>
                     </button>
 
                     <button

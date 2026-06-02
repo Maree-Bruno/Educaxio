@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AbsenceHistoryTable from '@/components/widgets/AbsenceHistoryTable.vue';
+import AttendanceStats from '@/components/widgets/AttendanceStats.vue';
+import type { AttendanceStats as AttendanceStatsType } from '@/components/widgets/AttendanceStats.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import StudentGroupsSidebar from '@/components/widgets/StudentGroupsSidebar.vue';
 import StudentHeaderCard from '@/components/widgets/StudentHeaderCard.vue';
@@ -11,23 +13,28 @@ import { show as showClasslist } from '@/routes/classlist';
 import type { AttendanceStatus, Student } from '@/types';
 
 interface AbsenceRecord {
-    date:    string | null;
-    type:    AttendanceStatus;
+    date: string | null;
+    type: AttendanceStatus;
     subject: string | null;
-    group:   string | null;
-    time:    string | null;
+    group: string | null;
+    time: string | null;
     teacher: string | null;
 }
 
-type StudentWithSchool = Student & { school?: { id: number; name: string; slug: string } };
+type StudentWithSchool = Student & {
+    school?: { id: number; name: string; slug: string };
+};
 
 const props = defineProps<{
-    student:        StudentWithSchool;
-    isAdmin:        boolean;
+    student: StudentWithSchool;
+    isAdmin: boolean;
     absenceHistory: AbsenceRecord[] | null;
+    attendanceStats: AttendanceStatsType;
 }>();
 
-const fullName = computed(() => `${props.student.lastname} ${props.student.firstname}`);
+const fullName = computed(
+    () => `${props.student.lastname} ${props.student.firstname}`,
+);
 
 setPageTitle(fullName.value);
 
@@ -37,7 +44,10 @@ const breadcrumbItems = computed(() => {
     const items: { label: string; href?: string }[] = [];
 
     if (props.isAdmin && props.student.school) {
-        items.push({ label: 'Élèves', href: adminStudentsIndex.url({ school: props.student.school.slug }) });
+        items.push({
+            label: 'Élèves',
+            href: adminStudentsIndex.url({ school: props.student.school.slug }),
+        });
     } else {
         items.push({ label: 'Liste de classe', href: classlist.url() });
 
@@ -58,27 +68,67 @@ const breadcrumbItems = computed(() => {
 <template>
     <Breadcrumb :items="breadcrumbItems" />
 
-    <section class="flex flex-col gap-6 xl:flex-row xl:items-start">
-        <StudentHeaderCard :student="student" :is-admin="isAdmin" :full-name="fullName" />
-        <StudentGroupsSidebar :groups="(student.groups ?? []) as any" />
-    </section>
+    <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
+        <!-- Colonne principale -->
+        <div class="flex min-w-0 flex-1 flex-col gap-6">
+            <StudentHeaderCard
+                :student="student"
+                :is-admin="isAdmin"
+                :full-name="fullName"
+            />
 
-    <AbsenceHistoryTable
-        v-if="absenceHistory !== null"
-        :history="absenceHistory as any"
-        :is-admin="isAdmin"
-    />
+            <AbsenceHistoryTable
+                v-if="absenceHistory !== null"
+                :history="absenceHistory as any"
+                :is-admin="isAdmin"
+            />
 
-    <div v-if="!isAdmin" class="min-w-0 flex-1 overflow-hidden rounded-2xl bg-white">
-        <div class="border-b border-neutral-300/10 px-6 py-5">
-            <h3 class="text-xl font-bold text-text-base">Évaluations</h3>
+            <div v-if="!isAdmin" class="overflow-hidden rounded-2xl bg-white">
+                <div class="border-b border-neutral-300/10 px-6 py-5">
+                    <h3 class="text-xl font-bold text-text-base">
+                        Évaluations
+                    </h3>
+                </div>
+                <div
+                    class="flex flex-col items-center gap-3 px-6 py-16 text-center"
+                >
+                    <svg
+                        class="size-10 text-stone-300"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        aria-hidden="true"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                        />
+                    </svg>
+                    <p class="text-sm font-bold text-stone-400">
+                        Fonctionnalité à venir
+                    </p>
+                    <p class="text-xs text-stone-300">
+                        Le suivi des évaluations sera disponible prochainement.
+                    </p>
+                </div>
+            </div>
         </div>
-        <div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
-            <svg class="size-10 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-            <p class="text-sm font-bold text-stone-400">Fonctionnalité à venir</p>
-            <p class="text-xs text-stone-300">Le suivi des évaluations sera disponible prochainement.</p>
+
+        <!-- Sidebar -->
+        <div
+            class="flex w-full shrink-0 flex-col gap-4 xl:sticky xl:top-20 xl:w-80"
+        >
+            <StudentGroupsSidebar :groups="(student.groups ?? []) as any" />
+            <AttendanceStats
+                :stats="attendanceStats"
+                :description="
+                    isAdmin
+                        ? `Tous les cours de ${student.firstname}`
+                        : `Vos cours avec ${student.firstname}`
+                "
+            />
         </div>
     </div>
 </template>

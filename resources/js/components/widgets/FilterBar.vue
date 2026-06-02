@@ -4,9 +4,11 @@ import ChevronDown from '@/components/widgets/svg/ChevronDown.vue';
 
 withDefaults(
     defineProps<{
-        activeCount?: number;
+        activeCount?:  number;
+        title?:        string;
+        description?:  string;
     }>(),
-    { activeCount: 0 },
+    { activeCount: 0, title: '', description: '' },
 );
 
 const isOpen = ref(false);
@@ -16,8 +18,15 @@ const isOpen = ref(false);
     <div
         class="sticky top-16 z-20 -mx-2 -mt-2 bg-bg-primary px-2 py-6 shadow-[0px_1px_2px_0px_rgba(48,48,48,0.05)] lg:-mx-8 lg:-mt-8 lg:px-8"
     >
-        <div class="rounded-2xl bg-white p-4 sm:p-6 outline-1 -outline-offset-1 outline-neutral-300/10">
+        <div class="rounded-2xl bg-white outline-1 -outline-offset-1 outline-neutral-300/10">
 
+            <!-- Header optionnel -->
+            <div v-if="title" class="border-b border-neutral-300/10 px-6 py-4">
+                <p class="text-sm font-bold text-text-base">{{ title }}</p>
+                <p v-if="description" class="mt-0.5 text-xs text-stone-400">{{ description }}</p>
+            </div>
+
+            <div class="p-4 sm:p-6">
             <!-- Toggle + action -->
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button
@@ -63,6 +72,7 @@ const isOpen = ref(false);
                     <slot name="filters" />
                 </div>
             </Transition>
+            </div>
         </div>
     </div>
 </template>

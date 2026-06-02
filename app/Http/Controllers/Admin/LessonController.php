@@ -16,7 +16,7 @@ class LessonController extends Controller
         $lessons = Lesson::whereHas('group', fn ($q) => $q->where('school_id', $school->id))
             ->with([
                 'group:id,grade,name',
-                'subject:id,name',
+                'subject:id,name,is_language',
                 'users:id,name',
             ])
             ->get(['id', 'group_id', 'subject_id', 'lm_level']);
@@ -28,7 +28,7 @@ class LessonController extends Controller
 
         $subjects = $school->subjects()
             ->orderBy('name')
-            ->get(['subjects.id', 'subjects.name']);
+            ->get(['subjects.id', 'subjects.name', 'subjects.is_language']);
 
         $teachers = $school->users()
             ->wherePivot('role', 'teacher')

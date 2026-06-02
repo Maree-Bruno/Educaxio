@@ -110,6 +110,7 @@ Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
             Route::delete('eleves/{student}', [AdminStudentController::class, 'destroy'])->name('students.destroy');
 
             Route::get('professeurs', [AdminTeacherController::class, 'index'])->name('teachers.index');
+            Route::delete('professeurs/{user}', [AdminTeacherController::class, 'destroy'])->name('teachers.destroy');
             Route::patch('demandes/{joinRequest}/approuver', [AdminJoinRequestController::class, 'approve'])->name('join-requests.approve');
             Route::patch('demandes/{joinRequest}/refuser', [AdminJoinRequestController::class, 'reject'])->name('join-requests.reject');
 

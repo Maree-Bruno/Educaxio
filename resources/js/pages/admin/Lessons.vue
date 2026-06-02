@@ -1,12 +1,12 @@
 <!--suppress D -->
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
-import { computed, nextTick, ref, watch } from 'vue';
-import { store as adminLessonsStore, destroy as adminLessonsDestroy } from '@/routes/admin/lessons';
-import { sync as syncLessonTeachers } from '@/routes/admin/lessons/teachers';
+import { router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { destroy as adminLessonsDestroy } from '@/routes/admin/lessons';
 import { create, show as showClasslist } from '@/routes/classlist';
+import AddLessonModal from '@/components/admin/AddLessonModal.vue';
+import LessonTeachersModal from '@/components/admin/LessonTeachersModal.vue';
 import Badge from '@/components/widgets/Badge.vue';
-import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
@@ -17,6 +17,7 @@ import SelectField from '@/components/widgets/SelectField.vue';
 import ChevronDown from '@/components/widgets/svg/ChevronDown.vue';
 import Edit from '@/components/widgets/svg/Edit.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
+import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { useToasterStore } from '@/stores/toaster';
@@ -35,6 +36,7 @@ interface Group {
 interface Subject {
     id: number;
     name: string;
+    is_language: boolean;
 }
 interface Teacher {
     id: number;
@@ -78,6 +80,8 @@ const activeCount = computed(() =>
 );
 
 // ── Données groupées + filtrées ───────────────────────────────────────────
+const { hide, show, isHidden } = useHiddenIds();
+
 const groupedLessons = computed(() => {
     const term       = search.value.toLowerCase().trim();
     const subjectId  = filterSubject.value ? Number(filterSubject.value) : null;
@@ -86,7 +90,7 @@ const groupedLessons = computed(() => {
 
     return props.groups
         .map((group) => {
-            let lessons = props.lessons.filter((l) => l.group_id === group.id && !hiddenIds.value.has(l.id));
+            let lessons = props.lessons.filter((l) => l.group_id === group.id && !isHidden(l.id));
 
             if (subjectId !== null) lessons = lessons.filter((l) => l.subject_id === subjectId);
             if (teacherId !== null) lessons = lessons.filter((l) => l.users.some((u) => u.id === teacherId));
@@ -121,48 +125,13 @@ function isGroupOpen(id: number): boolean {
     return openGroupIds.value.has(id) || hasActiveFilter.value;
 }
 
-const toaster   = useToasterStore();
-const hiddenIds = ref(new Set<number>());
+// ── Modals ────────────────────────────────────────────────────────────────
+const teachersModal = ref<InstanceType<typeof LessonTeachersModal> | null>(null);
+const addModal      = ref<InstanceType<typeof AddLessonModal> | null>(null);
 
-// ── Modal : gérer les profs d'un cours ───────────────────────────────────
-const teacherModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const editingLesson = ref<Lesson | null>(null);
-const teacherForm = useForm({ teacher_ids: [] as number[] });
-
-function openTeachers(lesson: Lesson) {
-    editingLesson.value = lesson;
-    teacherForm.teacher_ids = lesson.users.map((u) => u.id);
-    teacherForm.clearErrors();
-    nextTick(() => teacherModalRef.value?.open());
-}
-
-function closeTeachers() {
-    teacherModalRef.value?.close();
-}
-
-function toggleTeacher(id: number) {
-    const idx = teacherForm.teacher_ids.indexOf(id);
-
-    if (idx === -1) {
-        teacherForm.teacher_ids.push(id);
-    } else {
-        teacherForm.teacher_ids.splice(idx, 1);
-    }
-}
-
-function syncTeachers() {
-    if (!editingLesson.value) {
-        return;
-    }
-
-    const lessonId = editingLesson.value.id;
-    teacherForm.put(syncLessonTeachers.url({ school: props.school.slug, lesson: lessonId }), {
-        preserveScroll: true,
-        onSuccess: () => {
-            closeTeachers();
-            toaster.success('Profs enregistrés');
-        },
-    });
+function hasAvailableSubjects(group: Group): boolean {
+    const assigned = props.lessons.filter((l) => l.group_id === group.id).map((l) => l.subject_id);
+    return props.subjects.some((s) => !assigned.includes(s.id));
 }
 
 // ── Mise à jour inline du niveau LM ──────────────────────────────────────
@@ -174,76 +143,9 @@ function updateLmLevel(lesson: Lesson, lmLevel: string) {
     );
 }
 
-// ── Modal : ajouter une matière à un groupe ───────────────────────────────
-const addModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const addingToGroup = ref<Group | null>(null);
-const addForm = useForm<{ subject_id: string | number | null; lm_level: string; teacher_ids: number[] }>({ subject_id: null, lm_level: '', teacher_ids: [] });
-const addSubjectOptions = computed(() =>
-    addingToGroup.value ? availableSubjects(addingToGroup.value).map((s) => ({ value: s.id, label: s.name })) : [],
-);
-
-const addTeacherOptions = computed(() =>
-    addForm.subject_id
-        ? props.teachers.filter((t) => t.subject_ids.includes(Number(addForm.subject_id)))
-        : [],
-);
-
-watch(() => addForm.subject_id, () => {
-    addForm.teacher_ids = [];
-    addForm.lm_level = '';
-});
-
-function availableSubjects(group: Group) {
-    const assigned = props.lessons
-        .filter((l) => l.group_id === group.id)
-        .map((l) => l.subject_id);
-
-    return props.subjects.filter((s) => !assigned.includes(s.id));
-}
-
-function openAdd(group: Group) {
-    addingToGroup.value = group;
-    addForm.reset();
-    nextTick(() => addModalRef.value?.open());
-}
-
-function closeAdd() {
-    addModalRef.value?.close();
-}
-
-function toggleAddTeacher(id: number) {
-    const idx = addForm.teacher_ids.indexOf(id);
-
-    if (idx === -1) {
-        addForm.teacher_ids.push(id);
-    } else {
-        addForm.teacher_ids.splice(idx, 1);
-    }
-}
-
-function submitAdd() {
-    if (!addingToGroup.value) {
-        return;
-    }
-
-    const groupId = addingToGroup.value.id;
-    addForm.transform((data) => ({
-        ...data,
-        group_id: groupId,
-        lm_level: data.lm_level === '' ? null : Number(data.lm_level),
-    }))
-        .post(adminLessonsStore.url({ school: props.school.slug }), {
-            preserveScroll: true,
-            onSuccess: () => {
-                closeAdd();
-                toaster.success('Cours ajouté');
-            },
-        });
-}
-
 // ── Suppression ───────────────────────────────────────────────────────────
+const toaster       = useToasterStore();
 const pendingDelete = ref<Lesson | null>(null);
-const deleteLoading = ref(false);
 
 function confirmDelete() {
     if (!pendingDelete.value) {
@@ -253,11 +155,11 @@ function confirmDelete() {
     const { id, subject, group, lm_level } = pendingDelete.value;
 
     pendingDelete.value = null;
-    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    hide(id);
     toaster.deletable(
         `${resolveSubjectLabel(subject.name, lm_level)} · ${group.grade}${group.name} supprimé`,
         () => router.delete(adminLessonsDestroy.url({ school: props.school.slug, lesson: id }), { preserveScroll: true }),
-        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+        () => show(id),
     );
 }
 </script>
@@ -267,12 +169,18 @@ function confirmDelete() {
         :open="pendingDelete !== null"
         :title="`Supprimer ${pendingDelete ? resolveSubjectLabel(pendingDelete.subject.name, pendingDelete.lm_level) : ''} · ${pendingDelete?.group.grade}${pendingDelete?.group.name}`"
         message="Les créneaux horaires associés seront aussi supprimés."
-        :loading="deleteLoading"
         @confirm="confirmDelete"
         @cancel="pendingDelete = null"
     />
 
-    <FilterBar :active-count="activeCount">
+    <LessonTeachersModal ref="teachersModal" :school="school" :teachers="teachers" />
+    <AddLessonModal ref="addModal" :school="school" :subjects="subjects" :teachers="teachers" :lessons="lessons" />
+
+    <FilterBar
+        title="Attribution des cours"
+        description="Associez des matières et des professeurs à chaque classe. Cliquez sur une classe pour la déplier."
+        :active-count="activeCount"
+    >
         <template #filters>
             <SearchInput
                 id="filter-search"
@@ -367,6 +275,7 @@ function confirmDelete() {
                             </span>
                         </span>
                         <select
+                            v-if="lesson.subject.is_language"
                             class="h-7 rounded-lg border border-neutral-200 bg-white px-2 text-xs text-stone-500 focus:border-blue focus:outline-none"
                             :value="lesson.lm_level ?? ''"
                             @change="updateLmLevel(lesson, ($event.target as HTMLSelectElement).value)"
@@ -387,7 +296,7 @@ function confirmDelete() {
                         </div>
 
                         <div class="flex shrink-0 items-center gap-2">
-                            <Button variant="secondary" size="sm" :icon-only="true" title="Gérer les profs" @click="openTeachers(lesson)">
+                            <Button variant="secondary" size="sm" :icon-only="true" title="Gérer les profs" @click="teachersModal?.open(lesson)">
                                 <template #icon><Edit :size="16" :stroke-width="2" aria-hidden="true" /></template>
                             </Button>
                             <Button variant="danger" size="sm" :icon-only="true" title="Supprimer" @click="pendingDelete = lesson">
@@ -401,8 +310,8 @@ function confirmDelete() {
                             variant="secondary"
                             size="sm"
                             label="+ Ajouter une matière"
-                            :disabled="availableSubjects(group).length === 0"
-                            @click="openAdd(group)"
+                            :disabled="!hasAvailableSubjects(group)"
+                            @click="addModal?.open(group)"
                         />
                     </div>
                 </div>
@@ -415,97 +324,4 @@ function confirmDelete() {
             class="rounded-2xl bg-white"
         />
     </div>
-
-    <!-- Modal : gérer les profs d'un cours -->
-    <BaseModal ref="teacherModalRef">
-        <form v-if="editingLesson" class="flex flex-col gap-5" @submit.prevent="syncTeachers">
-            <div>
-                <h2 class="text-xl font-bold text-black">Profs assignés</h2>
-                <p class="mt-1 text-sm font-bold text-border-figma">
-                    {{ resolveSubjectLabel(editingLesson.subject.name, editingLesson.lm_level) }} · {{ editingLesson.group.grade }}{{ editingLesson.group.name }}
-                </p>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-                <label
-                    v-for="teacher in teachers"
-                    :key="teacher.id"
-                    class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
-                    :class="teacherForm.teacher_ids.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
-                >
-                    <input
-                        type="checkbox"
-                        class="accent-blue"
-                        :checked="teacherForm.teacher_ids.includes(teacher.id)"
-                        @change="toggleTeacher(teacher.id)"
-                    />
-                    <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
-                </label>
-                <p v-if="teachers.length === 0" class="text-xs text-border-figma italic">
-                    Aucun prof dans cette école
-                </p>
-            </div>
-
-            <div class="flex gap-3">
-                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1" :loading="teacherForm.processing" />
-                <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeTeachers" />
-            </div>
-        </form>
-    </BaseModal>
-
-    <!-- Modal : ajouter une matière à un groupe -->
-    <BaseModal ref="addModalRef">
-        <form v-if="addingToGroup" class="flex flex-col gap-5" @submit.prevent="submitAdd">
-            <div>
-                <h2 class="text-xl font-bold text-black">Ajouter une matière</h2>
-                <p class="mt-1 text-sm font-bold text-border-figma">
-                    {{ addingToGroup.grade }}{{ addingToGroup.name }}
-                </p>
-            </div>
-
-            <SelectField
-                v-model="addForm.subject_id"
-                label="Matière"
-                placeholder="Choisir une matière"
-                :options="addSubjectOptions"
-            />
-
-            <SelectField
-                v-model="addForm.lm_level"
-                label="Niveau LM (langue étrangère)"
-                placeholder="Sans niveau LM"
-                :options="[{ value: '1', label: 'LM1' }, { value: '2', label: 'LM2' }, { value: '3', label: 'LM3' }]"
-            />
-
-            <div v-if="addForm.subject_id" class="flex flex-col gap-2">
-                <label class="text-xs font-bold tracking-wider text-border-figma uppercase">
-                    Profs <span class="font-normal normal-case">(optionnel)</span>
-                </label>
-                <div class="flex flex-col gap-1.5">
-                    <label
-                        v-for="teacher in addTeacherOptions"
-                        :key="teacher.id"
-                        class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
-                        :class="addForm.teacher_ids.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
-                    >
-                        <input
-                            type="checkbox"
-                            class="accent-blue"
-                            :checked="addForm.teacher_ids.includes(teacher.id)"
-                            @change="toggleAddTeacher(teacher.id)"
-                        />
-                        <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
-                    </label>
-                    <p v-if="addTeacherOptions.length === 0" class="text-xs text-border-figma italic">
-                        Aucun prof rattaché à cette matière
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex gap-3">
-                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1" :disabled="!addForm.subject_id" :loading="addForm.processing" />
-                <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="closeAdd" />
-            </div>
-        </form>
-    </BaseModal>
 </template>
