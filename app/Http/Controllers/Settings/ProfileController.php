@@ -8,6 +8,8 @@ use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Jobs\ProcessUploadedImage;
 use App\Models\School;
 use App\Models\SchoolJoinRequest;
+use App\Models\SchoolSlotTime;
+use App\Models\ScheduleSlot;
 use App\Models\Subject;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -50,6 +52,25 @@ class ProfileController extends Controller
             'availableSchools'    => School::orderBy('name')
                 ->whereNotIn('id', $excludedIds)
                 ->get(['id', 'name']),
+            'scheduleSlots'       => ScheduleSlot::orderBy('position')
+                ->get(['id', 'label', 'type', 'start_time', 'end_time'])
+                ->map(fn ($s) => [
+                    'id'         => $s->id,
+                    'label'      => $s->label,
+                    'type'       => $s->type->value,
+                    'start_time' => $s->start_time ? substr($s->start_time, 0, 5) : null,
+                    'end_time'   => $s->end_time   ? substr($s->end_time, 0, 5)   : null,
+                ]),
+            'adminSchoolSlotTimes' => SchoolSlotTime::whereIn(
+                'school_id',
+                $user->schools()->wherePivot('role', 'admin')->pluck('schools.id'),
+            )
+                ->get()
+                ->groupBy('school_id')
+                ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
+                    'start_time' => substr($r->start_time, 0, 5),
+                    'end_time'   => substr($r->end_time, 0, 5),
+                ])),
         ]);
     }
 

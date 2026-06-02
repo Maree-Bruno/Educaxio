@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
 use App\Models\ScheduleSlot;
+use App\Models\SchoolSlotTime;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -35,14 +36,35 @@ class ScheduleController extends Controller
         $schedules = $scheduleQuery->get();
         $scheduleIds = $schedules->pluck('id');
 
+        // Per-school slot time overrides
+        $schoolSlotTimes = SchoolSlotTime::whereIn('school_id', $schoolIds)
+            ->get()
+            ->groupBy('school_id')
+            ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
+                'start_time' => substr($r->start_time, 0, 5),
+                'end_time'   => substr($r->end_time, 0, 5),
+            ]));
+
+        // Use the first school that has configured slot times, else any school
+        $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $userSchools->first()?->id;
+        $slotTimesForIndicator = $schoolSlotTimes[$indicatorSchoolId] ?? collect();
+
         $slots = ScheduleSlot::orderBy('position')
             ->get()
-            ->map(fn ($slot) => [
-                'id'       => $slot->id,
-                'position' => $slot->position,
-                'label'    => $slot->label,
-                'type'     => $slot->type->value,
-            ]);
+            ->map(function ($slot) use ($slotTimesForIndicator) {
+                $override = $slotTimesForIndicator[$slot->id] ?? null;
+                $globalStart = $slot->start_time ? substr($slot->start_time, 0, 5) : null;
+                $globalEnd   = $slot->end_time   ? substr($slot->end_time, 0, 5)   : null;
+
+                return [
+                    'id'         => $slot->id,
+                    'position'   => $slot->position,
+                    'label'      => $slot->label,
+                    'type'       => $slot->type->value,
+                    'start_time' => $override['start_time'] ?? $globalStart,
+                    'end_time'   => $override['end_time']   ?? $globalEnd,
+                ];
+            });
 
         $lessons = $user->lessons()
             ->with([

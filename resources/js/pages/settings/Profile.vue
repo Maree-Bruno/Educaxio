@@ -1,22 +1,25 @@
 <script setup lang="ts">
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import ProfileAvatarPicker from '@/components/settings/ProfileAvatarPicker.vue';
+import ProfileSection from '@/components/settings/ProfileSection.vue';
 import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SchoolJoinForm from '@/components/widgets/SchoolJoinForm.vue';
 import SubjectPicker from '@/components/widgets/SubjectPicker.vue';
-import { useImagePreview } from '@/composables/useImagePreview';
 import { setPageTitle } from '@/composables/usePageTitle';
-import { useUserHelpers } from '@/composables/useUserHelpers';
+import { useSlotTimeForms } from '@/composables/useSlotTimeForms';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useAuthStore } from '@/stores/auth';
+import { useToasterStore } from '@/stores/toaster';
 import type { Lesson } from '@/types';
 
 defineOptions({ layout: AppLayout });
-
 setPageTitle('Profil');
+
+type SlotDef = { id: number; label: string; type: string; start_time: string | null; end_time: string | null };
 
 type Props = {
     assignedLessons: Lesson[];
@@ -24,17 +27,15 @@ type Props = {
     userSubjectIds: number[];
     pendingRequests: { id: number; school: { id: number; name: string } }[];
     availableSchools: { id: number; name: string }[];
+    scheduleSlots: SlotDef[];
+    adminSchoolSlotTimes: Record<string, Record<string, { start_time: string; end_time: string }>>;
 };
 const props = defineProps<Props>();
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const auth = useAuthStore();
-
-const { previewUrl, handleSingleImage, removeSinglePreview } = useImagePreview();
-const { getUserImageUrl, getUserImageSrcset } = useUserHelpers();
-
-const fileInputRef = ref<HTMLInputElement | null>(null);
+useToasterStore();
 
 const profileForm = useForm({
     name: user.value.name ?? '',
@@ -42,46 +43,10 @@ const profileForm = useForm({
     picture: null as File | null,
 });
 
-const handlePicture = (event: Event) => {
-    const file = handleSingleImage(event);
-
-    if (file) {
-        profileForm.picture = file;
-    }
-};
-
-const removePicture = () => {
-    removeSinglePreview();
-    profileForm.picture = null;
-
-    if (fileInputRef.value) {
-        fileInputRef.value.value = '';
-    }
-};
-
-const currentImageSrc = computed(() => {
-    if (previewUrl.value) {
-        return previewUrl.value;
-    }
-
-    return getUserImageUrl(user.value.picture, 'md');
-});
-
-const currentImageSrcset = computed(() => {
-    if (previewUrl.value || !user.value.picture) {
-        return '';
-    }
-
-    return getUserImageSrcset(user.value.picture);
-});
-
-const hasImage = computed(() => !!(previewUrl.value || user.value.picture));
-
 function submitProfile() {
     profileForm.patch('/settings/profile', {
         forceFormData: true,
         preserveScroll: true,
-        onSuccess: () => removeSinglePreview(),
     });
 }
 
@@ -108,14 +73,18 @@ const lessonsBySchool = computed(() => {
     const map = new Map<string, Lesson[]>();
 
     for (const lesson of props.assignedLessons) {
-        const schoolName = lesson.group!.school.name;
-        const entry = map.get(schoolName) ?? [];
-        entry.push(lesson);
-        map.set(schoolName, entry);
+        const key = lesson.group!.school.name;
+        map.set(key, [...(map.get(key) ?? []), lesson]);
     }
 
     return [...map.entries()].map(([school, lessons]) => ({ school, lessons }));
 });
+
+const { slotTimeForms, saveSlotTimes } = useSlotTimeForms(
+    auth.adminSchools,
+    props.scheduleSlots,
+    props.adminSchoolSlotTimes,
+);
 
 const showDeleteModal = ref(false);
 const deleteForm = useForm({});
@@ -128,53 +97,13 @@ function confirmDelete() {
 <template>
     <div class="flex flex-col gap-8">
 
-        <section class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
-            <h2 class="text-base font-bold text-text-base">Informations personnelles</h2>
-
+        <ProfileSection title="Informations personnelles">
             <div class="flex flex-col gap-5 sm:flex-row">
-                <div class="shrink-0 self-start">
-                    <div class="relative">
-                        <img
-                            v-if="hasImage"
-                            :src="currentImageSrc"
-                            :srcset="currentImageSrcset || undefined"
-                            sizes="(max-width: 640px) 112px, 176px"
-                            class="size-28 rounded-full object-cover sm:size-44"
-                            alt="Photo de profil"
-                        />
-                        <div
-                            v-else
-                            class="flex size-28 items-center justify-center rounded-full bg-neutral-100 text-3xl font-bold text-neutral-400 sm:size-44 sm:text-4xl"
-                        >
-                            {{ user.name?.charAt(0).toUpperCase() }}
-                        </div>
-
-                        <button
-                            v-if="previewUrl"
-                            type="button"
-                            class="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-red-500 text-xs text-white hover:bg-red-600"
-                            @click="removePicture"
-                        >
-                            ×
-                        </button>
-                    </div>
-
-                    <input
-                        ref="fileInputRef"
-                        type="file"
-                        accept="image/png,image/jpeg,image/jpg,image/webp"
-                        class="hidden"
-                        @change="handlePicture"
-                    />
-                    <button
-                        type="button"
-                        class="mt-3 w-full rounded-xl border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-text-base transition-colors hover:bg-gray-50"
-                        @click="fileInputRef?.click()"
-                    >
-                        Changer la photo
-                    </button>
-                </div>
-
+                <ProfileAvatarPicker
+                    :current-picture="user.picture ?? null"
+                    :name="user.name ?? ''"
+                    @update:picture="profileForm.picture = $event"
+                />
                 <div class="flex flex-1 flex-col items-end gap-5">
                     <InputLabel
                         v-model="profileForm.name"
@@ -200,27 +129,15 @@ function confirmDelete() {
                     />
                 </div>
             </div>
-        </section>
+        </ProfileSection>
 
-        <section
-            v-if="auth.isTeacher"
-            class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10"
-        >
-            <h2 class="text-base font-bold text-text-base">Mes cours</h2>
-
-            <div v-if="assignedLessons.length === 0" class="py-4 text-sm text-border-figma">
+        <ProfileSection v-if="auth.isTeacher" title="Mes cours">
+            <p v-if="assignedLessons.length === 0" class="py-4 text-sm text-border-figma">
                 Aucun cours ne vous a encore été attribué.
-            </div>
-
+            </p>
             <div v-else class="flex flex-col gap-6">
-                <div
-                    v-for="group in lessonsBySchool"
-                    :key="group.school"
-                    class="flex flex-col gap-3"
-                >
-                    <p class="text-xs font-bold uppercase tracking-wider text-stone-500">
-                        {{ group.school }}
-                    </p>
+                <div v-for="group in lessonsBySchool" :key="group.school" class="flex flex-col gap-3">
+                    <p class="text-xs font-bold uppercase tracking-wider text-stone-500">{{ group.school }}</p>
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         <div
                             v-for="lesson in group.lessons"
@@ -239,19 +156,17 @@ function confirmDelete() {
                     </div>
                 </div>
             </div>
-        </section>
+        </ProfileSection>
 
-        <section v-if="!auth.isPureAdmin" class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
-            <div>
-                <h2 class="text-base font-bold text-text-base">Matières enseignées</h2>
-                <p class="mt-0.5 text-sm text-stone-400">Les matières que vous pouvez enseigner.</p>
-            </div>
+        <ProfileSection
+            v-if="!auth.isPureAdmin"
+            title="Matières enseignées"
+            description="Les matières que vous pouvez enseigner."
+        >
             <SubjectPicker :subjects="allSubjects" :model-value="userSubjectIds" />
-        </section>
+        </ProfileSection>
 
-        <section v-if="!auth.isPureAdmin" class="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
-            <h2 class="text-base font-bold text-text-base">Établissements</h2>
-
+        <ProfileSection v-if="!auth.isPureAdmin" title="Établissements">
             <div>
                 <p class="mb-2 text-xs font-bold uppercase tracking-wider text-stone-500">Rattachements actifs</p>
                 <ul class="flex flex-col gap-2">
@@ -260,10 +175,12 @@ function confirmDelete() {
                         :key="school.id"
                         class="flex items-center gap-3 rounded-xl border border-blue bg-blue/5 px-4 py-3 text-sm font-medium text-text-base"
                     >
-                        <span class="size-2 shrink-0 rounded-full bg-blue" />
+                        <span class="size-2 shrink-0 rounded-full bg-blue" aria-hidden="true" />
                         {{ school.name }}
                     </li>
-                    <li v-if="auth.schoolRoles.length === 0" class="text-sm text-border-figma">Aucun établissement actif.</li>
+                    <li v-if="auth.schoolRoles.length === 0" class="text-sm text-border-figma">
+                        Aucun établissement actif.
+                    </li>
                 </ul>
             </div>
 
@@ -310,13 +227,47 @@ function confirmDelete() {
                     />
                 </div>
             </div>
-        </section>
+        </ProfileSection>
+
+        <template v-if="auth.adminSchools.length > 0 && scheduleSlots.length > 0">
+            <ProfileSection
+                v-for="school in auth.adminSchools"
+                :key="school.id"
+                :title="`Horaires — ${school.name}`"
+                description="Définissez l'heure de début et de fin de chaque créneau."
+            >
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-xs font-bold uppercase text-stone-400">
+                                <th scope="col" class="pb-3 pr-6">Créneau</th>
+                                <th scope="col" class="pb-3 pr-4">Début</th>
+                                <th scope="col" class="pb-3">Fin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(row, i) in slotTimeForms[school.id]" :key="row.slot_id">
+                                <th scope="row" class="py-1.5 pr-6 text-left text-sm font-medium text-text-base">
+                                    {{ scheduleSlots[i].label }}
+                                </th>
+                                <td class="py-1.5 pr-4">
+                                    <InputLabel v-model="row.start_time" type="time" size="sm" :fluid="false" />
+                                </td>
+                                <td class="py-1.5">
+                                    <InputLabel v-model="row.end_time" type="time" size="sm" :fluid="false" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-end">
+                    <Button variant="primary" size="sm" label="Enregistrer" @click="saveSlotTimes(school.slug, school.id)" />
+                </div>
+            </ProfileSection>
+        </template>
 
         <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
-
-            <section class="flex flex-3 flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10">
-                <h2 class="text-base font-bold text-text-base">Changer de mot de passe</h2>
-
+            <ProfileSection title="Changer de mot de passe" class="flex-3">
                 <div class="flex flex-col items-end gap-5">
                     <InputLabel
                         v-model="passwordForm.current_password"
@@ -352,16 +303,17 @@ function confirmDelete() {
                         @click="submitPassword"
                     />
                 </div>
-            </section>
+            </ProfileSection>
 
-            <section class="flex flex-col justify-between gap-5 rounded-2xl bg-pink/10 p-6 shadow-sm outline-1 -outline-offset-1 outline-neutral-300/10 lg:flex-2 lg:min-h-80">
-                <div class="flex flex-col gap-5">
-                    <h2 class="text-base font-bold text-text-base">Supprimer le compte</h2>
-                    <p class="text-sm text-text-base">
-                        Une fois le compte supprimé, il vous sera impossible de récupérer les données.
-                        Soyez bien sûr que vous voulez supprimer ce compte.
-                    </p>
-                </div>
+            <ProfileSection
+                title="Supprimer le compte"
+                variant="danger"
+                class="flex-2 justify-between lg:min-h-80"
+            >
+                <p class="text-sm text-text-base">
+                    Une fois le compte supprimé, il vous sera impossible de récupérer les données.
+                    Soyez bien sûr que vous voulez supprimer ce compte.
+                </p>
                 <div class="flex justify-end">
                     <Button
                         variant="danger"
@@ -371,8 +323,9 @@ function confirmDelete() {
                         @click="showDeleteModal = true"
                     />
                 </div>
-            </section>
+            </ProfileSection>
         </div>
+
     </div>
 
     <ConfirmModal

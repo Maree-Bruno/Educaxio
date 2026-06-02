@@ -13,6 +13,8 @@ return new class extends Migration
             $table->unsignedTinyInteger('position')->unique();
             $table->string('label');
             $table->string('type')->default('slot');
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
             $table->timestamps();
         });
     }

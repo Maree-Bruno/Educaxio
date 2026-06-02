@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useCurrentSlot } from '@/composables/useCurrentSlot';
+import { useHiddenIds } from '@/composables/useHiddenIds';
 import { dashboard, agenda, attendances } from '@/routes';
 import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
 import { show as showClasslist } from '@/routes/classlist';
@@ -29,6 +31,8 @@ interface Slot {
     position: number;
     label: string;
     type: 'slot' | 'lunch';
+    start_time: string | null;
+    end_time: string | null;
     entry: Entry | null;
 }
 
@@ -52,7 +56,7 @@ interface UpcomingAssignment {
     school: string;
 }
 
-const { user, selectedDate, upcomingAssignments } = defineProps<{
+const { user, selectedDate, upcomingAssignments, slots } = defineProps<{
     slots: Slot[];
     groups: Group[];
     date: string;
@@ -71,27 +75,32 @@ function changeDate(value: string) {
     router.get(dashboard.url(), { date: value }, { preserveState: false });
 }
 
-// Auto-avance à minuit si l'utilisateur est sur "aujourd'hui"
+const { now, activeSlotIndex } = useCurrentSlot(slots);
+
+const isViewingToday = computed(() => {
+    if (!now.value) return false;
+    const localDate = new Date(now.value.getTime() - now.value.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 10);
+    return selectedDate === localDate;
+});
+
 let midnightTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(() => {
-    if (selectedDate !== today) {
-        return;
-    }
+    if (selectedDate !== today) return;
 
-    const now = new Date();
-    const midnight = new Date(now);
+    const n = new Date();
+    const midnight = new Date(n);
     midnight.setHours(24, 0, 0, 0);
 
     midnightTimer = setTimeout(() => {
         router.get(dashboard.url(), {}, { preserveState: false });
-    }, midnight.getTime() - now.getTime());
+    }, midnight.getTime() - n.getTime());
 });
 
 onUnmounted(() => {
-    if (midnightTimer) {
-        clearTimeout(midnightTimer);
-    }
+    if (midnightTimer) clearTimeout(midnightTimer);
 });
 
 function formatDate(dateStr: string): string {
@@ -104,8 +113,8 @@ const editModalRef      = ref<InstanceType<typeof BaseModal> | null>(null);
 const editingAssignment = ref<UpcomingAssignment | null>(null);
 
 const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const pendingDelete    = ref<{ id: number; title: string } | null>(null);
-const hiddenIds        = ref(new Set<number>());
+const pendingDelete = ref<{ id: number; title: string } | null>(null);
+const { hide: hideAssignment, show: showAssignment, isHidden: isAssignmentHidden } = useHiddenIds();
 const toaster          = useToasterStore();
 const editForm = useForm({
     type:           'homework' as 'homework' | 'test',
@@ -157,11 +166,11 @@ function confirmDelete() {
 
     confirmDeleteRef.value?.close();
     pendingDelete.value = null;
-    hiddenIds.value = new Set([...hiddenIds.value, id]);
+    hideAssignment(id);
     toaster.deletable(
         `« ${title} » supprimé`,
         () => router.delete(destroyAssignment.url({ assignment: id }), { preserveScroll: true }),
-        () => { hiddenIds.value.delete(id); hiddenIds.value = new Set(hiddenIds.value); },
+        () => showAssignment(id),
     );
 }
 </script>
@@ -189,15 +198,21 @@ function confirmDelete() {
                     <template v-for="(slot, index) in slots" :key="slot.id">
                         <div
                             v-if="slot.type === 'lunch'"
-                            class="flex items-center justify-center border-b border-zinc-400/10 bg-white py-3"
-                            :class="index === slots.length - 1 && 'border-b-0'"
+                            class="flex items-center justify-center border-b border-zinc-400/10 py-3"
+                            :class="[
+                                index === slots.length - 1 && 'border-b-0',
+                                isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
+                            ]"
                         >
                             <span class="text-xs font-bold tracking-wider text-zinc-400 uppercase">Pause</span>
                         </div>
                         <div
                             v-else
-                            class="flex items-center gap-3 border-b border-zinc-400/10 bg-white px-6 py-4"
-                            :class="index === slots.length - 1 && 'border-b-0'"
+                            class="flex items-center gap-3 border-b border-zinc-400/10 px-6 py-4"
+                            :class="[
+                                index === slots.length - 1 && 'border-b-0',
+                                isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
+                            ]"
                         >
                             <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ slot.label }}</span>
                             <template v-if="slot.entry">
@@ -238,7 +253,7 @@ function confirmDelete() {
                     <template v-else>
                         <ul class="divide-y divide-neutral-100 bg-white">
                             <li
-                                v-for="a in upcomingAssignments.filter((a) => !hiddenIds.has(a.id))"
+                                v-for="a in upcomingAssignments.filter((a) => !isAssignmentHidden(a.id))"
                                 :key="a.id"
                                 class="group flex cursor-pointer items-start gap-3 px-6 py-4 transition-colors hover:bg-gray-50"
                                 @click="openEdit(a)"

@@ -1,5 +1,14 @@
 import { usePage } from '@inertiajs/vue3';
 
+export function getInitials(name: string): string {
+    return name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+}
+
 const profileImageVariants = {
     xs: '64x64',
     sm: '128x128',

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\JoinRequestController as AdminJoinRequestController;
 use App\Http\Controllers\Admin\LessonController as AdminLessonController;
+use App\Http\Controllers\Admin\SchoolSlotTimeController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\AgendaController;
@@ -115,6 +116,8 @@ Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
             Route::post('cours', [AdminLessonController::class, 'store'])->name('lessons.store');
             Route::put('cours/{lesson}/professeurs', [AdminLessonController::class, 'syncTeachers'])->name('lessons.teachers.sync');
             Route::delete('cours/{lesson}', [AdminLessonController::class, 'destroy'])->name('lessons.destroy');
+
+            Route::put('creneaux-horaires', [SchoolSlotTimeController::class, 'update'])->name('slot-times.update');
         });
 
     // Redirections GET admin anglais → français

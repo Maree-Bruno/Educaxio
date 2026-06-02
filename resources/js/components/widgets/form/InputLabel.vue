@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, useId } from 'vue';
 
-type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
+type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search' | 'time';
 
 const props = withDefaults(
     defineProps<{
@@ -13,6 +13,7 @@ const props = withDefaults(
         type?: InputType;
         id?: string;
         size?: 'sm' | 'md';
+        fluid?: boolean;
     }>(),
     {
         modelValue: '',
@@ -22,6 +23,7 @@ const props = withDefaults(
         disabled: false,
         type: 'text',
         size: 'md',
+        fluid: true,
     },
 );
 
@@ -35,7 +37,8 @@ const isFilled = computed(() => props.modelValue.length > 0);
 const hasError = computed(() => props.error.length > 0);
 
 const inputClasses = computed(() => [
-    'w-full rounded-2xl border bg-white font-manrope outline-none transition-all duration-150',
+    props.fluid ? 'w-full' : 'w-auto',
+    'rounded-2xl border bg-white font-manrope outline-none transition-all duration-150',
     'placeholder:text-gray-400 placeholder:font-normal',
     'disabled:cursor-not-allowed disabled:opacity-50',
     hasError.value
@@ -47,7 +50,7 @@ const inputClasses = computed(() => [
 </script>
 
 <template>
-    <div class="flex w-full flex-col gap-1.5">
+    <div :class="['flex flex-col gap-1.5', fluid ? 'w-full' : 'w-fit']">
         <!-- Label -->
         <label
             v-if="label"
