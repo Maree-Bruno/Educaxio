@@ -47,8 +47,9 @@ class ClassListController extends Controller
         $userId = auth()->id();
         $lessonsLoad = $teacherSchoolIds->isNotEmpty()
             ? ['lessons' => fn ($q) => $q->whereHas('users', fn ($u) => $u->where('users.id', $userId))
-                    ->select('lessons.id', 'lessons.name', 'lessons.group_id', 'lessons.subject_id')]
-            : ['lessons:id,name,group_id,subject_id'];
+                    ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id')
+                    ->with('subject:id,name')]
+            : ['lessons:id,group_id,subject_id', 'lessons.subject:id,name'];
 
         $query = $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)->with([
             'school:id,name',
@@ -89,7 +90,13 @@ class ClassListController extends Controller
         match ($request->string('sort')->toString()) {
             'school' => $query->orderBy(School::select('name')->whereColumn('schools.id', 'groups.school_id'), $dir),
             'students' => $query->orderBy('students_count', $dir),
-            'subject' => $query->orderBy(Lesson::select('name')->whereColumn('lessons.group_id', 'groups.id')->limit(1), $dir),
+            'subject' => $query->orderBy(
+                Lesson::select('subjects.name')
+                    ->join('subjects', 'subjects.id', '=', 'lessons.subject_id')
+                    ->whereColumn('lessons.group_id', 'groups.id')
+                    ->limit(1),
+                $dir
+            ),
             default => $query->orderBy('grade', $dir)->orderBy('name', $dir),
         };
 
@@ -170,7 +177,6 @@ class ClassListController extends Controller
         if ($validated['subject_id'] ?? null) {
             $subject = Subject::findOrFail($validated['subject_id']);
             $group->lessons()->create([
-                'name' => $subject->name,
                 'subject_id' => $subject->id,
             ]);
         }
@@ -282,15 +288,9 @@ class ClassListController extends Controller
         if ($subjectId) {
             $subject = Subject::findOrFail($subjectId);
             if ($currentLesson) {
-                $currentLesson->update([
-                    'name' => $subject->name,
-                    'subject_id' => $subjectId,
-                ]);
+                $currentLesson->update(['subject_id' => $subjectId]);
             } else {
-                $group->lessons()->create([
-                    'name' => $subject->name,
-                    'subject_id' => $subjectId,
-                ]);
+                $group->lessons()->create(['subject_id' => $subjectId]);
             }
         } else {
             $group->lessons()->delete();

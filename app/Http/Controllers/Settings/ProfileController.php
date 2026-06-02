@@ -41,7 +41,7 @@ class ProfileController extends Controller
                     'group.school:id,name',
                     'subject:id,name',
                 ])
-                ->get(['lessons.id', 'lessons.name', 'lessons.group_id', 'lessons.subject_id']),
+                ->get(['lessons.id', 'lessons.group_id', 'lessons.subject_id']),
             'allSubjects'         => Subject::orderBy('name')->get(['id', 'name']),
             'userSubjectIds'      => $user->subjects()->pluck('subjects.id'),
             'pendingRequests'     => SchoolJoinRequest::where('user_id', $user->id)

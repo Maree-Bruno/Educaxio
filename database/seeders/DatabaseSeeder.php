@@ -9,8 +9,8 @@ use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\ClassSession;
 use App\Models\Group;
-use App\Models\LessonNote;
 use App\Models\Lesson;
+use App\Models\LessonNote;
 use App\Models\Schedule;
 use App\Models\ScheduleEntry;
 use App\Models\ScheduleSlot;
@@ -113,11 +113,11 @@ class DatabaseSeeder extends Seeder
         foreach ($slotLabels as $i => $label) {
             $endMinutes = $startMinutes + 50;
             $slots->push(ScheduleSlot::create([
-                'position'   => $i + 1,
-                'label'      => $label,
-                'type'       => 'slot',
+                'position' => $i + 1,
+                'label' => $label,
+                'type' => 'slot',
                 'start_time' => sprintf('%02d:%02d', intdiv($startMinutes, 60), $startMinutes % 60),
-                'end_time'   => sprintf('%02d:%02d', intdiv($endMinutes, 60), $endMinutes % 60),
+                'end_time' => sprintf('%02d:%02d', intdiv($endMinutes, 60), $endMinutes % 60),
             ]));
             $startMinutes = $endMinutes;
         }
@@ -271,14 +271,14 @@ class DatabaseSeeder extends Seeder
                 if ($dows->contains($date->dayOfWeekIso)) {
                     $session = ClassSession::create([
                         'lesson_id' => $lesson->id,
-                        'date'      => $date->toDateString(),
+                        'date' => $date->toDateString(),
                     ]);
 
                     if (fake()->boolean(40)) {
                         LessonNote::create([
                             'lesson_id' => $lesson->id,
-                            'date'      => $date->toDateString(),
-                            'notes'     => fake()->randomElement($journalNotes),
+                            'date' => $date->toDateString(),
+                            'notes' => fake()->randomElement($journalNotes),
                         ]);
                     }
 

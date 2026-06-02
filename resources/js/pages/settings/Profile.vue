@@ -146,7 +146,7 @@ function confirmDelete() {
                         >
                             <span class="min-w-0">
                                 <span class="block truncate text-sm font-semibold text-text-base">
-                                    {{ lesson.subject?.name ?? lesson.name }}
+                                    {{ lesson.subject!.name }}
                                 </span>
                                 <span class="block text-xs text-stone-500">
                                     {{ lesson.group!.grade }}{{ lesson.group!.name }}

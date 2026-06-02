@@ -27,12 +27,6 @@ class DashboardController extends Controller
         }
 
         $schools = $adminSchools->map(function ($school) {
-            $studentsCount = $school->students()->count();
-
-            $teachersCount = $school->users()
-                ->wherePivot('role', 'teacher')
-                ->count();
-
             $pendingCount = SchoolJoinRequest::where('school_id', $school->id)
                 ->where('status', 'pending')
                 ->count();
@@ -57,6 +51,8 @@ class DashboardController extends Controller
                 ->paginate(5, ['id', 'firstname', 'lastname'], 'students_page')
                 ->onEachSide(1);
 
+            $studentsCount = $studentsPaginator->total();
+
             $recentStudents = [
                 'data' => $studentsPaginator->getCollection()->map(fn ($s) => [
                     'id' => $s->id,
@@ -75,6 +71,8 @@ class DashboardController extends Controller
                 ->with('subjects:id,name')
                 ->paginate(5, ['users.id', 'users.name', 'users.email'], 'teachers_page')
                 ->onEachSide(1);
+
+            $teachersCount = $teachersPaginator->total();
 
             $teachers = [
                 'data' => $teachersPaginator->getCollection()->map(fn ($t) => [
