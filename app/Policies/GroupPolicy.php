@@ -27,6 +27,11 @@ class GroupPolicy
         return $this->isAdminOf($user, $group->school_id);
     }
 
+    public function detachStudent(User $user, Group $group): bool
+    {
+        return $this->isAdminOf($user, $group->school_id);
+    }
+
     private function isAdminOf(User $user, int $schoolId): bool
     {
         return $user->schools()

@@ -19,6 +19,8 @@ import SortTh from '@/components/widgets/SortTh.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
+import StudentCount from '@/components/widgets/StudentCount.vue';
 import { useToasterStore } from '@/stores/toaster';
 import type { Paginator } from '@/types';
 
@@ -38,9 +40,11 @@ setPageTitle('Élèves');
 const groupOptions = props.groups.map((g) => ({ value: String(g.id), label: `${g.grade}${g.name}` }));
 
 const filterGroup = ref<string>(props.filters.group ?? '');
-const sortCol     = ref(props.filters.sort === 'firstname' ? 'firstname' : 'lastname');
-const sortDir     = ref<'asc' | 'desc'>(props.filters.dir === 'desc' ? 'desc' : 'asc');
 const search      = ref(props.filters.search ?? '');
+const { sortCol, sortDir, sortBy } = useStudentSort({
+    col: props.filters.sort === 'firstname' ? 'firstname' : 'lastname',
+    dir: props.filters.dir === 'desc' ? 'desc' : 'asc',
+});
 
 function applyFilters() {
     router.get(adminStudentsIndex.url({ school: props.school.slug }), {
@@ -54,22 +58,10 @@ function applyFilters() {
 const applyFiltersDebounced = useDebounceFn(applyFilters, 300);
 
 watch(search, applyFiltersDebounced);
+watch([sortCol, sortDir], applyFilters);
 
 function rowNumber(index: number): string {
-    const position = (props.students.current_page - 1) * props.students.per_page + index + 1;
-    const number = sortDir.value === 'desc' ? props.students.total - position + 1 : position;
-    return String(number).padStart(2, '0');
-}
-
-function sortBy(col: string) {
-    if (sortCol.value === col) {
-        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortCol.value = col;
-        sortDir.value = 'asc';
-    }
-
-    applyFilters();
+    return studentRowNumber(index, props.students.current_page, props.students.per_page, props.students.total, sortDir.value);
 }
 
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
@@ -151,8 +143,7 @@ function confirmDelete() {
     <div class="min-w-0 overflow-hidden rounded-2xl">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-300/10 bg-white px-4 sm:px-6 py-4 sm:py-5">
             <h2 class="text-xl font-bold text-text-base">
-                Élèves
-                <span class="text-border-figma">({{ students.total }})</span>
+                Élèves <StudentCount :total="students.total" />
             </h2>
             <Button variant="primary" size="sm" label="Nouvel élève" @click="openCreate" />
             <div class="flex w-full flex-col gap-2 sm:flex-row">

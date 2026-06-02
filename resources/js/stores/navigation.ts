@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useNavigationStore = defineStore('navigation', () => {
-    // Desktop: pin/collapse
     const isPinned = ref(localStorage.getItem('nav-pinned') === 'true');
     const isCollapsed = ref(!isPinned.value);
 
@@ -12,7 +11,6 @@ export const useNavigationStore = defineStore('navigation', () => {
         localStorage.setItem('nav-pinned', String(isPinned.value));
     }
 
-    // Mobile: drawer open/close
     const isMobileOpen = ref(false);
 
     function toggleMobile() {

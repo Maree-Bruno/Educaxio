@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified', 'school.approved'])->group(function () {
     Route::patch('classes/{group}', [ClassListController::class, 'update'])->name('classlist.update');
     Route::delete('classes/{group}', [ClassListController::class, 'destroy'])->name('classlist.destroy');
     Route::post('classes/{group}/eleves', [ClassListController::class, 'attachStudent'])->name('classlist.students.attach');
+    Route::delete('classes/{group}/eleves/{student}', [ClassListController::class, 'detachStudent'])->name('classlist.students.detach');
 
     // Élèves
     Route::post('eleves', [StudentController::class, 'store'])->name('students.store');
