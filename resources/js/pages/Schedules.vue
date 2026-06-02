@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import ScheduleCellCard from '@/components/widgets/ScheduleCellCard.vue';
+import ScheduleMobileRow from '@/components/widgets/ScheduleMobileRow.vue';
+import ScheduleSlotModal from '@/components/widgets/ScheduleSlotModal.vue';
+import SelectField from '@/components/widgets/SelectField.vue';
+import { toMins, useCurrentSlot } from '@/composables/useCurrentSlot';
+import { useHiddenIds } from '@/composables/useHiddenIds';
+import { setPageTitle } from '@/composables/usePageTitle';
 import { schedules as schedulesRoute } from '@/routes';
 import { destroy as destroyScheduleEntry } from '@/routes/schedule-entries';
 import { updateType } from '@/routes/schedule-slots';
-import Button from '@/components/widgets/Button.vue';
-import ScheduleSlotModal from '@/components/widgets/ScheduleSlotModal.vue';
-import SelectField from '@/components/widgets/SelectField.vue';
-import { setPageTitle } from '@/composables/usePageTitle';
 import { useToasterStore } from '@/stores/toaster';
-import type { AcademicYear, LessonOption, ScheduleEntry, School, SlotRow } from '@/types';
+import type {
+    AcademicYear,
+    LessonOption,
+    ScheduleEntry,
+    School,
+    SlotRow,
+} from '@/types';
 
 setPageTitle('Horaire hebdomadaire annuel');
 
@@ -24,17 +33,24 @@ const props = defineProps<{
 }>();
 
 const toaster = useToasterStore();
-const hiddenEntryIds = ref(new Set<number>());
+const { hide: hideEntry, show: showEntry, isHidden: isEntryHidden } = useHiddenIds();
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'];
-const todayDow = new Date().getDay(); // 0=dim, 1=lun … 5=ven, 6=sam
+const todayDow = new Date().getDay();
 const lastRowIndex = computed(() => props.slots.length - 1);
 
 const filterYear = ref<string | null>(props.filters.year ?? null);
-const yearOptions = props.academicYears.map((y) => ({ value: String(y.id), label: y.year }));
+const yearOptions = props.academicYears.map((y) => ({
+    value: String(y.id),
+    label: y.year,
+}));
 
 watch(filterYear, () => {
-    router.get(schedulesRoute.url(), { year: filterYear.value ?? undefined }, { preserveState: true, replace: true });
+    router.get(
+        schedulesRoute.url(),
+        { year: filterYear.value ?? undefined },
+        { preserveState: true, replace: true },
+    );
 });
 
 const selectedDay = ref(todayDow >= 1 && todayDow <= 5 ? todayDow : 1);
@@ -51,33 +67,60 @@ const modalState = ref<ModalState | null>(null);
 function openCell(slot: SlotRow, dayIndex: number) {
     const dayOfWeek = dayIndex + 1;
     const entry = props.entries[slot.position]?.[dayOfWeek] ?? null;
-    modalState.value = { slot, dayOfWeek, dayLabel: DAY_NAMES[dayIndex], entry };
+    modalState.value = {
+        slot,
+        dayOfWeek,
+        dayLabel: DAY_NAMES[dayIndex],
+        entry,
+    };
 }
 
 function getEntry(position: number, day: number): ScheduleEntry | null {
     const entry = props.entries[position]?.[day] ?? null;
-    if (!entry || hiddenEntryIds.value.has(entry.id)) {
-        return null;
-    }
 
-    return entry;
+    return !entry || isEntryHidden(entry.id) ? null : entry;
 }
 
 function onDeleteEntry(entryId: number) {
-    hiddenEntryIds.value = new Set([...hiddenEntryIds.value, entryId]);
+    hideEntry(entryId);
     toaster.deletable(
         'Créneau supprimé',
         () => router.delete(destroyScheduleEntry.url({ scheduleEntry: entryId }), { preserveScroll: true }),
-        () => { hiddenEntryIds.value.delete(entryId); hiddenEntryIds.value = new Set(hiddenEntryIds.value); },
+        () => showEntry(entryId),
     );
 }
 
 function toggleSlotType(row: SlotRow) {
-    router.patch(updateType.url(), {
-        id: row.id,
-        type: row.type === 'lunch' ? 'slot' : 'lunch',
-    }, { preserveState: true });
+    router.patch(
+        updateType.url(),
+        {
+            id: row.id,
+            type: row.type === 'lunch' ? 'slot' : 'lunch',
+        },
+        { preserveState: true },
+    );
 }
+
+const { now, activeSlotIndex } = useCurrentSlot(props.slots);
+
+const isViewingToday = computed(
+    () => now.value !== null && selectedDay.value === now.value.getDay(),
+);
+
+const indicatorTop = computed((): number | null => {
+    const i = activeSlotIndex.value;
+
+    if (i === null || !now.value) {
+        return null;
+    }
+
+    const slot = props.slots[i];
+    const start = toMins(slot.start_time!);
+    const end = toMins(slot.end_time!);
+    const mins = now.value.getHours() * 60 + now.value.getMinutes();
+
+    return 40 + i * 80 + ((mins - start) / (end - start)) * 80;
+});
 </script>
 
 <template>
@@ -89,27 +132,28 @@ function toggleSlotType(row: SlotRow) {
             :options="yearOptions"
             class="w-48"
         />
-        <div class="ml-auto flex items-center gap-4">
+        <!--        <div class="ml-auto flex items-center gap-4">
             <Button variant="primary" size="sm">Exporter</Button>
-        </div>
+        </div>-->
     </div>
 
-    <div v-if="slots.length === 0" class="flex items-center justify-center rounded-3xl bg-white py-20">
+    <div
+        v-if="slots.length === 0"
+        class="flex items-center justify-center rounded-3xl bg-white py-20"
+    >
         <p class="font-bold text-text-base">Aucun horaire configuré</p>
     </div>
 
     <div v-else>
-
         <div class="md:hidden">
-
             <div class="mb-4 flex gap-1.5">
                 <button
                     v-for="(day, i) in DAY_NAMES"
                     :key="day"
+                    type="button"
+                    :aria-pressed="selectedDay === i + 1"
                     class="flex-1 rounded-xl py-2 text-sm font-bold transition-colors"
-                    :class="selectedDay === i + 1
-                        ? 'bg-blue text-white'
-                        : 'bg-white text-text-base hover:bg-blue/10'"
+                    :class="selectedDay === i + 1 ? 'bg-blue text-white' : 'bg-white text-text-base hover:bg-blue/10'"
                     @click="selectedDay = i + 1"
                 >
                     {{ day }}
@@ -118,53 +162,33 @@ function toggleSlotType(row: SlotRow) {
 
             <div class="overflow-hidden rounded-3xl bg-bg-primary">
                 <template v-for="(row, rowIndex) in slots" :key="row.position">
-
-                    <div
-                        v-if="row.type === 'lunch'"
-                        class="flex items-center justify-center border-b border-zinc-400/10 bg-white py-3"
-                        :class="rowIndex === lastRowIndex && 'border-b-0'"
-                    >
-                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-400">Pause</span>
-                    </div>
-
-                    <div
-                        v-else
-                        class="flex cursor-pointer items-center gap-3 border-b border-zinc-400/10 bg-white px-4 py-3 transition-colors hover:bg-blue/5"
-                        :class="rowIndex === lastRowIndex && 'border-b-0'"
+                    <ScheduleMobileRow
+                        :row="row"
+                        :entry="getEntry(row.position, selectedDay)"
+                        :is-last="rowIndex === lastRowIndex"
+                        :is-active="isViewingToday && activeSlotIndex === rowIndex"
                         @click="openCell(row, selectedDay - 1)"
-                    >
-                        <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ row.label }}</span>
-                        <template v-if="getEntry(row.position, selectedDay)">
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-extrabold text-black">
-                                    {{ getEntry(row.position, selectedDay)!.grade }}
-                                    · {{ getEntry(row.position, selectedDay)!.subject }}
-                                </p>
-                                <p class="truncate text-xs text-border-figma">
-                                    {{ getEntry(row.position, selectedDay)!.room ?? '–' }}
-                                    · {{ getEntry(row.position, selectedDay)!.school }}
-                                </p>
-                            </div>
-                        </template>
-                        <p v-else class="flex-1 text-sm text-zinc-300">Libre</p>
-                    </div>
-
+                    />
                 </template>
             </div>
         </div>
 
-        <div class="hidden overflow-hidden rounded-3xl bg-bg-primary md:block">
-
-            <div class="grid" style="grid-template-columns: 80px repeat(5, 1fr)">
-                <div class="self-stretch rounded-tl-3xl bg-blue"></div>
+        <div
+            role="grid"
+            aria-label="Horaire hebdomadaire"
+            class="relative hidden overflow-hidden rounded-3xl bg-bg-primary md:block"
+        >
+            <div role="row" class="grid" style="grid-template-columns: 80px repeat(5, 1fr)">
+                <div aria-hidden="true" class="self-stretch rounded-tl-3xl bg-blue"></div>
                 <div
                     v-for="(day, i) in DAY_NAMES"
                     :key="day"
-                    class="flex h-10 items-center justify-center border-b border-r border-zinc-400/10 last:rounded-tr-3xl"
+                    role="columnheader"
+                    class="flex h-10 items-center justify-center border-r border-b border-zinc-400/10 last:rounded-tr-3xl"
                     :class="todayDow === i + 1 && 'bg-zinc-400/10'"
                 >
                     <span
-                        class="text-base font-extrabold leading-4"
+                        class="text-base leading-4 font-extrabold"
                         :class="todayDow === i + 1 ? 'text-blue' : 'text-text-base'"
                     >
                         {{ day }}
@@ -173,69 +197,73 @@ function toggleSlotType(row: SlotRow) {
             </div>
 
             <template v-for="(row, rowIndex) in slots" :key="row.position">
-
                 <div
                     v-if="row.type === 'slot'"
+                    role="row"
                     class="grid h-20"
                     style="grid-template-columns: 80px repeat(5, 1fr)"
                 >
-                    <div
-                        class="group flex cursor-pointer items-center justify-center border-b border-r border-zinc-400/10 bg-white transition-colors hover:bg-blue/5"
+                    <button
+                        type="button"
+                        role="rowheader"
+                        class="group flex cursor-pointer items-center justify-center border-r border-b border-zinc-400/10 bg-white transition-colors hover:bg-blue/5"
                         :class="rowIndex === lastRowIndex && 'rounded-bl-3xl'"
-                        title="Marquer comme pause"
+                        :aria-label="`${row.label} — basculer en pause`"
                         @click="toggleSlotType(row)"
                     >
-                        <span class="text-xs font-extrabold leading-4 text-border-figma">{{ row.label }}</span>
-                    </div>
+                        <span class="text-xs leading-4 font-extrabold text-border-figma" aria-hidden="true">{{ row.label }}</span>
+                    </button>
 
-                    <div
+                    <button
                         v-for="(day, colIndex) in DAY_NAMES"
                         :key="day"
-                        class="cursor-pointer border-b border-r border-zinc-400/10 p-1 last:border-r-0"
+                        type="button"
+                        role="gridcell"
+                        class="block cursor-pointer border-r border-b border-zinc-400/10 p-1 last:border-r-0"
+                        :aria-label="`${day}, ${row.label}`"
                         @click="openCell(row, colIndex)"
                     >
-                        <div
-                            v-if="getEntry(row.position, colIndex + 1)"
-                            class="flex h-full flex-col justify-between rounded-lg bg-white p-2 transition-shadow hover:shadow-sm"
-                        >
-                            <div class="flex items-start justify-between gap-1">
-                                <span class="shrink-0 text-xs font-extrabold leading-4 text-black">
-                                    {{ getEntry(row.position, colIndex + 1)!.grade }}
-                                </span>
-                                <span class="line-clamp-1 text-right text-xs font-extrabold leading-4 text-black">
-                                    {{ getEntry(row.position, colIndex + 1)!.subject }}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between gap-1">
-                                <span class="shrink-0 text-xs font-extrabold leading-4 text-black">
-                                    {{ getEntry(row.position, colIndex + 1)!.room ?? '–' }}
-                                </span>
-                                <span class="line-clamp-1 text-right text-xs font-extrabold leading-4 text-black">
-                                    {{ getEntry(row.position, colIndex + 1)!.school }}
-                                </span>
-                            </div>
-                        </div>
-                        <div v-else class="h-full rounded-lg bg-white transition-colors hover:bg-blue/5" />
-                    </div>
+                        <ScheduleCellCard
+                            :entry="getEntry(row.position, colIndex + 1)"
+                            :active="activeSlotIndex === rowIndex && now?.getDay() === colIndex + 1"
+                        />
+                    </button>
                 </div>
 
-                <div v-else class="grid h-20" style="grid-template-columns: 80px repeat(5, 1fr)">
-                    <div
-                        class="cursor-pointer border-b border-r border-zinc-400/10 bg-white transition-colors hover:bg-blue/5"
+                <div
+                    v-else
+                    role="row"
+                    class="grid h-20"
+                    style="grid-template-columns: 80px repeat(5, 1fr)"
+                >
+                    <button
+                        type="button"
+                        role="rowheader"
+                        class="cursor-pointer border-r border-b border-zinc-400/10 bg-white transition-colors hover:bg-blue/5"
                         :class="rowIndex === lastRowIndex && 'rounded-bl-3xl'"
-                        title="Marquer comme cours"
+                        :aria-label="`${row.label} — basculer en cours`"
                         @click="toggleSlotType(row)"
-                    ></div>
-                    <div class="col-span-5 p-1">
+                    ></button>
+                    <div role="gridcell" aria-colspan="5" class="col-span-5 p-1">
                         <div class="flex h-full items-center justify-center rounded-lg bg-white">
-                            <span class="text-xs font-bold uppercase tracking-wider text-black">Pause</span>
+                            <span class="text-xs font-bold tracking-wider text-black uppercase">Pause</span>
                         </div>
                     </div>
                 </div>
-
             </template>
-        </div>
 
+            <div
+                v-if="indicatorTop !== null"
+                class="pointer-events-none absolute inset-x-0 z-10 flex items-center"
+                :style="{ top: indicatorTop + 'px' }"
+            >
+                <div
+                    class="h-2.5 w-2.5 shrink-0 rounded-full bg-pink"
+                    style="margin-left: 74px"
+                />
+                <div class="h-px flex-1 bg-pink opacity-80" />
+            </div>
+        </div>
     </div>
 
     <ScheduleSlotModal

@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use App\Models\ScheduleEntry;
 use App\Models\ScheduleSlot;
 use App\Models\SchoolJoinRequest;
+use App\Models\SchoolSlotTime;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -133,17 +134,34 @@ class DashboardController extends Controller
 
         $entriesBySlotId = $todayEntries->keyBy('schedule_slot_id');
 
+        $userSchoolIds = $user->schools()->pluck('schools.id');
+        $schoolSlotTimes = SchoolSlotTime::whereIn('school_id', $userSchoolIds)
+            ->get()
+            ->groupBy('school_id')
+            ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
+                'start_time' => substr($r->start_time, 0, 5),
+                'end_time'   => substr($r->end_time, 0, 5),
+            ]));
+
+        $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $userSchoolIds->first();
+        $slotTimesForIndicator = $schoolSlotTimes[$indicatorSchoolId] ?? collect();
+
         $slots = ScheduleSlot::orderBy('position')
-            ->get(['id', 'position', 'label', 'type'])
-            ->map(function ($s) use ($entriesBySlotId, $lessons) {
+            ->get(['id', 'position', 'label', 'type', 'start_time', 'end_time'])
+            ->map(function ($s) use ($entriesBySlotId, $lessons, $slotTimesForIndicator) {
+                $override = $slotTimesForIndicator[$s->id] ?? null;
+                $globalStart = $s->start_time ? substr($s->start_time, 0, 5) : null;
+                $globalEnd   = $s->end_time   ? substr($s->end_time, 0, 5)   : null;
                 $entry = $entriesBySlotId->get($s->id);
                 $lesson = $entry ? $lessons->get($entry->lesson_id) : null;
 
                 return [
-                    'id' => $s->id,
-                    'position' => $s->position,
-                    'label' => $s->label,
-                    'type' => $s->type,
+                    'id'         => $s->id,
+                    'position'   => $s->position,
+                    'label'      => $s->label,
+                    'type'       => $s->type,
+                    'start_time' => $override ? $override['start_time'] : $globalStart,
+                    'end_time'   => $override ? $override['end_time']   : $globalEnd,
                     'entry' => ($entry && $lesson) ? [
                         'id' => $entry->id,
                         'subject' => $lesson->subject->name,

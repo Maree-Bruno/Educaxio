@@ -87,7 +87,14 @@ export interface ScheduleSlot {
     type: 'slot' | 'lunch';
 }
 
-export type SlotRow = Pick<ScheduleSlot, 'id' | 'position' | 'label' | 'type'>;
+export interface SlotRow {
+    id: number;
+    position: number;
+    label: string;
+    type: 'slot' | 'lunch';
+    start_time: string | null;
+    end_time: string | null;
+}
 
 export interface ScheduleEntry {
     id: number;

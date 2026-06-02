@@ -109,12 +109,17 @@ class DatabaseSeeder extends Seeder
         ];
 
         $slots = collect();
+        $startMinutes = 8 * 60 + 30;
         foreach ($slotLabels as $i => $label) {
+            $endMinutes = $startMinutes + 50;
             $slots->push(ScheduleSlot::create([
-                'position' => $i + 1,
-                'label' => $label,
-                'type' => 'slot',
+                'position'   => $i + 1,
+                'label'      => $label,
+                'type'       => 'slot',
+                'start_time' => sprintf('%02d:%02d', intdiv($startMinutes, 60), $startMinutes % 60),
+                'end_time'   => sprintf('%02d:%02d', intdiv($endMinutes, 60), $endMinutes % 60),
             ]));
+            $startMinutes = $endMinutes;
         }
 
         $schedulesByTeacherSchool = [];
