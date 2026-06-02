@@ -141,11 +141,14 @@ function confirmDelete() {
     />
 
     <div class="min-w-0 overflow-hidden rounded-2xl">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-300/10 bg-white px-4 sm:px-6 py-4 sm:py-5">
-            <h2 class="text-xl font-bold text-text-base">
-                Élèves <StudentCount :total="students.total" />
-            </h2>
-            <Button variant="primary" size="sm" label="Nouvel élève" @click="openCreate" />
+        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-300/10 bg-white px-4 sm:px-6 py-4 sm:py-5">
+            <div>
+                <h2 class="text-xl font-bold text-text-base">
+                    Élèves <StudentCount :total="students.total" />
+                </h2>
+                <p class="mt-0.5 text-xs text-stone-400">Gérez les élèves et leurs groupes.</p>
+            </div>
+            <Button variant="primary" size="sm" label="Nouvel élève" class="mt-0.5 shrink-0" @click="openCreate" />
             <div class="flex w-full flex-col gap-2 sm:flex-row">
                 <SelectField
                     id="filter-group"

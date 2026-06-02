@@ -188,6 +188,7 @@ function confirmDelete() {
             <div class="min-w-0 flex-1 overflow-hidden rounded-2xl">
                 <div class="border-b border-zinc-400/10 bg-white px-6 py-5">
                     <h3 class="text-base font-bold text-stone-900">Horaire du jour</h3>
+                    <p class="mt-0.5 text-xs text-stone-400">Cliquez sur « Présences » pour enregistrer les présences d'un cours.</p>
                 </div>
                 <EmptyState
                     v-if="slots.length === 0"
@@ -239,9 +240,12 @@ function confirmDelete() {
             </div>
             <div class="flex w-full shrink-0 flex-col gap-6 xl:w-72">
                 <div class="overflow-hidden rounded-2xl">
-                    <div class="flex items-center justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
-                        <h3 class="text-base font-bold text-stone-900">Devoirs & Interros</h3>
-                        <span v-if="upcomingAssignmentsTotal > 0" class="text-xs text-stone-400">
+                    <div class="flex items-start justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
+                        <div>
+                            <h3 class="text-base font-bold text-stone-900">Devoirs & Interros</h3>
+                            <p class="mt-0.5 text-xs text-stone-400">Prochains devoirs et interrogations pour vos classes.</p>
+                        </div>
+                        <span v-if="upcomingAssignmentsTotal > 0" class="mt-0.5 shrink-0 text-xs text-stone-400">
                             {{ upcomingAssignmentsTotal }} à venir
                         </span>
                     </div>
@@ -285,6 +289,7 @@ function confirmDelete() {
                 <div class="overflow-hidden rounded-2xl">
                     <div class="border-b border-neutral-300/10 bg-white px-6 py-5">
                         <h3 class="text-base font-bold text-stone-900">Mes classes</h3>
+                        <p class="mt-0.5 text-xs text-stone-400">Accédez aux fiches de vos classes et à leurs présences.</p>
                     </div>
 
                     <EmptyState

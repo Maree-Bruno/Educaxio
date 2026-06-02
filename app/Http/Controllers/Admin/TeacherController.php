@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\SchoolJoinRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -61,5 +62,14 @@ class TeacherController extends Controller
                 'subjects' => $r->user->subjects->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             ]),
         ]);
+    }
+
+    public function destroy(School $school, User $user)
+    {
+        $this->authorize('update', $school);
+
+        $school->users()->detach($user->id);
+
+        return back();
     }
 }

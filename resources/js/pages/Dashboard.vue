@@ -93,14 +93,17 @@ function rejectRequest(school: School, req: JoinRequest) {
 
                 <!-- Demandes en attente -->
                 <div class="overflow-hidden rounded-2xl">
-                    <div class="flex items-center justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
-                        <h3 class="text-base font-bold text-stone-900">
-                            Demandes d'adhésion
-                            <span v-if="school.stats.pending > 0" class="ml-1 rounded-full bg-orange px-2 py-0.5 text-xs font-bold text-white">
-                                {{ school.stats.pending }}
-                            </span>
-                        </h3>
-                        <LinkButton :href="teachersIndex.url(school)" variant="primary" size="sm" label="Voir tout" />
+                    <div class="flex items-start justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
+                        <div>
+                            <h3 class="text-base font-bold text-stone-900">
+                                Demandes d'adhésion
+                                <span v-if="school.stats.pending > 0" class="ml-1 rounded-full bg-orange px-2 py-0.5 text-xs font-bold text-white">
+                                    {{ school.stats.pending }}
+                                </span>
+                            </h3>
+                            <p class="mt-0.5 text-xs text-stone-400">Approuvez ou refusez les demandes de professeurs souhaitant rejoindre l'établissement.</p>
+                        </div>
+                        <LinkButton :href="teachersIndex.url(school)" variant="primary" size="sm" label="Voir tout" class="mt-0.5 shrink-0" />
                     </div>
 
                     <EmptyState v-if="school.joinRequests.length === 0" message="Aucune demande en attente" class="bg-white" />
@@ -140,9 +143,12 @@ function rejectRequest(school: School, req: JoinRequest) {
 
                 <!-- Élèves récents -->
                 <div class="overflow-hidden rounded-2xl">
-                    <div class="flex items-center justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
-                        <h3 class="text-base font-bold text-stone-900">Élèves récents</h3>
-                        <LinkButton :href="studentsIndex.url(school)" variant="primary" size="sm" label="Voir tout" />
+                    <div class="flex items-start justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
+                        <div>
+                            <h3 class="text-base font-bold text-stone-900">Élèves récents</h3>
+                            <p class="mt-0.5 text-xs text-stone-400">Derniers élèves inscrits dans l'établissement.</p>
+                        </div>
+                        <LinkButton :href="studentsIndex.url(school)" variant="primary" size="sm" label="Voir tout" class="mt-0.5 shrink-0" />
                     </div>
 
                     <EmptyState v-if="school.recentStudents.data.length === 0" message="Aucun élève" class="bg-white" />
@@ -181,9 +187,12 @@ function rejectRequest(school: School, req: JoinRequest) {
 
                 <!-- Professeurs -->
                 <div class="overflow-hidden rounded-2xl">
-                    <div class="flex items-center justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
-                        <h3 class="text-base font-bold text-stone-900">Professeurs</h3>
-                        <LinkButton :href="teachersIndex.url(school)" variant="primary" size="sm" label="Voir tout" />
+                    <div class="flex items-start justify-between border-b border-neutral-300/10 bg-white px-6 py-5">
+                        <div>
+                            <h3 class="text-base font-bold text-stone-900">Professeurs</h3>
+                            <p class="mt-0.5 text-xs text-stone-400">Professeurs actifs et leurs matières enseignées.</p>
+                        </div>
+                        <LinkButton :href="teachersIndex.url(school)" variant="primary" size="sm" label="Voir tout" class="mt-0.5 shrink-0" />
                     </div>
 
                     <EmptyState v-if="school.teachers.data.length === 0" message="Aucun professeur" class="bg-white" />
@@ -218,6 +227,7 @@ function rejectRequest(school: School, req: JoinRequest) {
                 <div class="overflow-hidden rounded-2xl">
                     <div class="border-b border-neutral-300/10 bg-white px-6 py-5">
                         <h3 class="text-base font-bold text-stone-900">Accès rapide</h3>
+                        <p class="mt-0.5 text-xs text-stone-400">Raccourcis vers les principales sections de gestion.</p>
                     </div>
                     <div class="grid grid-cols-2 gap-3 bg-white p-6">
                         <LinkButton href="/classlist" variant="secondary" size="sm" label="Groupes" class="justify-center" />

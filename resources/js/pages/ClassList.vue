@@ -305,6 +305,7 @@ watch(sortDir, applyFilters);
                     v-bind="groupProps(group)"
                     :lesson="lesson"
                     :can-delete="canDeleteGroup(group.school_id)"
+                    :show-attendance="!auth.isPureAdmin"
                     :view-href="show.url({ group: group.slug })"
                     :grades-href="
                         lesson

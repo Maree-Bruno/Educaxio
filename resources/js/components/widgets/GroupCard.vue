@@ -21,6 +21,7 @@ const props = defineProps<{
     students_count: number;
     lesson: Lesson | null;
     canDelete?: boolean;
+    showAttendance?: boolean;
     viewHref?: string;
     gradesHref?: string;
 }>();
@@ -123,6 +124,7 @@ const emit = defineEmits<{
             </LinkButton>
 
             <LinkButton
+                v-if="showAttendance"
                 :href="attendances.url({ query: { group: slug } })"
                 variant="secondary"
                 size="sm"

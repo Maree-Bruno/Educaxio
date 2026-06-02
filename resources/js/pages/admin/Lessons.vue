@@ -272,7 +272,11 @@ function confirmDelete() {
         @cancel="pendingDelete = null"
     />
 
-    <FilterBar :active-count="activeCount">
+    <FilterBar
+        title="Attribution des cours"
+        description="Associez des matières et des professeurs à chaque classe. Cliquez sur une classe pour la déplier."
+        :active-count="activeCount"
+    >
         <template #filters>
             <SearchInput
                 id="filter-search"
