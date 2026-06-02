@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
+use App\Models\Attendance;
+use App\Models\ClassSession;
 use App\Models\Group;
 use App\Models\Lesson;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\StudentAttendanceStatus;
 use App\Models\Subject;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -222,6 +225,8 @@ class ClassListController extends Controller
                 ->get(['id', 'lastname', 'firstname'])
             : [];
 
+        $attendanceStats = $this->groupAttendanceStats($group);
+
         return Inertia::render('ClassListShow', [
             'group' => $group,
             'students' => $students,
@@ -233,6 +238,7 @@ class ClassListController extends Controller
                 ->orderBy('name')->get(['id', 'name']),
             'filters' => $request->only(['sort', 'dir', 'search']),
             'schoolStudents' => $schoolStudents,
+            'attendanceStats' => $attendanceStats,
         ]);
     }
 
@@ -273,6 +279,38 @@ class ClassListController extends Controller
         $this->authorize('detachStudent', $group);
         $group->students()->detach($student->id);
         return back();
+    }
+
+    private function groupAttendanceStats(Group $group): array
+    {
+        $lessonIds    = Lesson::where('group_id', $group->id)->pluck('id');
+        $sessionIds   = ClassSession::whereIn('lesson_id', $lessonIds)->pluck('id');
+        $studentIds   = $group->students()->pluck('students.id');
+        $sessions     = $sessionIds->count();
+        $totalSlots   = $sessions * $studentIds->count();
+
+        if ($totalSlots === 0) {
+            return ['sessions' => 0, 'absences' => 0, 'lates' => 0, 'exclusions' => 0, 'rate' => null];
+        }
+
+        $attendanceIds = Attendance::whereIn('classsession_id', $sessionIds)->pluck('id');
+        $counts = StudentAttendanceStatus::whereIn('attendance_id', $attendanceIds)
+            ->whereIn('student_id', $studentIds)
+            ->selectRaw('type, COUNT(*) as cnt')
+            ->groupBy('type')
+            ->pluck('cnt', 'type');
+
+        $absences   = (int) $counts->get('Absent', 0);
+        $lates      = (int) $counts->get('Late', 0);
+        $exclusions = (int) $counts->get('Excluded', 0);
+
+        return [
+            'sessions'   => $sessions,
+            'absences'   => $absences,
+            'lates'      => $lates,
+            'exclusions' => $exclusions,
+            'rate'       => round(($totalSlots - $absences) / $totalSlots * 100, 1),
+        ];
     }
 
     public function edit(Group $group): void {}

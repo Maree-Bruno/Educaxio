@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
+use App\Models\ClassSession;
+use App\Models\Lesson;
 use App\Models\Student;
+use App\Models\StudentAttendanceStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -78,10 +82,40 @@ class StudentController extends Controller
             }
         }
 
+        $groupIds  = $student->groups->pluck('id');
+        $lessonIds = $isAdmin
+            ? Lesson::whereIn('group_id', $groupIds)->pluck('id')
+            : auth()->user()->lessons()->whereIn('group_id', $groupIds)->pluck('lessons.id');
+
+        $sessionIds = ClassSession::whereIn('lesson_id', $lessonIds)->pluck('id');
+        $sessions   = $sessionIds->count();
+
+        if ($sessions > 0) {
+            $attendanceIds = Attendance::whereIn('classsession_id', $sessionIds)->pluck('id');
+            $counts = StudentAttendanceStatus::where('student_id', $student->id)
+                ->whereIn('attendance_id', $attendanceIds)
+                ->selectRaw('type, COUNT(*) as cnt')
+                ->groupBy('type')
+                ->pluck('cnt', 'type');
+            $absences   = (int) $counts->get('Absent', 0);
+            $lates      = (int) $counts->get('Late', 0);
+            $exclusions = (int) $counts->get('Excluded', 0);
+            $attendanceStats = [
+                'sessions'   => $sessions,
+                'absences'   => $absences,
+                'lates'      => $lates,
+                'exclusions' => $exclusions,
+                'rate'       => round(($sessions - $absences) / $sessions * 100, 1),
+            ];
+        } else {
+            $attendanceStats = ['sessions' => 0, 'absences' => 0, 'lates' => 0, 'exclusions' => 0, 'rate' => null];
+        }
+
         return Inertia::render('StudentShow', [
-            'student'        => $student,
-            'isAdmin'        => $isAdmin,
-            'absenceHistory' => $absenceHistory,
+            'student'         => $student,
+            'isAdmin'         => $isAdmin,
+            'absenceHistory'  => $absenceHistory,
+            'attendanceStats' => $attendanceStats,
         ]);
     }
 

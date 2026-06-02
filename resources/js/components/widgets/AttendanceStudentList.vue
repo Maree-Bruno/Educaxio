@@ -13,6 +13,10 @@ import StudentCount from '@/components/widgets/StudentCount.vue';
 import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
 import { attendanceStatusClasses, type AttendanceStatus, type PaginationLink } from '@/types';
 
+const emit = defineEmits<{
+    'update:localStatuses': [statuses: Record<number, AttendanceStatus | null>]
+}>();
+
 interface Student { id: number; lastname: string; firstname: string }
 interface Entry   { id: number; lesson_id: number }
 interface Status  { student_id: number; type: string; motive: string | null }
@@ -34,6 +38,8 @@ for (const s of props.students) {
     initialStatuses[s.id] = (found?.type as AttendanceStatus) ?? null;
 }
 const localStatuses = ref<Record<number, AttendanceStatus | null>>(initialStatuses);
+
+watch(localStatuses, (val) => emit('update:localStatuses', { ...val }), { deep: true });
 
 const form = useForm({});
 

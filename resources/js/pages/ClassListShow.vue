@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import AddStudentModal from '@/components/widgets/AddStudentModal.vue';
+import AttendanceStats from '@/components/widgets/AttendanceStats.vue';
+import type { AttendanceStats as AttendanceStatsType } from '@/components/widgets/AttendanceStats.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import Button from '@/components/widgets/Button.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
@@ -19,6 +21,7 @@ const props = defineProps<{
     subjects: Pick<Subject, 'id' | 'name'>[];
     filters: { sort?: string; dir?: 'asc' | 'desc'; search?: string };
     schoolStudents: { id: number; lastname: string; firstname: string; groups: { id: number; grade: string; name: string }[] }[];
+    attendanceStats: AttendanceStatsType;
 }>();
 
 const className = computed(() => `${props.group.grade}${props.group.name}`);
@@ -57,12 +60,10 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
             :filters="filters"
             @add="addModalRef?.open()"
         />
-        <div v-if="canManage" class="flex w-full shrink-0 flex-col gap-4 xl:w-80 sticky top-20">
-<!--            <div class="flex gap-2.5">
-                <Button variant="primary" size="sm" label="Importer" class="flex-1" />
-                <Button variant="primary" size="sm" label="Exporter" class="flex-1" />
-            </div>-->
+        <div class="flex w-full shrink-0 flex-col gap-4 xl:w-80 xl:sticky xl:top-20">
+            <AttendanceStats :stats="attendanceStats" />
             <ClassGroupForm
+                v-if="canManage"
                 mode="edit"
                 :action="updateClasslist.url({ group: group.slug })"
                 :academic-years="academicYears"
