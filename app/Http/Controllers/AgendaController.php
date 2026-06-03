@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
+use App\Http\Controllers\Concerns\HandlesSorting;
 use App\Models\Assignment;
 use App\Models\LessonNote;
 use Carbon\Carbon;
@@ -14,6 +15,7 @@ use Inertia\Inertia;
 class AgendaController extends Controller
 {
     use DetectsCurrentAcademicYear;
+    use HandlesSorting;
     public function __invoke(Request $request)
     {
         $user = auth()->user();
@@ -21,17 +23,13 @@ class AgendaController extends Controller
         $search = $request->input('search', '');
         $group = $request->input('group', '');
         $school = $request->input('school', '');
-        $sortField = in_array($request->input('sort_field'), ['date', 'group', 'subject'])
-            ? $request->input('sort_field')
-            : 'date';
-        $sortDir = in_array($request->input('sort_dir'), ['asc', 'desc'])
-            ? $request->input('sort_dir')
-            : 'desc';
+        $sortField = $this->sortCol($request, ['date', 'group', 'subject'], 'date', 'sort_field');
+        $sortDir = $this->sortDir($request, 'sort_dir', 'desc');
         $assignmentType = in_array($request->input('assignment_type'), ['homework', 'test'])
             ? $request->input('assignment_type') : null;
         $schoolIds = $user->schools()->pluck('schools.id');
         $currentYearId = $this->currentAcademicYearId($schoolIds);
-        $selectedYearId = $request->filled('year') ? $request->integer('year') : $currentYearId;
+        $selectedYearId = $this->selectedAcademicYearId($currentYearId, $request);
 
         $lessons = $user->lessons()
             ->with([
@@ -50,16 +48,7 @@ class AgendaController extends Controller
             ->get()
             ->keyBy('id');
 
-        $academicYears = \App\Models\AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-            ->with(['schools' => fn ($q) => $q->whereIn('schools.id', $schoolIds)])
-            ->orderByDesc('year')
-            ->get(['id', 'year'])
-            ->map(fn ($y) => [
-                'id'         => $y->id,
-                'year'       => $y->year,
-                'is_current' => $y->id === $currentYearId,
-                'is_archived' => $y->schools->every(fn ($s) => $s->pivot->archived_at !== null),
-            ]);
+        $academicYears = $this->academicYearsForSchools($schoolIds, $currentYearId);
         $filteredLessons = $lessons
             ->when($group, fn ($col) => $col->filter(fn ($l) => $l->group->grade.$l->group->name === $group))
             ->when($school, fn ($col) => $col->filter(fn ($l) => $l->group->school->name === $school));

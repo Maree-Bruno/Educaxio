@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
+use App\Http\Controllers\Concerns\HandlesSorting;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\SchoolJoinRequest;
@@ -13,13 +14,12 @@ use Inertia\Inertia;
 class TeacherController extends Controller
 {
     use DetectsCurrentAcademicYear;
+    use HandlesSorting;
 
     public function index(Request $request, School $school)
     {
-        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
-        $sort = in_array($request->string('sort')->toString(), ['name', 'email'])
-            ? $request->string('sort')->toString()
-            : 'name';
+        $dir = $this->sortDir($request);
+        $sort = $this->sortCol($request, ['name', 'email'], 'name');
 
         $query = $school->users()
             ->wherePivot('role', 'teacher')
@@ -52,24 +52,11 @@ class TeacherController extends Controller
             'subjects:id,name',
         ]);
 
-        $joinRequests = SchoolJoinRequest::where('school_id', $school->id)
-            ->where('status', 'pending')
-            ->with([
-                'user:id,name,email',
-                'user.subjects:id,name',
-            ])
-            ->latest()
-            ->get();
-
         return Inertia::render('admin/Teachers', [
             'school' => $school->only('id', 'name', 'slug'),
             'teachers' => $teachers,
             'filters' => (object) $request->only(['search', 'sort', 'dir']),
-            'joinRequests' => $joinRequests->map(fn ($r) => [
-                'id' => $r->id,
-                'user' => ['id' => $r->user->id, 'name' => $r->user->name, 'email' => $r->user->email],
-                'subjects' => $r->user->subjects->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
-            ]),
+            'joinRequests' => $this->pendingJoinRequests($school->id),
         ]);
     }
 
