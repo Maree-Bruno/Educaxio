@@ -305,14 +305,14 @@ class ClassListController extends Controller
             $group->students()->attach($student->id);
         }
 
-        return back();
+        return to_route('classlist.show', $group);
     }
 
     public function detachStudent(Group $group, Student $student)
     {
         $this->authorize('detachStudent', $group);
         $group->students()->detach($student->id);
-        return back();
+        return to_route('classlist.show', $group);
     }
 
     private function groupAttendanceStats(Group $group, ?int $teacherUserId = null, ?array $dateRange = null): array

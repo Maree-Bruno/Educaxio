@@ -103,7 +103,7 @@ class StudentController extends Controller
             $student->groups()->attach($groupIds->all());
         }
 
-        return back();
+        return to_route('admin.students.index', $school);
     }
 
     public function update(Request $request, School $school, Student $student)
@@ -131,7 +131,7 @@ class StudentController extends Controller
 
         $student->groups()->sync($groupIds->all());
 
-        return back();
+        return to_route('admin.students.index', $school);
     }
 
     public function destroy(School $school, Student $student)
@@ -140,6 +140,6 @@ class StudentController extends Controller
 
         $student->delete();
 
-        return back();
+        return to_route('admin.students.index', $school);
     }
 }

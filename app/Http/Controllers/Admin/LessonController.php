@@ -83,7 +83,7 @@ class LessonController extends Controller
             $lesson->users()->syncWithoutDetaching($validated['teacher_ids']);
         }
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 
     public function update(Request $request, School $school, Lesson $lesson)
@@ -96,7 +96,7 @@ class LessonController extends Controller
 
         $lesson->update(['lm_level' => $validated['lm_level']]);
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 
     public function syncTeachers(Request $request, School $school, Lesson $lesson)
@@ -111,7 +111,6 @@ class LessonController extends Controller
             'teacher_ids.*' => ['exists:users,id'],
         ]);
 
-        // Only allow teachers that belong to this school
         $schoolTeacherIds = $school->users()
             ->wherePivot('role', 'teacher')
             ->pluck('users.id');
@@ -120,7 +119,7 @@ class LessonController extends Controller
 
         $lesson->users()->sync($safeIds);
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 
     public function destroy(School $school, Lesson $lesson)
@@ -129,6 +128,6 @@ class LessonController extends Controller
 
         $lesson->delete();
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 }

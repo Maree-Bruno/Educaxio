@@ -158,7 +158,7 @@ class StudentController extends Controller
 
         $student->update($validated);
 
-        return back();
+        return to_route('students.show', $student);
     }
 
     public function destroy($id) {}

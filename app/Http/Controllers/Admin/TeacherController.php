@@ -79,6 +79,6 @@ class TeacherController extends Controller
 
         $school->users()->detach($user->id);
 
-        return back();
+        return to_route('admin.teachers.index', $school);
     }
 }
