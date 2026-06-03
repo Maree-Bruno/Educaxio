@@ -62,7 +62,10 @@ class TeacherController extends Controller
 
     public function destroy(School $school, User $user)
     {
-        $this->authorize('update', $school);
+        abort_unless(
+            $school->users()->where('users.id', $user->id)->wherePivot('role', 'teacher')->exists(),
+            403,
+        );
 
         $school->users()->detach($user->id);
 
