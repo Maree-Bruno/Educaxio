@@ -57,7 +57,7 @@ class PendingController extends Controller
             'status' => 'pending',
         ]);
 
-        return back();
+        return to_route('pending');
     }
 
     public function cancelRequest(SchoolJoinRequest $joinRequest)
@@ -67,7 +67,7 @@ class PendingController extends Controller
 
         $joinRequest->delete();
 
-        return back();
+        return to_route('pending');
     }
 
     public function syncSubjects(Request $request)
@@ -79,6 +79,6 @@ class PendingController extends Controller
 
         auth()->user()->subjects()->sync($validated['subject_ids']);
 
-        return back();
+        return to_route('pending');
     }
 }

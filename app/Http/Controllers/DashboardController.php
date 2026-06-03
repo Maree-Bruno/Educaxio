@@ -36,17 +36,7 @@ class DashboardController extends Controller
 
             $lessonsCount = Lesson::whereHas('group', fn ($q) => $q->where('school_id', $school->id))->count();
 
-            $joinRequests = SchoolJoinRequest::where('school_id', $school->id)
-                ->where('status', 'pending')
-                ->with(['user:id,name,email', 'user.subjects:id,name'])
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(fn ($r) => [
-                    'id' => $r->id,
-                    'user' => ['id' => $r->user->id, 'name' => $r->user->name, 'email' => $r->user->email],
-                    'subjects' => $r->user->subjects->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
-                ]);
+            $joinRequests = $this->pendingJoinRequests($school->id, 5);
 
             $studentsPaginator = $school->students()
                 ->orderByDesc('created_at')
@@ -149,16 +139,9 @@ class DashboardController extends Controller
 
         $entriesBySlotId = $todayEntries->keyBy('schedule_slot_id');
 
-        $userSchoolIds = $user->schools()->pluck('schools.id');
-        $schoolSlotTimes = SchoolSlotTime::whereIn('school_id', $userSchoolIds)
-            ->get()
-            ->groupBy('school_id')
-            ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
-                'start_time' => substr($r->start_time, 0, 5),
-                'end_time' => substr($r->end_time, 0, 5),
-            ]));
+        $schoolSlotTimes = $this->schoolSlotTimes($schoolIds);
 
-        $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $userSchoolIds->first();
+        $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $schoolIds->first();
         $slotTimesForIndicator = $schoolSlotTimes[$indicatorSchoolId] ?? collect();
 
         $slots = ScheduleSlot::orderBy('position')

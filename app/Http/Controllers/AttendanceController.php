@@ -1,4 +1,6 @@
-<?php /** @noinspection D */
+<?php
+
+/** @noinspection D */
 
 namespace App\Http\Controllers;
 
@@ -30,24 +32,13 @@ class AttendanceController extends Controller
 
         $schoolIds = $user->schools()->pluck('schools.id');
         $currentYearId = $this->currentAcademicYearId($schoolIds);
-        $selectedYearId = $request->filled('year') ? $request->integer('year') : $currentYearId;
+        $selectedYearId = $this->selectedAcademicYearId($currentYearId, $request);
 
-        $academicYears = \App\Models\AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-            ->with(['schools' => fn ($q) => $q->whereIn('schools.id', $schoolIds)])
-            ->orderByDesc('year')
-            ->get(['id', 'year'])
-            ->map(fn ($y) => [
-                'id'         => $y->id,
-                'year'       => $y->year,
-                'is_current' => $y->id === $currentYearId,
-                'is_archived' => $y->schools->every(fn ($s) => $s->pivot->archived_at !== null),
-            ]);
+        $academicYears = $this->academicYearsForSchools($schoolIds, $currentYearId);
 
-        // Tous les créneaux du prof ce jour-là
         $entries = ScheduleEntry::where('schedule_entries.day_of_week', $dow)
             ->whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
-            ->when($selectedYearId, fn ($q) => $q->whereHas('schedule', fn ($s) =>
-                $s->where('academic_year_id', $selectedYearId)
+            ->when($selectedYearId, fn ($q) => $q->whereHas('schedule', fn ($s) => $s->where('academic_year_id', $selectedYearId)
             ))
             ->join('schedule_slots', 'schedule_entries.schedule_slot_id', '=', 'schedule_slots.id')
             ->orderBy('schedule_slots.position')
@@ -61,24 +52,19 @@ class AttendanceController extends Controller
             ])
             ->get();
 
-        // Sélection : ?creneau=slug prioritaire, puis ?group=slug (depuis ClassListShow)
         $groupSlug = $request->string('group')->toString() ?: null;
         $creneauSlug = $request->string('creneau')->toString() ?: null;
 
         $entrySlug = fn ($e) => Str::slug($e->lesson->group->slug.'-'.$e->scheduleSlot->label);
 
-        $selected = $creneauSlug
-            ? $entries->first(fn ($e) => $entrySlug($e) === $creneauSlug)
-            : ($groupSlug
-                ? $entries->first(fn ($e) => $e->lesson->group->slug === $groupSlug)
-                : null);
+        $byCreneau = $creneauSlug ? $entries->first(fn ($e) => $entrySlug($e) === $creneauSlug) : null;
+        $byGroup = $groupSlug ? $entries->first(fn ($e) => $e->lesson->group->slug === $groupSlug) : null;
+        $selected = $byCreneau ?? $byGroup;
 
-        // Si group demandé mais pas trouvé aujourd'hui → rediriger vers la prochaine séance
         if (! $selected && $groupSlug && ! $creneauSlug) {
             $groupDows = ScheduleEntry::whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
                 ->whereHas('lesson.group', fn ($q) => $q->where('slug', $groupSlug))
-                ->when($selectedYearId, fn ($q) => $q->whereHas('schedule', fn ($s) =>
-                    $s->where('academic_year_id', $selectedYearId)
+                ->when($selectedYearId, fn ($q) => $q->whereHas('schedule', fn ($s) => $s->where('academic_year_id', $selectedYearId)
                 ))
                 ->pluck('day_of_week');
 
@@ -110,9 +96,10 @@ class AttendanceController extends Controller
         $statuses = [];
         $attendanceId = null;
         $session = null;
-
         $assignments = collect();
         $nextAssignmentDate = null;
+        $lessonNote = null;
+        $schedulePattern = [];
 
         if ($selected) {
             $students = $selected->lesson->group->students()
@@ -134,57 +121,58 @@ class AttendanceController extends Controller
             $assignments = Assignment::where('lesson_id', $selected->lesson_id)
                 ->orderBy('scheduled_date')
                 ->get(['id', 'type', 'title', 'scheduled_date', 'description']);
-
             $nextAssignmentDate = $this->nextOccurrence($lesson);
-
             $lessonNote = LessonNote::where('lesson_id', $selected->lesson_id)
                 ->whereDate('date', $date)->first();
-
             $schedulePattern = $lesson->scheduleEntries
                 ->sortBy('scheduleSlot.position')
-                ->map(fn ($e) => [
-                    'day_of_week' => $e->day_of_week,
-                    'slot_label' => $e->scheduleSlot->label,
-                ])->values();
+                ->map(fn ($e) => ['day_of_week' => $e->day_of_week, 'slot_label' => $e->scheduleSlot->label])
+                ->values();
         }
 
         $isAdmin = $user->schools()->wherePivot('role', 'admin')->exists();
+
+        $entriesData = $entries->map(fn ($e) => [
+            'creneau' => Str::slug($e->lesson->group->slug.'-'.$e->scheduleSlot->label),
+            'label' => $e->scheduleSlot->label,
+            'lesson_id' => $e->lesson_id,
+            'subject' => $e->lesson->subjectLabel(),
+            'group' => $e->lesson->group->grade.$e->lesson->group->name,
+            'school' => $e->lesson->group->school->name,
+        ])->values();
+
+        $assignmentsData = $assignments->map(fn ($a) => [
+            'id' => $a->id,
+            'type' => $a->type,
+            'title' => $a->title,
+            'scheduled_date' => $a->scheduled_date->toDateString(),
+            'description' => $a->description,
+        ]);
+
+        $lessonNoteData = $lessonNote ? [
+            'id' => $lessonNote->id,
+            'notes' => $lessonNote->notes,
+            'savedAt' => $lessonNote->updated_at?->format('d/m/Y H:i'),
+        ] : null;
 
         return Inertia::render('Attendance', [
             'academicYears' => $academicYears,
             'isAdmin' => $isAdmin,
             'filters' => ['year' => $selectedYearId ? (string) $selectedYearId : null],
-            'entries' => $entries->map(fn ($e) => [
-                'creneau' => Str::slug($e->lesson->group->slug.'-'.$e->scheduleSlot->label),
-                'label' => $e->scheduleSlot->label,
-                'lesson_id' => $e->lesson_id,
-                'subject' => $e->lesson->subjectLabel(),
-                'group' => $e->lesson->group->grade.$e->lesson->group->name,
-                'school' => $e->lesson->group->school->name,
-            ])->values(),
+            'entries' => $entriesData,
             'selectedEntry' => $selected ? Str::slug($selected->lesson->group->slug.'-'.$selected->scheduleSlot->label) : null,
             'selectedSchool' => $selected?->lesson->group->school->name,
-            'selectedGroup' => $selected ? ($selected->lesson->group->grade.$selected->lesson->group->name) : null,
+            'selectedGroup' => $selected ? $selected->lesson->group->grade.$selected->lesson->group->name : null,
             'date' => $date,
             'students' => $students,
             'statuses' => $statuses,
             'attendanceId' => $attendanceId,
             'lastSavedAt' => $session?->updated_at?->format('d/m/Y H:i'),
-            'lessonNote' => isset($lessonNote) && $lessonNote ? [
-                'id' => $lessonNote->id,
-                'notes' => $lessonNote->notes,
-                'savedAt' => $lessonNote->updated_at?->format('d/m/Y H:i'),
-            ] : null,
+            'lessonNote' => $lessonNoteData,
             'lessonId' => $selected?->lesson_id,
-            'assignments' => $assignments->map(fn ($a) => [
-                'id' => $a->id,
-                'type' => $a->type,
-                'title' => $a->title,
-                'scheduled_date' => $a->scheduled_date->toDateString(),
-                'description' => $a->description,
-            ]),
-            'nextAssignmentDate' => $nextAssignmentDate ?? null,
-            'schedulePattern' => $schedulePattern ?? [],
+            'assignments' => $assignmentsData,
+            'nextAssignmentDate' => $nextAssignmentDate,
+            'schedulePattern' => $schedulePattern,
         ]);
     }
 

@@ -37,7 +37,7 @@ class StudentController extends Controller
 
         $studentSchoolIds = $student->groups->pluck('school_id')->unique();
         $currentYearId = $this->currentAcademicYearId($studentSchoolIds);
-        $selectedYearId = $request->filled('year') ? $request->integer('year') : $currentYearId;
+        $selectedYearId = $this->selectedAcademicYearId($currentYearId, $request);
 
         $academicYears = AcademicYear::whereIn('id', $student->groups->pluck('academic_year_id')->unique())
             ->orderByDesc('year')
@@ -158,7 +158,7 @@ class StudentController extends Controller
 
         $student->update($validated);
 
-        return back();
+        return to_route('students.show', $student);
     }
 
     public function destroy($id) {}
