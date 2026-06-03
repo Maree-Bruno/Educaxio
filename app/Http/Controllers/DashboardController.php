@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Models\Assignment;
 use App\Models\Lesson;
 use App\Models\ScheduleEntry;
@@ -15,6 +16,7 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    use DetectsCurrentAcademicYear;
     public function __invoke(Request $request)
     {
         $user = auth()->user();
@@ -113,8 +115,15 @@ class DashboardController extends Controller
         $request = request();
         $today = $request->filled('date') ? Carbon::parse($request->date) : now();
         $dow = $today->dayOfWeekIso;
+
+        $schoolIds = $user->schools()->pluck('schools.id');
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+
         $todayEntries = ScheduleEntry::where('schedule_entries.day_of_week', $dow)
             ->whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
+            ->when($currentYearId, fn ($q) => $q->whereHas('schedule', fn ($s) =>
+                $s->where('academic_year_id', $currentYearId)
+            ))
             ->join('schedule_slots', 'schedule_entries.schedule_slot_id', '=', 'schedule_slots.id')
             ->orderBy('schedule_slots.position')
             ->select('schedule_entries.*')
@@ -126,6 +135,13 @@ class DashboardController extends Controller
                 'group.school:id,name',
                 'subject:id,name',
             ])
+            ->when(
+                $currentYearId,
+                fn ($q) => $q->whereHas('group', fn ($g) => $g->where('academic_year_id', $currentYearId)),
+                fn ($q) => $q->whereHas('group', fn ($g) => $g->whereHas('academicYear.schools', fn ($s) =>
+                    $s->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
+                )),
+            )
             ->get()
             ->keyBy('id');
 

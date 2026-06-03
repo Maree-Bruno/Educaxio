@@ -29,7 +29,7 @@ const props = defineProps<{
     lessons: LessonOption[];
     schools: Pick<School, 'id' | 'name' | 'slug'>[];
     schedules: { id: number; school_id: number; school: string | null }[];
-    academicYears: Pick<AcademicYear, 'id' | 'year' | 'is_current'>[];
+    academicYears: Pick<AcademicYear, 'id' | 'year' | 'is_current' | 'is_archived'>[];
     filters: { year?: string };
 }>();
 
@@ -43,7 +43,7 @@ const lastRowIndex = computed(() => props.slots.length - 1);
 const filterYear = ref<string | null>(props.filters.year ?? null);
 const yearOptions = props.academicYears.map((y) => ({
     value: String(y.id),
-    label: y.is_current ? `${y.year} — en cours` : y.year,
+    label: y.is_archived ? `${y.year} — archivée` : y.is_current ? `${y.year} — en cours` : y.year,
 }));
 
 watch(filterYear, () => {

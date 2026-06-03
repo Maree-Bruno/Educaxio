@@ -18,25 +18,26 @@ class SchoolAcademicYearController extends Controller
             ->orderByDesc('year')
             ->get()
             ->map(fn ($y) => [
-                'id'         => $y->id,
-                'year'       => $y->year,
+                'id' => $y->id,
+                'year' => $y->year,
                 'start_date' => $y->pivot->start_date,
-                'end_date'   => $y->pivot->end_date,
+                'end_date' => $y->pivot->end_date,
                 'is_current' => $today >= $y->pivot->start_date && $today <= $y->pivot->end_date,
+                'is_archived' => $y->pivot->archived_at !== null,
             ]);
 
         return Inertia::render('admin/AcademicYears', [
             'school' => $school->only('id', 'name', 'slug'),
-            'years'  => $years,
+            'years' => $years,
         ]);
     }
 
     public function store(Request $request, School $school)
     {
         $validated = $request->validate([
-            'year'       => ['required', 'string', 'regex:/^\d{4}-\d{4}$/'],
+            'year' => ['required', 'string', 'regex:/^\d{4}-\d{4}$/'],
             'start_date' => ['required', 'date'],
-            'end_date'   => ['required', 'date', 'after:start_date'],
+            'end_date' => ['required', 'date', 'after:start_date'],
         ]);
 
         $year = AcademicYear::firstOrCreate(['year' => $validated['year']]);
@@ -44,18 +45,18 @@ class SchoolAcademicYearController extends Controller
         $school->academicYears()->syncWithoutDetaching([
             $year->id => [
                 'start_date' => $validated['start_date'],
-                'end_date'   => $validated['end_date'],
+                'end_date' => $validated['end_date'],
             ],
         ]);
 
-        return back();
+        return to_route('academic-years.index');
     }
 
     public function update(Request $request, School $school, AcademicYear $academicYear)
     {
         $validated = $request->validate([
             'start_date' => ['required', 'date'],
-            'end_date'   => ['required', 'date', 'after:start_date'],
+            'end_date' => ['required', 'date', 'after:start_date'],
         ]);
 
         $school->academicYears()->updateExistingPivot($academicYear->id, $validated);

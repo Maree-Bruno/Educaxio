@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
+            $table->timestamp('archived_at')->nullable();
             $table->primary(['academic_year_id', 'school_id']);
         });
     }

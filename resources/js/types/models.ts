@@ -14,6 +14,7 @@ export interface AcademicYear {
     id: number;
     year: string;
     is_current?: boolean;
+    is_archived?: boolean;
 }
 
 export interface Subject {

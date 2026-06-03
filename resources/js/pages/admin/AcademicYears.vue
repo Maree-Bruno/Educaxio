@@ -17,6 +17,7 @@ interface AcademicYear {
     start_date: string | null;
     end_date: string | null;
     is_current: boolean;
+    is_archived: boolean;
 }
 
 const props = defineProps<{
@@ -132,6 +133,7 @@ function submitNewYear() {
                 <li v-for="year in years" :key="year.id">
                     <form
                         class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4"
+                        :class="{ 'opacity-60': year.is_archived }"
                         @submit.prevent="saveYear(year)"
                     >
                         <div class="flex items-center gap-2">
@@ -140,17 +142,23 @@ function submitNewYear() {
                                 v-if="year.is_current"
                                 class="rounded-full bg-blue/10 px-2 py-0.5 text-xs font-bold text-blue"
                             >en cours</span>
+                            <span
+                                v-if="year.is_archived"
+                                class="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-bold text-stone-400"
+                            >archivée</span>
                         </div>
 
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
                             <DateField
                                 label="Début"
                                 :model-value="editStates[year.id].start_date"
+                                :disabled="year.is_archived"
                                 @update:model-value="editStates[year.id].start_date = $event"
                             />
                             <DateField
                                 label="Fin"
                                 :model-value="editStates[year.id].end_date"
+                                :disabled="year.is_archived"
                                 @update:model-value="editStates[year.id].end_date = $event"
                             />
                             <Button
@@ -158,6 +166,7 @@ function submitNewYear() {
                                 variant="primary"
                                 size="sm"
                                 :loading="editStates[year.id].processing"
+                                :disabled="year.is_archived"
                                 class="shrink-0"
                             >
                                 Enregistrer

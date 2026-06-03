@@ -27,7 +27,7 @@ class AcademicYear extends Model
     public function schools(): BelongsToMany
     {
         return $this->belongsToMany(School::class)
-            ->withPivot(['start_date', 'end_date']);
+            ->withPivot(['start_date', 'end_date', 'archived_at']);
     }
 
     public function groups(): HasMany

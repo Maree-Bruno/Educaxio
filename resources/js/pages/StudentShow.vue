@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 import AbsenceHistoryTable from '@/components/widgets/AbsenceHistoryTable.vue';
 import AttendanceStats from '@/components/widgets/AttendanceStats.vue';
 import type { AttendanceStats as AttendanceStatsType } from '@/components/widgets/AttendanceStats.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
+import SelectField from '@/components/widgets/SelectField.vue';
 import StudentGroupsSidebar from '@/components/widgets/StudentGroupsSidebar.vue';
 import StudentHeaderCard from '@/components/widgets/StudentHeaderCard.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
@@ -30,6 +32,8 @@ const props = defineProps<{
     isAdmin: boolean;
     absenceHistory: AbsenceRecord[] | null;
     attendanceStats: AttendanceStatsType;
+    academicYears: { id: number; year: string; is_current: boolean; is_archived: boolean }[];
+    filters: { year: string | null };
 }>();
 
 const fullName = computed(
@@ -38,7 +42,26 @@ const fullName = computed(
 
 setPageTitle(fullName.value);
 
-const firstGroup = computed(() => props.student.groups?.[0] ?? null);
+const filterYear = ref<string | null>(props.filters.year ?? null);
+
+const yearOptions = computed(() =>
+    props.academicYears.map((y) => ({
+        value: String(y.id),
+        label: y.is_current ? `${y.year} — en cours` : y.year,
+    })),
+);
+
+watch(filterYear, (year) => {
+    router.get(window.location.pathname, { year: year ?? undefined }, { preserveState: true, replace: true });
+});
+
+const filteredGroups = computed(() => {
+    const all = props.student.groups ?? [];
+    if (!filterYear.value) return all;
+    return all.filter((g: any) => String(g.academic_year_id) === filterYear.value);
+});
+
+const firstGroup = computed(() => filteredGroups.value[0] ?? null);
 
 const breadcrumbItems = computed(() => {
     const items: { label: string; href?: string }[] = [];
@@ -76,6 +99,20 @@ const breadcrumbItems = computed(() => {
                 :is-admin="isAdmin"
                 :full-name="fullName"
             />
+
+            <div
+                v-if="isAdmin && yearOptions.length > 1"
+                class="flex items-end gap-4 rounded-2xl bg-white px-6 py-4"
+            >
+                <SelectField
+                    label="Année scolaire"
+                    placeholder="Toutes les années"
+                    :options="yearOptions"
+                    :model-value="filterYear"
+                    class="w-48"
+                    @update:model-value="(v) => (filterYear = v as string | null)"
+                />
+            </div>
 
             <AbsenceHistoryTable
                 v-if="absenceHistory !== null"
@@ -120,7 +157,7 @@ const breadcrumbItems = computed(() => {
         <div
             class="flex w-full shrink-0 flex-col gap-4 xl:sticky xl:top-20 xl:w-80"
         >
-            <StudentGroupsSidebar :groups="(student.groups ?? []) as any" />
+            <StudentGroupsSidebar :groups="filteredGroups as any" />
             <AttendanceStats
                 :stats="attendanceStats"
                 :description="
