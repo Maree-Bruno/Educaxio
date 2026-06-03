@@ -19,6 +19,7 @@ use Inertia\Inertia;
 
 class ClassListController extends Controller
 {
+    use \App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
     private function scopedGroupQuery(Collection $adminSchoolIds, Collection $teacherSchoolIds): Builder
     {
         if ($adminSchoolIds->isEmpty() && $teacherSchoolIds->isEmpty()) {
@@ -72,8 +73,11 @@ class ClassListController extends Controller
             $query->where('slug', $request->string('class'));
         }
 
-        if ($request->filled('year')) {
-            $query->where('academic_year_id', $request->integer('year'));
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+        $selectedYearId = $request->filled('year') ? $request->integer('year') : $currentYearId;
+
+        if ($selectedYearId) {
+            $query->where('academic_year_id', $selectedYearId);
         }
 
         if ($request->filled('search')) {
@@ -104,14 +108,25 @@ class ClassListController extends Controller
             default => $query->orderBy('grade', $dir)->orderBy('name', $dir),
         };
 
+        $academicYears = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            ->orderByDesc('year')
+            ->get(['id', 'year'])
+            ->map(fn ($y) => [
+                'id'         => $y->id,
+                'year'       => $y->year,
+                'is_current' => $y->id === $currentYearId,
+            ]);
+
         return Inertia::render('ClassList', [
             'groups' => $query->get(),
             'schools' => $userSchools,
-            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-                ->orderByDesc('year')->get(['id', 'year']),
+            'academicYears' => $academicYears,
             'classes' => $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)
                 ->orderBy('grade')->orderBy('name')->get(['slug', 'grade', 'name', 'school_id']),
-            'filters' => (object) $request->only(['school', 'class', 'year', 'search', 'sort', 'dir']),
+            'filters' => (object) array_merge(
+                $request->only(['school', 'class', 'search', 'sort', 'dir']),
+                ['year' => $selectedYearId ? (string) $selectedYearId : null],
+            ),
         ]);
     }
 

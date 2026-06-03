@@ -13,6 +13,7 @@ export interface UserSummary {
 export interface AcademicYear {
     id: number;
     year: string;
+    is_current?: boolean;
 }
 
 export interface Subject {

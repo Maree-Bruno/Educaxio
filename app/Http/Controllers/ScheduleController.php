@@ -12,19 +12,28 @@ use Inertia\Inertia;
 
 class ScheduleController extends Controller
 {
+    use \App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
+
     public function index(Request $request)
     {
         $user = auth()->user();
         $userSchools = $user->schools()->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
         $schoolIds = $userSchools->pluck('id');
 
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+
         $academicYears = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
             ->orderByDesc('year')
-            ->get(['id', 'year']);
+            ->get(['id', 'year'])
+            ->map(fn ($y) => [
+                'id'         => $y->id,
+                'year'       => $y->year,
+                'is_current' => $y->id === $currentYearId,
+            ]);
 
         $selectedYearId = $request->filled('year')
             ? $request->integer('year')
-            : $academicYears->first()?->id;
+            : ($currentYearId ?? $academicYears->first()['id'] ?? null);
 
         $scheduleQuery = Schedule::where('user_id', $user->id)
             ->orderBy('school_id');

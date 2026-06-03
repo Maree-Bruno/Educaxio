@@ -90,7 +90,7 @@ class DatabaseSeeder extends Seeder
         $athenee->users()->attach($adminAr->id, ['role' => 'admin']);
 
         foreach ([$saintJoseph, $athenee] as $school) {
-            $school->academicYears()->attach($academicYear->id);
+            $school->academicYears()->attach($academicYear->id, AcademicYear::defaultDates($academicYear->year));
             $teachers->each(fn (User $t) => $school->users()->attach($t->id, ['role' => 'teacher']));
         }
 

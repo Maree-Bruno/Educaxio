@@ -7,10 +7,12 @@ import Bell from '@/components/widgets/svg/Bell.vue';
 import ClassesList from '@/components/widgets/svg/ClassesList.vue';
 import ClipboardCheck from '@/components/widgets/svg/ClipboardCheck.vue';
 import Home from '@/components/widgets/svg/Home.vue';
+import Pin from '@/components/widgets/svg/Pin.vue';
 import Schedule from '@/components/widgets/svg/Schedule.vue';
 import SchoolAgenda from '@/components/widgets/svg/SchoolAgenda.vue';
 import { useAuthStore } from '@/stores/auth';
 import { agenda, dashboard, classlist, attendances, schedules, pending } from '@/routes';
+import { index as adminAcademicYearsIndex } from '@/routes/admin/academic-years';
 import { index as adminStudentsIndex } from '@/routes/admin/students';
 import { index as adminTeachersIndex } from '@/routes/admin/teachers';
 import { index as adminLessonsIndex } from '@/routes/admin/lessons';
@@ -107,6 +109,16 @@ function isActive(href: string): boolean {
                     >
                         <template #icon>
                             <ClipboardCheck :size="20" :stroke-width="2" />
+                        </template>
+                    </NavItem>
+                    <NavItem
+                        :href="adminAcademicYearsIndex.url({ school: school.slug })"
+                        title="Années scolaires"
+                        :active="isActive(adminAcademicYearsIndex.url({ school: school.slug }))"
+                        :collapsed="collapsed"
+                    >
+                        <template #icon>
+                            <Schedule :size="20" :stroke-width="2" />
                         </template>
                     </NavItem>
                 </template>

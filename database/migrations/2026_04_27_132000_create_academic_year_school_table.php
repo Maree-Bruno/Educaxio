@@ -11,6 +11,8 @@ return new class extends Migration
         Schema::create('academic_year_school', function (Blueprint $table) {
             $table->foreignId('academic_year_id')->constrained('academic_years')->cascadeOnDelete();
             $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->primary(['academic_year_id', 'school_id']);
         });
     }

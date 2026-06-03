@@ -15,9 +15,19 @@ class AcademicYear extends Model
         'year',
     ];
 
+    public static function defaultDates(string $year): array
+    {
+        [$startYear, $endYear] = explode('-', $year);
+        return [
+            'start_date' => "{$startYear}-09-01",
+            'end_date'   => "{$endYear}-06-30",
+        ];
+    }
+
     public function schools(): BelongsToMany
     {
-        return $this->belongsToMany(School::class);
+        return $this->belongsToMany(School::class)
+            ->withPivot(['start_date', 'end_date']);
     }
 
     public function groups(): HasMany
