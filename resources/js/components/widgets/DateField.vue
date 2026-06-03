@@ -5,11 +5,13 @@ withDefaults(defineProps<{
     max?: string;
     min?: string;
     id?: string;
+    disabled?: boolean;
 }>(), {
     label: '',
     max: undefined,
     min: undefined,
     id: undefined,
+    disabled: false,
 });
 
 const emit = defineEmits<{
@@ -36,7 +38,8 @@ function onChange(event: Event) {
             :value="modelValue"
             :max="max"
             :min="min"
-            class="w-full rounded-2xl border border-border-figma bg-white px-3 py-3 font-manrope text-sm font-semibold text-text-base outline-none transition-all duration-150 focus:border-blue focus:ring-2 focus:ring-blue/20"
+            :disabled="disabled"
+            class="w-full rounded-2xl border border-border-figma bg-white px-3 py-3 font-manrope text-sm font-semibold text-text-base outline-none transition-all duration-150 focus:border-blue focus:ring-2 focus:ring-blue/20 disabled:cursor-not-allowed disabled:opacity-50"
             @change="onChange"
         />
     </div>

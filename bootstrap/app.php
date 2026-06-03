@@ -5,9 +5,11 @@ use App\Http\Middleware\EnsureSchoolAdmin;
 use App\Http\Middleware\EnsureTeacherRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Console\Commands\ArchiveAcademicYears;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -30,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'school.approved' => EnsureApprovedSchool::class,
             'role.teacher' => EnsureTeacherRole::class,
         ]);
+    })
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command(ArchiveAcademicYears::class)->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

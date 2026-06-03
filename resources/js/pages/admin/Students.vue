@@ -29,17 +29,24 @@ interface Group   { id: number; grade: string; name: string; slug: string }
 interface Student { id: number; slug: string; lastname: string; firstname: string; email: string | null; school_id: number; groups: Group[] }
 
 const props = defineProps<{
-    school:   School;
-    students: Paginator<Student>;
-    groups:   Group[];
-    filters:  { group?: string | null; sort?: string; dir?: string; search?: string };
+    school:        School;
+    students:      Paginator<Student>;
+    groups:        Group[];
+    academicYears: { id: number; year: string; is_current: boolean; is_archived: boolean }[];
+    filters:       { group?: string | null; sort?: string; dir?: string; search?: string; year?: string | null };
 }>();
 
 setPageTitle('Élèves');
 
 const groupOptions = props.groups.map((g) => ({ value: String(g.id), label: `${g.grade}${g.name}` }));
 
+const yearOptions = props.academicYears.map((y) => ({
+    value: String(y.id),
+    label: y.is_archived ? `${y.year} — archivée` : y.is_current ? `${y.year} — en cours` : y.year,
+}));
+
 const filterGroup = ref<string>(props.filters.group ?? '');
+const filterYear  = ref<string | null>(props.filters.year ?? null);
 const search      = ref(props.filters.search ?? '');
 const { sortCol, sortDir, sortBy } = useStudentSort({
     col: props.filters.sort === 'firstname' ? 'firstname' : 'lastname',
@@ -49,6 +56,7 @@ const { sortCol, sortDir, sortBy } = useStudentSort({
 function applyFilters() {
     router.get(adminStudentsIndex.url({ school: props.school.slug }), {
         group:  filterGroup.value || undefined,
+        year:   filterYear.value || undefined,
         sort:   sortCol.value !== 'lastname' ? sortCol.value : undefined,
         dir:    sortDir.value === 'desc' ? 'desc' : undefined,
         search: search.value.trim() || undefined,
@@ -56,7 +64,7 @@ function applyFilters() {
 }
 
 watch(search, useDebounceFn(applyFilters, 300));
-watch([sortCol, sortDir], applyFilters);
+watch([sortCol, sortDir, filterGroup, filterYear], applyFilters);
 
 function rowNumber(index: number): string {
     return studentRowNumber(index, props.students.current_page, props.students.per_page, props.students.total, sortDir.value);
@@ -107,13 +115,20 @@ function confirmDelete() {
             <Button variant="primary" size="sm" label="Nouvel élève" class="mt-0.5 shrink-0" @click="createModal?.open()" />
             <div class="flex w-full flex-col gap-2 sm:flex-row">
                 <SelectField
+                    v-if="yearOptions.length > 1"
+                    v-model="filterYear"
+                    label=""
+                    placeholder="Année en cours"
+                    :options="yearOptions"
+                    class="w-full sm:w-44"
+                />
+                <SelectField
                     id="filter-group"
                     v-model="filterGroup"
                     label=""
                     placeholder="Tous les groupes"
                     :options="groupOptions"
                     class="w-full sm:w-40"
-                    @update:model-value="applyFilters"
                 />
                 <SearchInput
                     id="filter-search"

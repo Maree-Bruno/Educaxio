@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\SchoolJoinRequest;
@@ -11,6 +12,8 @@ use Inertia\Inertia;
 
 class TeacherController extends Controller
 {
+    use DetectsCurrentAcademicYear;
+
     public function index(Request $request, School $school)
     {
         $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
@@ -36,9 +39,14 @@ class TeacherController extends Controller
             ->withQueryString();
 
         $schoolId = $school->id;
+        $currentYearId = $this->currentAcademicYearId(collect([$schoolId]));
+
         $teachers->getCollection()->load([
             'lessons' => fn ($q) => $q
-                ->whereHas('group', fn ($sq) => $sq->where('school_id', $schoolId))
+                ->whereHas('group', fn ($sq) => $sq
+                    ->where('school_id', $schoolId)
+                    ->when($currentYearId, fn ($g) => $g->where('academic_year_id', $currentYearId)),
+                )
                 ->with('group:id,grade,name', 'subject:id,name')
                 ->select('lessons.id', 'lessons.group_id', 'lessons.subject_id', 'lessons.lm_level'),
             'subjects:id,name',

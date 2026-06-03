@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { attendances } from '@/routes';
 import AttendanceAssignments from '@/components/widgets/AttendanceAssignments.vue';
 import type { Assignment } from '@/components/widgets/AttendanceAssignments.vue';
@@ -52,11 +52,25 @@ const props = defineProps<{
     assignments: Assignment[];
     nextAssignmentDate: string | null;
     schedulePattern: { day_of_week: number; slot_label: string }[];
+    academicYears: { id: number; year: string; is_current: boolean; is_archived: boolean }[];
+    isAdmin: boolean;
+    filters: { year: string | null };
 }>();
 
+const filterYear = ref<string | null>(props.filters.year ?? null);
+
+const yearOptions = computed(() =>
+    props.academicYears.map((y) => ({
+        value: String(y.id),
+        label: y.is_archived ? `${y.year} — archivée` : y.is_current ? `${y.year} — en cours` : y.year,
+    })),
+);
+
 function nav(params: Record<string, string | number | null | undefined>) {
-    router.get(attendances.url(), params, { preserveState: false });
+    router.get(attendances.url(), { year: filterYear.value, ...params }, { preserveState: false });
 }
+
+watch(filterYear, (year) => nav({ date: props.date, year: year ?? undefined }));
 
 const entryOptions = computed(() =>
     props.entries.map((e) => ({
@@ -103,7 +117,17 @@ const sessionStats = computed(() => {
             </p>
         </div>
         <div class="px-6 py-5">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-6">
+            <div class="grid grid-cols-1 gap-4 sm:gap-6" :class="isAdmin && yearOptions.length > 1 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'">
+                <SelectField
+                    v-if="isAdmin && yearOptions.length > 1"
+                    label="Année"
+                    placeholder="En cours"
+                    :options="yearOptions"
+                    :model-value="filterYear"
+                    class="w-full"
+                    @update:model-value="(v) => (filterYear = v as string | null)"
+                />
+
                 <DateField
                     label="Date"
                     :model-value="date"

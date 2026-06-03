@@ -8,6 +8,7 @@ import EmptyState from '@/components/widgets/EmptyState.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { index as academicYearsIndex } from '@/routes/admin/academic-years';
 import { approve, reject } from '@/routes/admin/join-requests';
 import { index as lessonsIndex } from '@/routes/admin/lessons';
 import { index as studentsIndex } from '@/routes/admin/students';
@@ -364,6 +365,13 @@ function statCards(school: School) {
                             size="sm"
                             label="Cours"
                             class="justify-center"
+                        />
+                        <LinkButton
+                            :href="academicYearsIndex.url(school)"
+                            variant="secondary"
+                            size="sm"
+                            label="Années scolaires"
+                            class="col-span-2 justify-center"
                         />
                     </div>
                 </DashboardCard>

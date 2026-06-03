@@ -4,7 +4,6 @@ import AddStudentModal from '@/components/widgets/AddStudentModal.vue';
 import AttendanceStats from '@/components/widgets/AttendanceStats.vue';
 import type { AttendanceStats as AttendanceStatsType } from '@/components/widgets/AttendanceStats.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
-import Button from '@/components/widgets/Button.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
 import ClassGroupStudentTable from '@/components/widgets/ClassGroupStudentTable.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
@@ -20,7 +19,12 @@ const props = defineProps<{
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
     filters: { sort?: string; dir?: 'asc' | 'desc'; search?: string };
-    schoolStudents: { id: number; lastname: string; firstname: string; groups: { id: number; grade: string; name: string }[] }[];
+    schoolStudents: {
+        id: number;
+        lastname: string;
+        firstname: string;
+        groups: { id: number; grade: string; name: string }[];
+    }[];
     attendanceStats: AttendanceStatsType;
 }>();
 
@@ -60,7 +64,9 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
             :filters="filters"
             @add="addModalRef?.open()"
         />
-        <div class="flex w-full shrink-0 flex-col gap-4 xl:w-80 xl:sticky xl:top-20">
+        <div
+            class="flex w-full shrink-0 flex-col gap-4 xl:sticky xl:top-20 xl:w-80"
+        >
             <AttendanceStats :stats="attendanceStats" />
             <ClassGroupForm
                 v-if="canManage"
@@ -73,5 +79,10 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
         </div>
     </div>
 
-    <AddStudentModal v-if="canManage" ref="addModalRef" :group-slug="group.slug" :school-students="schoolStudents" />
+    <AddStudentModal
+        v-if="canManage"
+        ref="addModalRef"
+        :group-slug="group.slug"
+        :school-students="schoolStudents"
+    />
 </template>

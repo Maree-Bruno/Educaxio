@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use App\Models\School;
@@ -11,9 +12,16 @@ use Inertia\Inertia;
 
 class LessonController extends Controller
 {
+    use DetectsCurrentAcademicYear;
+
     public function index(School $school)
     {
-        $lessons = Lesson::whereHas('group', fn ($q) => $q->where('school_id', $school->id))
+        $currentYearId = $this->currentAcademicYearId(collect([$school->id]));
+
+        $lessons = Lesson::whereHas('group', fn ($q) => $q
+                ->where('school_id', $school->id)
+                ->when($currentYearId, fn ($g) => $g->where('academic_year_id', $currentYearId)),
+            )
             ->with([
                 'group:id,grade,name',
                 'subject:id,name,is_language',
@@ -22,6 +30,7 @@ class LessonController extends Controller
             ->get(['id', 'group_id', 'subject_id', 'lm_level']);
 
         $groups = $school->groups()
+            ->when($currentYearId, fn ($q) => $q->where('academic_year_id', $currentYearId))
             ->orderBy('grade')
             ->orderBy('name')
             ->get(['id', 'grade', 'name', 'slug']);

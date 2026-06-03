@@ -46,6 +46,8 @@ const props = defineProps<{
     pastAssignments: PaginatedAssignments;
     groupOptions: string[];
     schoolOptions: string[];
+    academicYears: { id: number; year: string; is_current: boolean; is_archived: boolean }[];
+    isAdmin: boolean;
     filters: {
         search: string;
         group: string;
@@ -53,6 +55,7 @@ const props = defineProps<{
         sort_field: 'date' | 'group' | 'subject';
         sort_dir: 'asc' | 'desc';
         assignment_type: '' | 'homework' | 'test';
+        year: string | null;
     };
 }>();
 
@@ -65,6 +68,12 @@ const activeTab = ref<Tab>(initialTab === 'assignments' ? 'assignments' : 'journ
 const search = ref(props.filters.search);
 const filterGroup = ref(props.filters.group);
 const filterSchool = ref(props.filters.school);
+const filterYear = ref<string | null>(props.filters.year ?? null);
+
+const yearOptions = props.academicYears.map((y) => ({
+    value: String(y.id),
+    label: y.is_archived ? `${y.year} — archivée` : y.is_current ? `${y.year} — en cours` : y.year,
+}));
 
 // ── Sous-vue devoirs ──────────────────────────────────────────────────────
 const showPast = ref(false);
@@ -122,6 +131,7 @@ function applyServerFilters() {
             sort_field:       sortField.value !== 'date' ? sortField.value : undefined,
             sort_dir:         sortDir.value !== 'desc' ? sortDir.value : undefined,
             assignment_type:  filterType.value || undefined,
+            year:             filterYear.value || undefined,
         },
         { preserveState: true, preserveScroll: true, replace: true },
     );
@@ -135,7 +145,7 @@ watch(search, () => {
     searchTimer = setTimeout(applyServerFilters, 300);
 });
 
-watch([filterGroup, filterSchool, filterType], applyServerFilters);
+watch([filterGroup, filterSchool, filterType, filterYear], applyServerFilters);
 
 watch([sortField, sortDir], applyServerFilters);
 
@@ -252,6 +262,15 @@ function goToAttendance(entry: AgendaJournalEntry) {
         </template>
 
         <template #filters>
+            <SelectField
+                v-if="isAdmin && yearOptions.length > 1"
+                placeholder="Année en cours"
+                :options="yearOptions"
+                :model-value="filterYear"
+                class="w-full lg:w-44"
+                @update:model-value="(v) => (filterYear = v as string | null)"
+            />
+
             <SelectField
                 v-if="activeTab === 'assignments'"
                 placeholder="Tous les types"

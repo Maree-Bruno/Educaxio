@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Models\Assignment;
 use App\Models\LessonNote;
 use Carbon\Carbon;
@@ -12,6 +13,7 @@ use Inertia\Inertia;
 
 class AgendaController extends Controller
 {
+    use DetectsCurrentAcademicYear;
     public function __invoke(Request $request)
     {
         $user = auth()->user();
@@ -27,6 +29,10 @@ class AgendaController extends Controller
             : 'desc';
         $assignmentType = in_array($request->input('assignment_type'), ['homework', 'test'])
             ? $request->input('assignment_type') : null;
+        $schoolIds = $user->schools()->pluck('schools.id');
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+        $selectedYearId = $request->filled('year') ? $request->integer('year') : $currentYearId;
+
         $lessons = $user->lessons()
             ->with([
                 'group:id,grade,name,slug,school_id',
@@ -34,8 +40,26 @@ class AgendaController extends Controller
                 'subject:id,name',
                 'scheduleEntries.scheduleSlot:id,label',
             ])
+            ->when(
+                $selectedYearId,
+                fn ($q) => $q->whereHas('group', fn ($g) => $g->where('academic_year_id', $selectedYearId)),
+                fn ($q) => $q->whereHas('group', fn ($g) => $g->whereHas('academicYear.schools', fn ($s) =>
+                    $s->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
+                )),
+            )
             ->get()
             ->keyBy('id');
+
+        $academicYears = \App\Models\AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            ->with(['schools' => fn ($q) => $q->whereIn('schools.id', $schoolIds)])
+            ->orderByDesc('year')
+            ->get(['id', 'year'])
+            ->map(fn ($y) => [
+                'id'         => $y->id,
+                'year'       => $y->year,
+                'is_current' => $y->id === $currentYearId,
+                'is_archived' => $y->schools->every(fn ($s) => $s->pivot->archived_at !== null),
+            ]);
         $filteredLessons = $lessons
             ->when($group, fn ($col) => $col->filter(fn ($l) => $l->group->grade.$l->group->name === $group))
             ->when($school, fn ($col) => $col->filter(fn ($l) => $l->group->school->name === $school));
@@ -102,12 +126,16 @@ class AgendaController extends Controller
         $groupOptions = $lessons->map(fn ($l) => $l->group->grade.$l->group->name)->unique()->sort()->values();
         $schoolOptions = $lessons->map(fn ($l) => $l->group->school->name)->unique()->sort()->values();
 
+        $isAdmin = $user->schools()->wherePivot('role', 'admin')->exists();
+
         return Inertia::render('Agenda', [
+            'isAdmin' => $isAdmin,
             'journalEntries' => $journalEntries,
             'upcomingAssignments' => $upcomingAssignments,
             'pastAssignments' => $pastAssignments,
             'groupOptions' => $groupOptions,
             'schoolOptions' => $schoolOptions,
+            'academicYears' => $academicYears,
             'filters' => [
                 'search' => $search,
                 'group' => $group,
@@ -115,6 +143,7 @@ class AgendaController extends Controller
                 'sort_field' => $sortField,
                 'sort_dir' => $sortDir,
                 'assignment_type' => $assignmentType ?? '',
+                'year' => $selectedYearId ? (string) $selectedYearId : null,
             ],
         ]);
     }
