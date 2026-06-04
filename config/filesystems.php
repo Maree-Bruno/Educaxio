@@ -56,9 +56,11 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'public',
             'throw' => false,
             'report' => false,
         ],
+
         'userimages' => env('FILESYSTEM_DISK') === 's3' ? [
             'driver' => 's3',
             'region' => env('AWS_DEFAULT_REGION', 'auto'),
@@ -90,7 +92,7 @@ return [
     */
 
     'links' => [
-        public_path('storage') => storage_path('app/public'),
+        // public_path('storage') => storage_path('app/public'),
         public_path('images') => storage_path('app/public/images'),
     ],
 
