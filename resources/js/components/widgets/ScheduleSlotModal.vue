@@ -211,11 +211,11 @@ function deleteEntry() {
             </div>
 
             <div class="flex flex-col gap-5">
-                <!-- Jour + Heure -->
                 <div class="flex gap-3">
                     <div class="flex flex-1 flex-col gap-2">
-                        <span class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Jour</span>
+                        <label for="slot-jour" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Jour</label>
                         <select
+                            id="slot-jour"
                             v-model="selectedDay"
                             class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
                         >
@@ -223,8 +223,9 @@ function deleteEntry() {
                         </select>
                     </div>
                     <div class="flex flex-1 flex-col gap-2">
-                        <span class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Heure</span>
+                        <label for="slot-heure" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Heure</label>
                         <select
+                            id="slot-heure"
                             v-model="selectedSlotId"
                             class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
                         >
@@ -233,13 +234,10 @@ function deleteEntry() {
                     </div>
                 </div>
 
-                <!-- École -->
                 <div class="flex flex-col gap-2">
-                    <span
-                        class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase"
-                        >École</span
-                    >
+                    <label for="slot-ecole" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">École</label>
                     <select
+                        id="slot-ecole"
                         v-model="filterEcole"
                         class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
                     >
@@ -254,13 +252,10 @@ function deleteEntry() {
                     </select>
                 </div>
 
-                <!-- Classe -->
                 <div class="flex flex-col gap-2">
-                    <span
-                        class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase"
-                        >Classe</span
-                    >
+                    <label for="slot-classe" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Classe</label>
                     <select
+                        id="slot-classe"
                         v-model="filterClasse"
                         :disabled="!filterEcole"
                         class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma disabled:opacity-50"
@@ -276,13 +271,10 @@ function deleteEntry() {
                     </select>
                 </div>
 
-                <!-- Cours -->
                 <div class="flex flex-col gap-2">
-                    <span
-                        class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase"
-                        >Cours</span
-                    >
+                    <label for="slot-cours" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Cours</label>
                     <select
+                        id="slot-cours"
                         v-model="selectedLesson"
                         :disabled="!filterClasse"
                         class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma disabled:opacity-50"
@@ -298,13 +290,10 @@ function deleteEntry() {
                     </select>
                 </div>
 
-                <!-- Local -->
                 <div class="flex flex-col gap-2">
-                    <span
-                        class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase"
-                        >Local</span
-                    >
+                    <label for="slot-local" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Local</label>
                     <input
+                        id="slot-local"
                         v-model="form.classroom"
                         type="text"
                         placeholder="Ex : 302"
@@ -312,7 +301,6 @@ function deleteEntry() {
                     />
                 </div>
 
-                <!-- Actions -->
                 <div class="flex items-center gap-5">
                     <Button
                         variant="primary"
@@ -329,7 +317,6 @@ function deleteEntry() {
                     </Button>
                 </div>
 
-                <!-- Suppression : étape 1 -->
                 <Button
                     v-if="currentEntry && !confirmingDelete"
                     variant="danger"
@@ -340,7 +327,6 @@ function deleteEntry() {
                     Supprimer le créneau
                 </Button>
 
-                <!-- Suppression : étape 2 (confirmation) -->
                 <div v-if="currentEntry && confirmingDelete" class="flex gap-3">
                     <Button variant="danger" size="sm" class="flex-1" @click="deleteEntry">
                         Confirmer la suppression

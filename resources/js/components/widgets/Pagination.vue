@@ -44,7 +44,6 @@ function jumpToPage(page: number) {
         role="navigation"
         aria-label="Pagination"
     >
-        <!-- Précédent -->
         <button
             :disabled="currentPage === 1"
             class="flex h-7 w-7 items-center justify-center rounded-lg outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
@@ -54,9 +53,10 @@ function jumpToPage(page: number) {
             <ChevronDown :size="12" :stroke-width="1.5" class="rotate-90 text-text-base" aria-hidden="true" />
         </button>
 
-        <!-- Mobile : select compact entre les flèches -->
         <div class="relative sm:hidden">
+            <label for="pagination-select-mobile" class="sr-only">Aller à la page</label>
             <select
+                id="pagination-select-mobile"
                 class="h-7 appearance-none cursor-pointer rounded-lg bg-white pl-2 pr-6 text-xs font-medium text-text-base outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10"
                 :value="currentPage"
                 @change="jumpToPage(Number(($event.target as HTMLSelectElement).value))"
@@ -66,7 +66,6 @@ function jumpToPage(page: number) {
             <ChevronDown :size="10" :stroke-width="2" class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-text-base" aria-hidden="true" />
         </div>
 
-        <!-- Desktop : boutons numérotés avec ellipse -->
         <template v-for="link in pageLinks" :key="link.label">
             <button
                 v-if="link.label !== '...'"
@@ -80,7 +79,6 @@ function jumpToPage(page: number) {
             <span v-else class="hidden sm:flex h-7 w-7 items-center justify-center text-xs text-border-figma">…</span>
         </template>
 
-        <!-- Suivant -->
         <button
             :disabled="currentPage === lastPage"
             class="flex h-7 w-7 items-center justify-center rounded-lg outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
@@ -90,9 +88,10 @@ function jumpToPage(page: number) {
             <ChevronDown :size="12" :stroke-width="1.5" class="-rotate-90 text-text-base" aria-hidden="true" />
         </button>
 
-        <!-- Desktop : select après les flèches pour sauter à n'importe quelle page -->
         <div class="relative ml-1 hidden sm:block">
+            <label for="pagination-select-desktop" class="sr-only">Aller à la page</label>
             <select
+                id="pagination-select-desktop"
                 class="h-7 appearance-none cursor-pointer rounded-lg bg-white pl-2 pr-6 text-xs font-medium text-text-base outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10"
                 :value="currentPage"
                 @change="jumpToPage(Number(($event.target as HTMLSelectElement).value))"

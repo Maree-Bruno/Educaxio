@@ -121,11 +121,11 @@ defineExpose({ open, availableSubjectsFor });
                 :options="[{ value: '1', label: 'LM1' }, { value: '2', label: 'LM2' }, { value: '3', label: 'LM3' }]"
             />
 
-            <div v-if="form.subject_id" class="flex flex-col gap-2">
-                <label class="text-xs font-bold tracking-wider text-border-figma uppercase">
+            <fieldset v-if="form.subject_id" class="flex flex-col gap-2 border-0 p-0 m-0">
+                <legend class="text-xs font-bold tracking-wider text-border-figma uppercase">
                     Profs <span class="font-normal normal-case">(optionnel)</span>
-                </label>
-                <div class="flex flex-col gap-1.5">
+                </legend>
+                <div class="flex flex-col gap-1.5 mt-2">
                     <label
                         v-for="teacher in teacherOptions"
                         :key="teacher.id"
@@ -144,7 +144,7 @@ defineExpose({ open, availableSubjectsFor });
                         Aucun prof rattaché à cette matière
                     </p>
                 </div>
-            </div>
+            </fieldset>
 
             <div class="flex gap-3">
                 <Button

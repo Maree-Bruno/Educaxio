@@ -100,7 +100,6 @@ function confirmUnlink() {
             </div>
         </div>
 
-        <!-- Vue mobile -->
         <ul class="lg:hidden divide-y divide-neutral-100 bg-white">
             <li
                 v-for="(teacher, index) in teachers.data.filter((t) => !isHidden(t.id))"
@@ -133,17 +132,17 @@ function confirmUnlink() {
             <li v-if="teachers.total === 0"><EmptyState message="Aucun professeur trouvé" /></li>
         </ul>
 
-        <!-- Vue desktop -->
         <div class="hidden lg:block overflow-x-auto bg-white">
             <table class="w-full border-collapse text-left">
+                <caption class="sr-only">Liste des professeurs</caption>
                 <thead>
                     <tr class="bg-gray-100">
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
+                        <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
                         <SortTh col="name" :current-col="sortCol" :current-dir="sortDir" label="Nom" @sort="sortBy" />
                         <SortTh col="email" :current-col="sortCol" :current-dir="sortDir" label="Email" @sort="sortBy" />
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Matières</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Cours attribués</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Action</th>
+                        <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Matières</th>
+                        <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Cours attribués</th>
+                        <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-neutral-100">

@@ -41,6 +41,7 @@ const save = useDebounceFn(() => { if (autoSave.value) doSave(); }, 800);
             v-model="journalNotes"
             :disabled="!selectedEntry"
             rows="6"
+            aria-label="Notes du journal de classe"
             placeholder="Notes du cours…"
             class="w-full resize-none rounded-xl bg-bg-primary p-4 text-sm text-text-base placeholder:text-border-figma focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
             @input="save"

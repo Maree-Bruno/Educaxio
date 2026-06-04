@@ -6,6 +6,7 @@ import AttendanceStats from '@/components/widgets/AttendanceStats.vue';
 import type { AttendanceStats as AttendanceStatsType } from '@/components/widgets/AttendanceStats.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
+import SidebarLayout from '@/components/widgets/SidebarLayout.vue';
 import StudentGroupsSidebar from '@/components/widgets/StudentGroupsSidebar.vue';
 import StudentHeaderCard from '@/components/widgets/StudentHeaderCard.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
@@ -91,72 +92,58 @@ const breadcrumbItems = computed(() => {
 <template>
     <Breadcrumb :items="breadcrumbItems" />
 
-    <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
-        <!-- Colonne principale -->
-        <div class="flex min-w-0 flex-1 flex-col gap-6">
-            <StudentHeaderCard
-                :student="student"
-                :is-admin="isAdmin"
-                :full-name="fullName"
+    <SidebarLayout>
+        <StudentHeaderCard
+            :student="student"
+            :is-admin="isAdmin"
+            :full-name="fullName"
+        />
+
+        <div
+            v-if="isAdmin && yearOptions.length > 1"
+            class="flex items-end gap-4 rounded-2xl bg-white px-6 py-4"
+        >
+            <SelectField
+                label="Année scolaire"
+                placeholder="Toutes les années"
+                :options="yearOptions"
+                :model-value="filterYear"
+                class="w-48"
+                @update:model-value="(v) => (filterYear = v as string | null)"
             />
-
-            <div
-                v-if="isAdmin && yearOptions.length > 1"
-                class="flex items-end gap-4 rounded-2xl bg-white px-6 py-4"
-            >
-                <SelectField
-                    label="Année scolaire"
-                    placeholder="Toutes les années"
-                    :options="yearOptions"
-                    :model-value="filterYear"
-                    class="w-48"
-                    @update:model-value="(v) => (filterYear = v as string | null)"
-                />
-            </div>
-
-            <AbsenceHistoryTable
-                v-if="absenceHistory !== null"
-                :history="absenceHistory as any"
-                :is-admin="isAdmin"
-            />
-
-            <div v-if="!isAdmin" class="overflow-hidden rounded-2xl bg-white">
-                <div class="border-b border-neutral-300/10 px-6 py-5">
-                    <h3 class="text-xl font-bold text-text-base">
-                        Évaluations
-                    </h3>
-                </div>
-                <div
-                    class="flex flex-col items-center gap-3 px-6 py-16 text-center"
-                >
-                    <svg
-                        class="size-10 text-stone-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        aria-hidden="true"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                        />
-                    </svg>
-                    <p class="text-sm font-bold text-stone-400">
-                        Fonctionnalité à venir
-                    </p>
-                    <p class="text-xs text-stone-300">
-                        Le suivi des évaluations sera disponible prochainement.
-                    </p>
-                </div>
-            </div>
         </div>
 
-        <!-- Sidebar -->
-        <div
-            class="flex w-full shrink-0 flex-col gap-4 xl:sticky xl:top-20 xl:w-80"
-        >
+        <AbsenceHistoryTable
+            v-if="absenceHistory !== null"
+            :history="absenceHistory as any"
+            :is-admin="isAdmin"
+        />
+
+        <section v-if="!isAdmin" class="overflow-hidden rounded-2xl bg-white">
+            <div class="border-b border-neutral-300/10 px-6 py-5">
+                <h3 class="text-xl font-bold text-text-base">Évaluations</h3>
+            </div>
+            <div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
+                <svg
+                    class="size-10 text-stone-300"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                </svg>
+                <p class="text-sm font-bold text-stone-400">Fonctionnalité à venir</p>
+                <p class="text-xs text-stone-300">Le suivi des évaluations sera disponible prochainement.</p>
+            </div>
+        </section>
+
+        <template #sidebar>
             <StudentGroupsSidebar :groups="filteredGroups as any" />
             <AttendanceStats
                 :stats="attendanceStats"
@@ -166,6 +153,6 @@ const breadcrumbItems = computed(() => {
                         : `Vos cours avec ${student.firstname}`
                 "
             />
-        </div>
-    </div>
+        </template>
+    </SidebarLayout>
 </template>

@@ -20,14 +20,12 @@ const isOpen = ref(false);
     >
         <div class="rounded-2xl bg-white outline-1 -outline-offset-1 outline-neutral-300/10">
 
-            <!-- Header optionnel -->
             <div v-if="title" class="border-b border-neutral-300/10 px-6 py-4">
                 <p class="text-sm font-bold text-text-base">{{ title }}</p>
                 <p v-if="description" class="mt-0.5 text-xs text-stone-400">{{ description }}</p>
             </div>
 
             <div class="p-4 sm:p-6">
-            <!-- Toggle + action -->
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button
                     type="button"
@@ -56,7 +54,6 @@ const isOpen = ref(false);
                 </div>
             </div>
 
-            <!-- Champs de filtre collapsibles -->
             <Transition
                 enter-active-class="transition-all duration-200 ease-out"
                 enter-from-class="opacity-0 -translate-y-2"

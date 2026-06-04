@@ -1,4 +1,3 @@
-<!--suppress D -->
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -222,10 +221,11 @@ function confirmDelete() {
             :key="group.id"
             class="overflow-hidden rounded-2xl bg-white"
         >
-            <!-- En-tête de la classe -->
             <div class="flex items-center justify-between px-4 sm:px-6 py-4">
                 <button
                     type="button"
+                    :aria-expanded="isGroupOpen(group.id)"
+                    :aria-controls="`group-${group.id}-content`"
                     class="flex flex-1 items-center gap-3 text-left transition-colors"
                     @click="toggleGroup(group.id)"
                 >
@@ -254,8 +254,7 @@ function confirmDelete() {
                 </div>
             </div>
 
-            <!-- Contenu déroulant -->
-            <div v-if="isGroupOpen(group.id)">
+            <div :id="`group-${group.id}-content`" v-if="isGroupOpen(group.id)">
                 <div class="border-t border-neutral-100">
                     <p
                         v-if="lessons.length === 0"
@@ -274,17 +273,20 @@ function confirmDelete() {
                                 {{ resolveSubjectLabel(lesson.subject.name, lesson.lm_level) }}
                             </span>
                         </span>
-                        <select
-                            v-if="lesson.subject.is_language"
-                            class="h-7 rounded-lg border border-neutral-200 bg-white px-2 text-xs text-stone-500 focus:border-blue focus:outline-none"
-                            :value="lesson.lm_level ?? ''"
-                            @change="updateLmLevel(lesson, ($event.target as HTMLSelectElement).value)"
-                        >
-                            <option value="">—</option>
-                            <option value="1">LM1</option>
-                            <option value="2">LM2</option>
-                            <option value="3">LM3</option>
-                        </select>
+                        <template v-if="lesson.subject.is_language">
+                            <label :for="`lm-${lesson.id}`" class="sr-only">Niveau de langue</label>
+                            <select
+                                :id="`lm-${lesson.id}`"
+                                class="h-7 rounded-lg border border-neutral-200 bg-white px-2 text-xs text-stone-500 focus:border-blue focus:outline-none"
+                                :value="lesson.lm_level ?? ''"
+                                @change="updateLmLevel(lesson, ($event.target as HTMLSelectElement).value)"
+                            >
+                                <option value="">—</option>
+                                <option value="1">LM1</option>
+                                <option value="2">LM2</option>
+                                <option value="3">LM3</option>
+                            </select>
+                        </template>
 
                         <div class="flex min-w-0 flex-1 flex-wrap gap-1.5">
                             <Badge v-for="teacher in lesson.users" :key="teacher.id">

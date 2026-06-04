@@ -124,7 +124,6 @@ const filteredHistory = computed(() => {
         </div>
 
         <template v-if="history.length">
-            <!-- Mobile -->
             <ul class="divide-y divide-neutral-100 sm:hidden">
                 <li
                     v-for="(record, i) in filteredHistory"
@@ -154,13 +153,13 @@ const filteredHistory = computed(() => {
                 </li>
             </ul>
 
-            <!-- Desktop -->
             <div class="hidden overflow-x-auto sm:block">
                 <table class="w-full border-collapse text-left">
+                    <caption class="sr-only">Historique des absences</caption>
                     <thead>
                         <tr class="bg-gray-100">
                             <SortTh col="date"    label="Date"       :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
-                            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Heure</th>
+                            <th scope="col" class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-stone-500">Heure</th>
                             <SortTh col="subject" label="Cours"      :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                             <SortTh col="group"   label="Classe"     :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                             <SortTh col="type"    label="Type"       :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />

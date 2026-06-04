@@ -6,6 +6,7 @@ import type { AttendanceStats as AttendanceStatsType } from '@/components/widget
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
 import ClassGroupStudentTable from '@/components/widgets/ClassGroupStudentTable.vue';
+import SidebarLayout from '@/components/widgets/SidebarLayout.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { classlist } from '@/routes';
 import { update as updateClasslist } from '@/routes/classlist';
@@ -55,7 +56,7 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
         ]"
     />
 
-    <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
+    <SidebarLayout>
         <ClassGroupStudentTable
             :students="students"
             :group="group"
@@ -64,9 +65,8 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
             :filters="filters"
             @add="addModalRef?.open()"
         />
-        <div
-            class="flex w-full shrink-0 flex-col gap-4 xl:sticky xl:top-20 xl:w-80"
-        >
+
+        <template #sidebar>
             <AttendanceStats :stats="attendanceStats" />
             <ClassGroupForm
                 v-if="canManage"
@@ -76,8 +76,8 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
                 :subjects="subjects"
                 :initial-data="formData"
             />
-        </div>
-    </div>
+        </template>
+    </SidebarLayout>
 
     <AddStudentModal
         v-if="canManage"

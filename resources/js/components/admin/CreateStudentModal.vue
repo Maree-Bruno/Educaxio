@@ -72,7 +72,7 @@ defineExpose({ open });
             <InputLabel v-model="form.email" type="email" label="Email (optionnel)" placeholder="marie@exemple.be" :error="form.errors.email" />
 
             <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-wider text-border-figma">
+                <label for="add-group-select" class="text-xs font-bold uppercase tracking-wider text-border-figma">
                     Groupes <span class="normal-case font-normal">(optionnel)</span>
                 </label>
                 <div v-if="form.group_ids.length" class="flex flex-wrap gap-1.5">
@@ -87,6 +87,7 @@ defineExpose({ open });
                 </div>
                 <select
                     v-if="availableGroups.length"
+                    id="add-group-select"
                     class="w-full rounded-2xl bg-white px-3 py-3 text-sm text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
                     @change="addGroup"
                 >
