@@ -11,6 +11,7 @@ import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
+import UserAvatar from '@/components/widgets/UserAvatar.vue';
 import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useSort } from '@/composables/useStudentSort';
@@ -23,7 +24,7 @@ interface School      { id: number; name: string; slug: string }
 interface Group       { id: number; grade: string; name: string }
 interface Subject     { id: number; name: string }
 interface Lesson      { id: number; group: Group; subject: Subject; lm_level: number | null }
-interface Teacher     { id: number; name: string; email: string; lessons: Lesson[]; subjects: Subject[] }
+interface Teacher     { id: number; name: string; email: string; picture: string | null; lessons: Lesson[]; subjects: Subject[] }
 interface JoinRequest { id: number; user: { id: number; name: string; email: string }; subjects: Subject[] }
 
 const props = defineProps<{
@@ -76,7 +77,7 @@ function confirmUnlink() {
 <template>
     <ConfirmModal
         :open="pendingDelete !== null"
-        :title="`Retirer ${pendingDelete?.name} de l'établissement`"
+        :title="`Retirer ${pendingDelete?.name ?? ''} de l'établissement`"
         message="Le professeur perdra l'accès à l'établissement et ses cours associés."
         @confirm="confirmUnlink"
         @cancel="pendingDelete = null"
@@ -111,6 +112,12 @@ function confirmUnlink() {
                         <span class="w-5 shrink-0 text-xs text-stone-400">
                             {{ String((teachers.current_page - 1) * teachers.per_page + index + 1).padStart(2, '0') }}
                         </span>
+                        <UserAvatar
+                            :name="teacher.name"
+                            :picture="teacher.picture"
+                            image-size="xs"
+                            class="size-8 shrink-0 text-xs"
+                        />
                         <span class="text-base font-medium text-text-base">{{ teacher.name }}</span>
                     </div>
                     <span v-if="teacher.email" class="pl-7 text-xs text-stone-400">{{ teacher.email }}</span>
@@ -138,6 +145,7 @@ function confirmUnlink() {
                 <thead>
                     <tr class="bg-gray-100">
                         <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
+                        <th scope="col" class="px-3 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Photo</th>
                         <SortTh col="name" :current-col="sortCol" :current-dir="sortDir" label="Nom" @sort="sortBy" />
                         <SortTh col="email" :current-col="sortCol" :current-dir="sortDir" label="Email" @sort="sortBy" />
                         <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Matières</th>
@@ -153,6 +161,14 @@ function confirmUnlink() {
                     >
                         <td class="px-6 py-5 text-sm text-stone-400">
                             {{ String((teachers.current_page - 1) * teachers.per_page + index + 1).padStart(2, '0') }}
+                        </td>
+                        <td class="w-12 px-3 py-5">
+                            <UserAvatar
+                                :name="teacher.name"
+                                :picture="teacher.picture"
+                                image-size="xs"
+                                class="size-8 text-xs"
+                            />
                         </td>
                         <td class="px-6 py-5">
                             <span class="text-base font-medium text-text-base">{{ teacher.name }}</span>
@@ -181,7 +197,7 @@ function confirmUnlink() {
                         </td>
                     </tr>
                     <tr v-if="teachers.total === 0">
-                        <td colspan="6"><EmptyState message="Aucun professeur trouvé" /></td>
+                        <td colspan="7"><EmptyState message="Aucun professeur trouvé" /></td>
                     </tr>
                 </tbody>
             </table>

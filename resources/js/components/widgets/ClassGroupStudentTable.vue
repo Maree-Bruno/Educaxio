@@ -13,6 +13,7 @@ import StudentCount from '@/components/widgets/StudentCount.vue';
 import Attendance from '@/components/widgets/svg/Attendance.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
+import UserAvatar from '@/components/widgets/UserAvatar.vue';
 import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
 import { attendances } from '@/routes';
 import { index as adminLessonsIndex } from '@/routes/admin/lessons';
@@ -128,6 +129,13 @@ const className = `${props.group.grade}${props.group.name}`;
             >
                 <div class="flex min-w-0 items-center gap-3">
                     <span class="w-5 shrink-0 text-xs text-stone-400">{{ rowNum(index) }}</span>
+                    <UserAvatar
+                        :name="`${student.firstname} ${student.lastname}`"
+                        :picture="student.picture ?? null"
+                        type="student"
+                        image-size="xs"
+                        class="size-8 shrink-0 text-xs"
+                    />
                     <span class="truncate text-sm font-medium text-text-base">
                         {{ student.lastname }} {{ student.firstname }}
                     </span>
@@ -172,6 +180,7 @@ const className = `${props.group.grade}${props.group.name}`;
                         >
                             N°
                         </th>
+                        <th scope="col" class="px-3 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Photo</th>
                         <SortTh col="lastname" label="Nom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <SortTh col="firstname" label="Prénom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <th
@@ -200,6 +209,15 @@ const className = `${props.group.grade}${props.group.name}`;
                         class="transition-colors hover:bg-gray-50"
                     >
                         <td class="px-6 py-5 text-sm text-stone-400">{{ rowNum(index) }}</td>
+                        <td class="w-12 px-3 py-5">
+                            <UserAvatar
+                                :name="`${student.firstname} ${student.lastname}`"
+                                :picture="student.picture ?? null"
+                                type="student"
+                                image-size="xs"
+                                class="size-8 text-xs"
+                            />
+                        </td>
                         <td class="px-6 py-5">
                             <span class="text-base font-medium text-text-base">{{ student.lastname }}</span>
                         </td>

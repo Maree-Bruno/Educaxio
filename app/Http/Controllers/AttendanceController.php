@@ -104,7 +104,7 @@ class AttendanceController extends Controller
         if ($selected) {
             $students = $selected->lesson->group->students()
                 ->orderBy('lastname')->orderBy('firstname')
-                ->get(['id', 'lastname', 'firstname']);
+                ->get(['id', 'lastname', 'firstname', 'picture']);
 
             $session = ClassSession::where('lesson_id', $selected->lesson_id)
                 ->whereDate('date', $date)->first();

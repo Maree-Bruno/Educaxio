@@ -36,7 +36,7 @@ const props = defineProps<Props>();
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const auth = useAuthStore();
-useToasterStore();
+const toaster = useToasterStore();
 
 const profileForm = useForm({
     name: user.value.name ?? '',
@@ -48,7 +48,20 @@ function submitProfile() {
     profileForm.patch('/settings/profile', {
         forceFormData: true,
         preserveScroll: true,
+        onSuccess: () => toaster.success('Profil enregistré'),
     });
+}
+
+function submitProfileWithUndo() {
+    const snapshot = { name: profileForm.name, email: profileForm.email };
+    toaster.deletable(
+        'Profil enregistré',
+        () => submitProfile(),
+        () => {
+            profileForm.name = snapshot.name;
+            profileForm.email = snapshot.email;
+        },
+    );
 }
 
 const passwordForm = useForm({
@@ -126,7 +139,7 @@ function confirmDelete() {
                         size="sm"
                         label="Enregistrer"
                         :loading="profileForm.processing"
-                        @click="submitProfile"
+                        @click="submitProfileWithUndo"
                     />
                 </div>
             </div>
