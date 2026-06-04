@@ -60,7 +60,7 @@ return [
             'throw' => false,
             'report' => false,
         ],
-        'userimages' => env('AWS_BUCKET') ? [
+        'userimages' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
@@ -71,7 +71,9 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
             'visibility' => 'public',
             'throw' => true,
-        ] : [
+        ],
+
+        'userimages_local' => [
             'driver' => 'local',
             'root' => storage_path('app/public/images'),
             'url' => env('APP_URL').'/images',

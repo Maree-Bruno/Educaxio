@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'disk' => 'userimages',
+    'disk' => env('IMAGES_DISK', 'userimages_local'),
     'sizes' => [
         'xs' => ['width' => 64,  'height' => 64],
         'sm' => ['width' => 128, 'height' => 128],
