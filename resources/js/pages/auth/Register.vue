@@ -165,6 +165,8 @@ watch(
             v-model="form.name"
             label="Nom complet"
             placeholder="Jean Dupont"
+            autocomplete="name"
+            required
             :error="stepErrors.name ?? form.errors.name ?? serverErrors.name"
         />
         <InputLabel
@@ -172,6 +174,8 @@ watch(
             type="email"
             label="Adresse email"
             placeholder="jean@exemple.com"
+            autocomplete="email"
+            required
             :error="stepErrors.email ?? form.errors.email ?? serverErrors.email"
         />
         <InputLabel
@@ -179,6 +183,8 @@ watch(
             type="password"
             label="Mot de passe"
             placeholder="••••••••"
+            autocomplete="new-password"
+            required
             :error="stepErrors.password ?? form.errors.password ?? serverErrors.password"
         />
         <InputLabel
@@ -186,6 +192,8 @@ watch(
             type="password"
             label="Confirmer le mot de passe"
             placeholder="••••••••"
+            autocomplete="new-password"
+            required
             :error="stepErrors.password_confirmation ?? form.errors.password_confirmation ?? serverErrors.password_confirmation"
         />
 

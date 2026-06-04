@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
+use App\Http\Controllers\Concerns\HandlesSorting;
 use App\Http\Controllers\Controller;
+use App\Models\AcademicYear;
 use App\Models\School;
 use App\Models\Student;
 use Illuminate\Http\Request;
@@ -10,20 +13,34 @@ use Inertia\Inertia;
 
 class StudentController extends Controller
 {
+    use DetectsCurrentAcademicYear;
+    use HandlesSorting;
+
     public function index(Request $request, School $school)
     {
+        $schoolIds = collect([$school->id]);
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+        $selectedYearId = $this->selectedAcademicYearId($currentYearId, $request);
+
         $groups = $school->groups()
+            ->when($selectedYearId, fn ($q) => $q->where('academic_year_id', $selectedYearId))
             ->orderBy('grade')
             ->orderBy('name')
-            ->get(['id', 'grade', 'name']);
+            ->get(['id', 'grade', 'name', 'slug']);
 
-        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
-        $sort = in_array($request->string('sort')->toString(), ['lastname', 'firstname'])
-            ? $request->string('sort')->toString()
-            : 'lastname';
+        $academicYears = $this->academicYearsForSchools(collect([$school->id]), $currentYearId);
+
+        $dir = $this->sortDir($request);
+        $sort = $this->sortCol($request, ['lastname', 'firstname'], 'lastname');
 
         $query = Student::where('school_id', $school->id)
-            ->with('groups:id,grade,name,slug')
+            ->with(['groups' => fn ($q) => $q
+                ->when($selectedYearId, fn ($g) => $g->where('academic_year_id', $selectedYearId))
+                ->select('groups.id', 'grade', 'name', 'slug'),
+            ])
+            ->when($selectedYearId, fn ($q) => $q->whereHas('groups', fn ($g) =>
+                $g->where('academic_year_id', $selectedYearId)
+            ))
             ->orderBy($sort, $dir)
             ->orderBy($sort === 'lastname' ? 'firstname' : 'lastname');
 
@@ -39,11 +56,18 @@ class StudentController extends Controller
             );
         }
 
+        $students = $query->paginate(30)->withQueryString();
+        $filters = (object) array_merge(
+            $request->only(['group', 'sort', 'dir', 'search']),
+            ['year' => $selectedYearId ? (string) $selectedYearId : null],
+        );
+
         return Inertia::render('admin/Students', [
-            'school' => $school->only('id', 'name', 'slug'),
-            'students' => $query->paginate(30)->withQueryString(),
-            'groups' => $groups,
-            'filters' => (object) $request->only(['group', 'sort', 'dir', 'search']),
+            'school'        => $school->only('id', 'name', 'slug'),
+            'students'      => $students,
+            'groups'        => $groups,
+            'academicYears' => $academicYears,
+            'filters'       => $filters,
         ]);
     }
 
@@ -73,7 +97,7 @@ class StudentController extends Controller
             $student->groups()->attach($groupIds->all());
         }
 
-        return back();
+        return to_route('admin.students.index', $school);
     }
 
     public function update(Request $request, School $school, Student $student)
@@ -101,7 +125,7 @@ class StudentController extends Controller
 
         $student->groups()->sync($groupIds->all());
 
-        return back();
+        return to_route('admin.students.index', $school);
     }
 
     public function destroy(School $school, Student $student)
@@ -110,6 +134,6 @@ class StudentController extends Controller
 
         $student->delete();
 
-        return back();
+        return to_route('admin.students.index', $school);
     }
 }

@@ -78,7 +78,6 @@ defineExpose({ open });
         <div class="flex flex-col gap-5">
             <h2 class="text-xl font-bold text-black">Ajouter un élève</h2>
 
-            <!-- Tabs -->
             <div class="flex gap-1 rounded-xl bg-gray-100 p-1">
                 <button
                     type="button"
@@ -98,7 +97,6 @@ defineExpose({ open });
                 </button>
             </div>
 
-            <!-- Tab: Nouvel élève -->
             <form v-if="addTab === 'new'" class="flex flex-col gap-4" @submit.prevent="submitNew">
                 <InputLabel v-model="addForm.lastname" label="Nom" placeholder="Dupont" :error="addForm.errors.lastname" />
                 <InputLabel v-model="addForm.firstname" label="Prénom" placeholder="Marie" :error="addForm.errors.firstname" />
@@ -110,7 +108,6 @@ defineExpose({ open });
                 </div>
             </form>
 
-            <!-- Tab: Élève existant -->
             <form v-else class="flex flex-col gap-4" @submit.prevent="attachSelected">
                 <SearchInput id="student-search" v-model="studentSearch" placeholder="Rechercher un élève…" />
                 <div class="flex flex-col divide-y divide-neutral-100 rounded-2xl bg-white overflow-hidden max-h-64 overflow-y-auto">

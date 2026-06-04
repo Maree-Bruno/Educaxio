@@ -4,9 +4,9 @@ import AddStudentModal from '@/components/widgets/AddStudentModal.vue';
 import AttendanceStats from '@/components/widgets/AttendanceStats.vue';
 import type { AttendanceStats as AttendanceStatsType } from '@/components/widgets/AttendanceStats.vue';
 import Breadcrumb from '@/components/widgets/Breadcrumb.vue';
-import Button from '@/components/widgets/Button.vue';
 import ClassGroupForm from '@/components/widgets/ClassGroupForm.vue';
 import ClassGroupStudentTable from '@/components/widgets/ClassGroupStudentTable.vue';
+import SidebarLayout from '@/components/widgets/SidebarLayout.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { classlist } from '@/routes';
 import { update as updateClasslist } from '@/routes/classlist';
@@ -20,7 +20,12 @@ const props = defineProps<{
     academicYears: Pick<AcademicYear, 'id' | 'year'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
     filters: { sort?: string; dir?: 'asc' | 'desc'; search?: string };
-    schoolStudents: { id: number; lastname: string; firstname: string; groups: { id: number; grade: string; name: string }[] }[];
+    schoolStudents: {
+        id: number;
+        lastname: string;
+        firstname: string;
+        groups: { id: number; grade: string; name: string }[];
+    }[];
     attendanceStats: AttendanceStatsType;
 }>();
 
@@ -51,7 +56,7 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
         ]"
     />
 
-    <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
+    <SidebarLayout>
         <ClassGroupStudentTable
             :students="students"
             :group="group"
@@ -60,7 +65,8 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
             :filters="filters"
             @add="addModalRef?.open()"
         />
-        <div class="flex w-full shrink-0 flex-col gap-4 xl:w-80 xl:sticky xl:top-20">
+
+        <template #sidebar>
             <AttendanceStats :stats="attendanceStats" />
             <ClassGroupForm
                 v-if="canManage"
@@ -70,8 +76,13 @@ const addModalRef = ref<InstanceType<typeof AddStudentModal> | null>(null);
                 :subjects="subjects"
                 :initial-data="formData"
             />
-        </div>
-    </div>
+        </template>
+    </SidebarLayout>
 
-    <AddStudentModal v-if="canManage" ref="addModalRef" :group-slug="group.slug" :school-students="schoolStudents" />
+    <AddStudentModal
+        v-if="canManage"
+        ref="addModalRef"
+        :group-slug="group.slug"
+        :school-students="schoolStudents"
+    />
 </template>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSorting;
 use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\ClassSession;
@@ -19,6 +20,8 @@ use Inertia\Inertia;
 
 class ClassListController extends Controller
 {
+    use \App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
+    use HandlesSorting;
     private function scopedGroupQuery(Collection $adminSchoolIds, Collection $teacherSchoolIds): Builder
     {
         if ($adminSchoolIds->isEmpty() && $teacherSchoolIds->isEmpty()) {
@@ -72,8 +75,15 @@ class ClassListController extends Controller
             $query->where('slug', $request->string('class'));
         }
 
-        if ($request->filled('year')) {
-            $query->where('academic_year_id', $request->integer('year'));
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+        $selectedYearId = $this->selectedAcademicYearId($currentYearId, $request);
+
+        if ($selectedYearId) {
+            $query->where('academic_year_id', $selectedYearId);
+        } else {
+            $query->whereHas('academicYear.schools', fn ($q) =>
+                $q->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
+            );
         }
 
         if ($request->filled('search')) {
@@ -89,7 +99,7 @@ class ClassListController extends Controller
             }
         }
 
-        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
+        $dir = $this->sortDir($request);
 
         match ($request->string('sort')->toString()) {
             'school' => $query->orderBy(School::select('name')->whereColumn('schools.id', 'groups.school_id'), $dir),
@@ -104,14 +114,22 @@ class ClassListController extends Controller
             default => $query->orderBy('grade', $dir)->orderBy('name', $dir),
         };
 
+        $academicYears = $this->academicYearsForSchools($schoolIds, $currentYearId);
+
+        $groups = $query->get();
+        $classes = $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)
+            ->orderBy('grade')->orderBy('name')->get(['slug', 'grade', 'name', 'school_id']);
+        $filters = (object) array_merge(
+            $request->only(['school', 'class', 'search', 'sort', 'dir']),
+            ['year' => $selectedYearId ? (string) $selectedYearId : null],
+        );
+
         return Inertia::render('ClassList', [
-            'groups' => $query->get(),
-            'schools' => $userSchools,
-            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-                ->orderByDesc('year')->get(['id', 'year']),
-            'classes' => $this->scopedGroupQuery($adminSchoolIds, $teacherSchoolIds)
-                ->orderBy('grade')->orderBy('name')->get(['slug', 'grade', 'name', 'school_id']),
-            'filters' => (object) $request->only(['school', 'class', 'year', 'search', 'sort', 'dir']),
+            'groups'        => $groups,
+            'schools'       => $userSchools,
+            'academicYears' => $academicYears,
+            'classes'       => $classes,
+            'filters'       => $filters,
         ]);
     }
 
@@ -201,10 +219,8 @@ class ClassListController extends Controller
             : ['lessons'];
         $group->load(['school', 'academicYear', ...$lessonsLoad]);
 
-        $dir = $request->string('dir')->toString() === 'desc' ? 'desc' : 'asc';
-        $sortCol = in_array($request->string('sort')->toString(), ['lastname', 'firstname'])
-            ? $request->string('sort')->toString()
-            : 'lastname';
+        $dir = $this->sortDir($request);
+        $sortCol = $this->sortCol($request, ['lastname', 'firstname'], 'lastname');
         $search = $request->string('search')->trim()->toString();
 
         $students = $group->students()
@@ -225,18 +241,34 @@ class ClassListController extends Controller
                 ->get(['id', 'lastname', 'firstname'])
             : [];
 
-        $attendanceStats = $this->groupAttendanceStats($group, $isTeacher ? $userId : null);
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+        $dateRange = null;
+        if ($currentYearId) {
+            $ay = AcademicYear::find($currentYearId);
+            if ($ay) {
+                $pivot = $ay->schools()->where('schools.id', $group->school_id)->first()?->pivot;
+                $defaults = AcademicYear::defaultDates($ay->year);
+                $dateRange = [
+                    $pivot?->start_date ?? $defaults['start_date'],
+                    $pivot?->end_date   ?? $defaults['end_date'],
+                ];
+            }
+        }
+        $attendanceStats = $this->groupAttendanceStats($group, $isTeacher ? $userId : null, $dateRange);
+
+        $academicYears = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            ->orderByDesc('year')->get(['id', 'year']);
+        $subjects = Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
+            ->orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('ClassListShow', [
-            'group' => $group,
-            'students' => $students,
-            'canManage' => $canManage,
-            'isTeacher' => $isTeacher,
-            'academicYears' => AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-                ->orderByDesc('year')->get(['id', 'year']),
-            'subjects' => Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-                ->orderBy('name')->get(['id', 'name']),
-            'filters' => $request->only(['sort', 'dir', 'search']),
+            'group'          => $group,
+            'students'       => $students,
+            'canManage'      => $canManage,
+            'isTeacher'      => $isTeacher,
+            'academicYears'  => $academicYears,
+            'subjects'       => $subjects,
+            'filters'        => $request->only(['sort', 'dir', 'search']),
             'schoolStudents' => $schoolStudents,
             'attendanceStats' => $attendanceStats,
         ]);
@@ -256,7 +288,6 @@ class ClassListController extends Controller
                 ->pluck('id');
             $group->students()->syncWithoutDetaching($ids->all());
         } else {
-            // Create new student and attach
             $validated = $request->validate([
                 'lastname' => ['required', 'string', 'max:100'],
                 'firstname' => ['required', 'string', 'max:100'],
@@ -271,24 +302,26 @@ class ClassListController extends Controller
             $group->students()->attach($student->id);
         }
 
-        return back();
+        return to_route('classlist.show', $group);
     }
 
     public function detachStudent(Group $group, Student $student)
     {
         $this->authorize('detachStudent', $group);
         $group->students()->detach($student->id);
-        return back();
+        return to_route('classlist.show', $group);
     }
 
-    private function groupAttendanceStats(Group $group, ?int $teacherUserId = null): array
+    private function groupAttendanceStats(Group $group, ?int $teacherUserId = null, ?array $dateRange = null): array
     {
         $lessonIds = $teacherUserId
             ? Lesson::where('group_id', $group->id)
                 ->whereHas('users', fn ($q) => $q->where('users.id', $teacherUserId))
                 ->pluck('id')
             : Lesson::where('group_id', $group->id)->pluck('id');
-        $sessionIds   = ClassSession::whereIn('lesson_id', $lessonIds)->pluck('id');
+        $sessionIds = ClassSession::whereIn('lesson_id', $lessonIds)
+            ->when($dateRange, fn ($q) => $q->whereBetween('date', $dateRange))
+            ->pluck('id');
         $studentIds   = $group->students()->pluck('students.id');
         $sessions     = $sessionIds->count();
         $totalSlots   = $sessions * $studentIds->count();

@@ -16,7 +16,6 @@ const parentItem = computed(() =>
     <nav class="mb-6" aria-label="Fil d'ariane">
         <h3 class="sr-only">Fil d'ariane</h3>
 
-        <!-- Mobile : lien retour seul -->
         <div class="flex items-center gap-1 sm:hidden">
             <template v-if="parentItem">
                 <ChevronDown
@@ -34,7 +33,6 @@ const parentItem = computed(() =>
             </template>
         </div>
 
-        <!-- Desktop : fil complet -->
         <div class="hidden sm:flex flex-wrap items-center gap-3">
             <template v-for="(item, index) in items" :key="index">
                 <ChevronDown

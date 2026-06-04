@@ -36,7 +36,6 @@ const emit = defineEmits<{
         class="flex w-full flex-col items-start justify-start gap-6 rounded-3xl bg-white px-8 py-6"
     >
         <h3 class="sr-only">{{slug}} - {{school.name}}</h3>
-        <!-- Infos principales -->
         <dl class="flex flex-col gap-5 self-stretch">
             <div class="flex items-start justify-start gap-3 self-stretch">
                 <div class="flex flex-1 flex-col gap-1">
@@ -62,7 +61,6 @@ const emit = defineEmits<{
             </div>
         </dl>
 
-        <!-- Cours -->
         <dl class="flex flex-col gap-5 self-stretch">
             <div class="flex items-center justify-start gap-3 self-stretch">
                 <div class="flex flex-1 flex-col gap-1">
@@ -80,7 +78,6 @@ const emit = defineEmits<{
             </div>
         </dl>
 
-        <!-- Année + Effectifs -->
         <dl class="flex items-center justify-start gap-3 self-stretch">
             <div class="flex flex-1 flex-col gap-1">
                 <dt
@@ -104,7 +101,6 @@ const emit = defineEmits<{
             </div>
         </dl>
 
-        <!-- Actions -->
         <div
             class="flex items-center justify-between self-stretch"
             :aria-label="`Actions pour ${name}`"

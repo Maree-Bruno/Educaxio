@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use App\Models\School;
@@ -11,9 +12,16 @@ use Inertia\Inertia;
 
 class LessonController extends Controller
 {
+    use DetectsCurrentAcademicYear;
+
     public function index(School $school)
     {
-        $lessons = Lesson::whereHas('group', fn ($q) => $q->where('school_id', $school->id))
+        $currentYearId = $this->currentAcademicYearId(collect([$school->id]));
+
+        $lessons = Lesson::whereHas('group', fn ($q) => $q
+                ->where('school_id', $school->id)
+                ->when($currentYearId, fn ($g) => $g->where('academic_year_id', $currentYearId)),
+            )
             ->with([
                 'group:id,grade,name',
                 'subject:id,name,is_language',
@@ -22,6 +30,7 @@ class LessonController extends Controller
             ->get(['id', 'group_id', 'subject_id', 'lm_level']);
 
         $groups = $school->groups()
+            ->when($currentYearId, fn ($q) => $q->where('academic_year_id', $currentYearId))
             ->orderBy('grade')
             ->orderBy('name')
             ->get(['id', 'grade', 'name', 'slug']);
@@ -74,7 +83,7 @@ class LessonController extends Controller
             $lesson->users()->syncWithoutDetaching($validated['teacher_ids']);
         }
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 
     public function update(Request $request, School $school, Lesson $lesson)
@@ -87,7 +96,7 @@ class LessonController extends Controller
 
         $lesson->update(['lm_level' => $validated['lm_level']]);
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 
     public function syncTeachers(Request $request, School $school, Lesson $lesson)
@@ -102,7 +111,6 @@ class LessonController extends Controller
             'teacher_ids.*' => ['exists:users,id'],
         ]);
 
-        // Only allow teachers that belong to this school
         $schoolTeacherIds = $school->users()
             ->wherePivot('role', 'teacher')
             ->pluck('users.id');
@@ -111,7 +119,7 @@ class LessonController extends Controller
 
         $lesson->users()->sync($safeIds);
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 
     public function destroy(School $school, Lesson $lesson)
@@ -120,6 +128,6 @@ class LessonController extends Controller
 
         $lesson->delete();
 
-        return back();
+        return to_route('admin.lessons.index', $school);
     }
 }

@@ -26,6 +26,6 @@ class LessonAssignmentController extends Controller
 
         $user->lessons()->sync($validated['lesson_ids'] ?? []);
 
-        return back();
+        return to_route('profile.edit');
     }
 }

@@ -10,10 +10,12 @@ const props = withDefaults(
         placeholder?: string;
         error?: string;
         disabled?: boolean;
+        required?: boolean;
         type?: InputType;
         id?: string;
         size?: 'sm' | 'md';
         fluid?: boolean;
+        autocomplete?: string;
     }>(),
     {
         modelValue: '',
@@ -21,9 +23,11 @@ const props = withDefaults(
         placeholder: '',
         error: '',
         disabled: false,
+        required: false,
         type: 'text',
         size: 'md',
         fluid: true,
+        autocomplete: undefined,
     },
 );
 
@@ -51,29 +55,30 @@ const inputClasses = computed(() => [
 
 <template>
     <div :class="['flex flex-col gap-1.5', fluid ? 'w-full' : 'w-fit']">
-        <!-- Label -->
         <label
             v-if="label"
             :for="inputId"
             class="font-manrope text-xs font-bold uppercase tracking-widest text-border-figma leading-4"
         >
             {{ label }}
+            <span v-if="required" class="ml-0.5 text-pink" aria-hidden="true">*</span>
         </label>
 
-        <!-- Input -->
         <input
             :id="inputId"
             :type="type"
             :value="modelValue"
             :placeholder="placeholder"
             :disabled="disabled"
+            :required="required || undefined"
+            :autocomplete="autocomplete"
             :class="inputClasses"
             :aria-invalid="hasError"
+            :aria-required="required ? 'true' : undefined"
             :aria-describedby="hasError ? `${inputId}-error` : undefined"
             @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         />
 
-        <!-- Error message -->
         <p
             v-if="hasError"
             :id="`${inputId}-error`"

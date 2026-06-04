@@ -53,6 +53,8 @@ function submit() {
             label="Adresse email"
             type="email"
             placeholder="email@exemple.com"
+            autocomplete="email"
+            required
             :error="form.errors.email || serverErrors.email"
         />
 
@@ -62,6 +64,8 @@ function submit() {
                 label="Mot de passe"
                 type="password"
                 placeholder="••••••••••"
+                autocomplete="current-password"
+                required
                 :error="form.errors.password || serverErrors.password"
             />
             <Link
