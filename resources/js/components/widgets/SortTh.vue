@@ -12,7 +12,7 @@ defineEmits<{ sort: [col: string] }>();
 </script>
 
 <template>
-    <th class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">
+    <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">
         <button
             type="button"
             class="flex items-center gap-1.5 transition-colors hover:text-text-base"

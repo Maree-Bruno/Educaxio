@@ -206,7 +206,6 @@ function confirmDelete() {
         </ul>
     </div>
 
-    <!-- Modale création -->
     <BaseModal ref="createModalRef">
         <div class="flex flex-col gap-5">
             <div>
@@ -292,7 +291,6 @@ function confirmDelete() {
         </div>
     </BaseModal>
 
-    <!-- Modale édition -->
     <BaseModal ref="editModalRef">
         <div class="flex flex-col gap-5">
             <div>
@@ -349,7 +347,6 @@ function confirmDelete() {
         </div>
     </BaseModal>
 
-    <!-- Modale confirmation suppression -->
     <BaseModal ref="confirmDeleteRef">
         <div class="flex flex-col gap-5">
             <div>

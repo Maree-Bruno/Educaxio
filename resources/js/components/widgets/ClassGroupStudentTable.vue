@@ -79,7 +79,6 @@ const className = `${props.group.grade}${props.group.name}`;
 <template>
     <div class="min-w-0 flex-1 rounded-2xl">
 
-        <!-- En-tête du tableau -->
         <div
             class="flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-neutral-300/10 bg-white px-4 sm:px-6 py-4 sm:py-5"
         >
@@ -121,7 +120,6 @@ const className = `${props.group.grade}${props.group.name}`;
             />
         </div>
 
-        <!-- Mobile : liste de cartes -->
         <ul class="sm:hidden divide-y divide-neutral-100 bg-white">
             <li
                 v-for="(student, index) in students.data.filter((s) => !hiddenIds.has(s.id))"
@@ -163,12 +161,13 @@ const className = `${props.group.grade}${props.group.name}`;
             <li v-if="students.total === 0"><EmptyState message="Aucun élève dans cette classe" /></li>
         </ul>
 
-        <!-- Desktop : tableau -->
         <div class="hidden sm:block overflow-x-auto bg-white">
             <table class="w-full border-collapse text-left">
+                <caption class="sr-only">Liste des élèves de la classe</caption>
                 <thead>
                     <tr class="bg-gray-100">
                         <th
+                            scope="col"
                             class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500"
                         >
                             N°
@@ -176,6 +175,7 @@ const className = `${props.group.grade}${props.group.name}`;
                         <SortTh col="lastname" label="Nom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <SortTh col="firstname" label="Prénom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <th
+                            scope="col"
                             class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500"
                         >
                             Classe
@@ -186,6 +186,7 @@ const className = `${props.group.grade}${props.group.name}`;
                             Moyenne
                         </th>-->
                         <th
+                            scope="col"
                             class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500"
                         >
                             Action
@@ -238,7 +239,6 @@ const className = `${props.group.grade}${props.group.name}`;
                         </td>
                     </tr>
 
-                    <!-- État vide -->
                     <tr v-if="students.total === 0">
                         <td colspan="6"><EmptyState message="Aucun élève dans cette classe" /></td>
                     </tr>
@@ -246,7 +246,6 @@ const className = `${props.group.grade}${props.group.name}`;
             </table>
         </div>
 
-        <!-- Pied : pagination -->
         <div class="rounded-b-2xl bg-gray-100 px-4 sm:px-6 py-4">
             <Pagination
                 :links="students.links"

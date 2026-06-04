@@ -86,7 +86,6 @@ function cancel() {
             {{ mode === 'create' ? 'Nouvelle classe' : 'Modifier la classe' }}
         </h3>
 
-        <!-- Classe -->
         <div class="flex flex-col gap-2">
             <span
                 class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase"

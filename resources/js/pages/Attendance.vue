@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { attendances } from '@/routes';
 import AttendanceAssignments from '@/components/widgets/AttendanceAssignments.vue';
 import type { Assignment } from '@/components/widgets/AttendanceAssignments.vue';
 import AttendanceJournal from '@/components/widgets/AttendanceJournal.vue';
@@ -10,6 +9,7 @@ import AttendanceStudentList from '@/components/widgets/AttendanceStudentList.vu
 import DateField from '@/components/widgets/DateField.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { attendances } from '@/routes';
 
 setPageTitle('Présences');
 
@@ -52,7 +52,12 @@ const props = defineProps<{
     assignments: Assignment[];
     nextAssignmentDate: string | null;
     schedulePattern: { day_of_week: number; slot_label: string }[];
-    academicYears: { id: number; year: string; is_current: boolean; is_archived: boolean }[];
+    academicYears: {
+        id: number;
+        year: string;
+        is_current: boolean;
+        is_archived: boolean;
+    }[];
     isAdmin: boolean;
     filters: { year: string | null };
 }>();
@@ -62,12 +67,20 @@ const filterYear = ref<string | null>(props.filters.year ?? null);
 const yearOptions = computed(() =>
     props.academicYears.map((y) => ({
         value: String(y.id),
-        label: y.is_archived ? `${y.year} — archivée` : y.is_current ? `${y.year} — en cours` : y.year,
+        label: y.is_archived
+            ? `${y.year} — archivée`
+            : y.is_current
+              ? `${y.year} — en cours`
+              : y.year,
     })),
 );
 
 function nav(params: Record<string, string | number | null | undefined>) {
-    router.get(attendances.url(), { year: filterYear.value, ...params }, { preserveState: false });
+    router.get(
+        attendances.url(),
+        { year: filterYear.value, ...params },
+        { preserveState: false },
+    );
 }
 
 watch(filterYear, (year) => nav({ date: props.date, year: year ?? undefined }));
@@ -103,21 +116,27 @@ const sessionStats = computed(() => {
 </script>
 
 <template>
-    <!-- Filtres -->
-    <div
+    <section
         class="rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10"
     >
         <div class="border-b border-neutral-300/10 px-6 py-4">
-            <p class="text-sm font-bold text-text-base">
+            <h2 class="text-sm font-bold text-text-base">
                 Sélection de l'heure de cours
-            </p>
+            </h2>
             <p class="mt-0.5 text-xs text-stone-400">
                 Sélectionnez une date et un créneau pour afficher et saisir les
                 présences
             </p>
         </div>
         <div class="px-6 py-5">
-            <div class="grid grid-cols-1 gap-4 sm:gap-6" :class="isAdmin && yearOptions.length > 1 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'">
+            <div
+                class="grid grid-cols-1 gap-4 sm:gap-6"
+                :class="
+                    isAdmin && yearOptions.length > 1
+                        ? 'sm:grid-cols-5'
+                        : 'sm:grid-cols-4'
+                "
+            >
                 <SelectField
                     v-if="isAdmin && yearOptions.length > 1"
                     label="Année"
@@ -125,7 +144,9 @@ const sessionStats = computed(() => {
                     :options="yearOptions"
                     :model-value="filterYear"
                     class="w-full"
-                    @update:model-value="(v) => (filterYear = v as string | null)"
+                    @update:model-value="
+                        (v) => (filterYear = v as string | null)
+                    "
                 />
 
                 <DateField
@@ -174,9 +195,8 @@ const sessionStats = computed(() => {
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Contenu -->
     <div class="flex flex-col gap-8 xl:flex-row xl:items-start">
         <AttendanceStudentList
             :students="students"
@@ -188,14 +208,7 @@ const sessionStats = computed(() => {
             @update:local-statuses="liveStatuses = $event"
         />
 
-        <!-- Sidebar -->
-        <div class="flex w-full shrink-0 flex-col gap-8 xl:w-72">
-            <AttendanceJournal
-                :lesson-note="lessonNote"
-                :lesson-id="lessonId"
-                :date="date"
-                :selected-entry="selectedEntry"
-            />
+        <aside class="flex w-full shrink-0 flex-col gap-8 xl:w-72">
             <AttendanceStats
                 :stats="sessionStats"
                 title="Présences du cours"
@@ -204,6 +217,12 @@ const sessionStats = computed(() => {
                         ? `${students.length - sessionStats.absences} / ${students.length} élèves présents`
                         : undefined
                 "
+            />
+            <AttendanceJournal
+                :lesson-note="lessonNote"
+                :lesson-id="lessonId"
+                :date="date"
+                :selected-entry="selectedEntry"
             />
 
             <AttendanceAssignments
@@ -214,6 +233,6 @@ const sessionStats = computed(() => {
                 :group-name="selectedGroup"
                 :selected-entry="selectedEntry"
             />
-        </div>
+        </aside>
     </div>
 </template>

@@ -231,7 +231,6 @@ function goToAttendance(entry: AgendaJournalEntry) {
 </script>
 
 <template>
-    <!-- Barre de filtres -->
     <FilterBar
         title="Journal de classe"
         description="Retrouvez les notes de cours et planifiez les devoirs et interrogations par classe."
@@ -317,7 +316,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
                     <button
                         type="button"
                         class="flex h-11.5 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-text-base outline-1 -outline-offset-1 outline-border-figma transition-colors hover:bg-gray-50"
-                        :title="sortDir === 'asc' ? 'Croissant' : 'Décroissant'"
+                        :aria-label="sortDir === 'asc' ? 'Croissant' : 'Décroissant'"
                         @click="toggleDir"
                     >
                         {{ sortDir === 'asc' ? '↑' : '↓' }}
@@ -327,7 +326,6 @@ function goToAttendance(entry: AgendaJournalEntry) {
         </template>
     </FilterBar>
 
-    <!-- Journal -->
     <template v-if="activeTab === 'journal'">
         <EmptyState
             v-if="journalEntries.data.length === 0"
@@ -368,7 +366,6 @@ function goToAttendance(entry: AgendaJournalEntry) {
         </div>
     </template>
 
-    <!-- Devoirs & Interros -->
     <template v-if="activeTab === 'assignments'">
         <EmptyState
             v-if="upcomingAssignments.total + pastAssignments.total === 0"
@@ -457,7 +454,6 @@ function goToAttendance(entry: AgendaJournalEntry) {
         </div>
     </template>
 
-    <!-- Modale édition -->
     <BaseModal ref="editModalRef">
         <div class="flex flex-col gap-5">
             <div>
@@ -560,7 +556,6 @@ function goToAttendance(entry: AgendaJournalEntry) {
         </div>
     </BaseModal>
 
-    <!-- Modale confirmation suppression -->
     <BaseModal ref="confirmDeleteRef">
         <div class="flex flex-col gap-5">
             <div>

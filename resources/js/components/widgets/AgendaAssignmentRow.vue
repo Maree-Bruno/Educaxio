@@ -44,19 +44,16 @@ function shortDate(dateStr: string): string {
         :class="past ? 'opacity-60' : 'cursor-pointer hover:bg-gray-50'"
         @click="!past && emit('edit', assignment.id)"
     >
-        <!-- Date + jour -->
         <div class="w-20 shrink-0">
             <p class="text-xs font-bold text-stone-900">{{ shortDate(assignment.scheduled_date) }}</p>
             <p class="text-[11px] capitalize text-stone-400">{{ dayOfWeek(assignment.scheduled_date) }}</p>
         </div>
 
-        <!-- Type -->
         <span
             class="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
             :class="assignment.type === 'test' ? 'bg-red-100 text-red-600' : 'bg-blue/10 text-blue'"
         >{{ assignment.type === 'test' ? 'Interro' : 'Devoir' }}</span>
 
-        <!-- Contenu -->
         <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-stone-900">{{ assignment.title }}</p>
             <div class="mt-0.5 flex items-center gap-1.5">
@@ -67,7 +64,6 @@ function shortDate(dateStr: string): string {
             </div>
         </div>
 
-        <!-- Supprimer -->
         <button
             v-if="!past"
             type="button"

@@ -116,7 +116,6 @@ function statCards(school: School) {
             {{ school.name }}
         </h2>
 
-        <!-- Stats -->
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div
                 v-for="stat in statCards(school)"
@@ -136,9 +135,7 @@ function statCards(school: School) {
         </div>
 
         <div class="grid grid-cols-1 gap-8 xl:grid-cols-2 xl:items-start">
-            <!-- Colonne gauche -->
             <div class="flex flex-col gap-8">
-                <!-- Demandes en attente -->
                 <DashboardCard
                     description="Approuvez ou refusez les demandes de professeurs souhaitant rejoindre l'établissement."
                 >
@@ -211,7 +208,6 @@ function statCards(school: School) {
                     </ul>
                 </DashboardCard>
 
-                <!-- Élèves récents -->
                 <DashboardCard
                     title="Élèves récents"
                     description="Derniers élèves inscrits dans l'établissement."
@@ -269,9 +265,7 @@ function statCards(school: School) {
                 </DashboardCard>
             </div>
 
-            <!-- Colonne droite -->
             <div class="flex flex-col gap-8">
-                <!-- Professeurs -->
                 <DashboardCard
                     title="Professeurs"
                     description="Professeurs actifs et leurs matières enseignées."
@@ -332,7 +326,6 @@ function statCards(school: School) {
                     </template>
                 </DashboardCard>
 
-                <!-- Accès rapide -->
                 <DashboardCard
                     title="Accès rapide"
                     description="Raccourcis vers les principales sections de gestion."
