@@ -12,19 +12,21 @@ use Inertia\Inertia;
 
 class ScheduleController extends Controller
 {
+    use \App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
+
     public function index(Request $request)
     {
         $user = auth()->user();
         $userSchools = $user->schools()->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
         $schoolIds = $userSchools->pluck('id');
 
-        $academicYears = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-            ->orderByDesc('year')
-            ->get(['id', 'year']);
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
 
-        $selectedYearId = $request->filled('year')
-            ? $request->integer('year')
-            : $academicYears->first()?->id;
+        $academicYears = $this->academicYearsForSchools($schoolIds, $currentYearId);
+
+        $selectedYearId = $this->selectedAcademicYearId($currentYearId, $request)
+            ?? $academicYears->first()['id']
+            ?? null;
 
         $scheduleQuery = Schedule::where('user_id', $user->id)
             ->orderBy('school_id');
@@ -36,16 +38,8 @@ class ScheduleController extends Controller
         $schedules = $scheduleQuery->get();
         $scheduleIds = $schedules->pluck('id');
 
-        // Per-school slot time overrides
-        $schoolSlotTimes = SchoolSlotTime::whereIn('school_id', $schoolIds)
-            ->get()
-            ->groupBy('school_id')
-            ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
-                'start_time' => substr($r->start_time, 0, 5),
-                'end_time' => substr($r->end_time, 0, 5),
-            ]));
+        $schoolSlotTimes = $this->schoolSlotTimes($schoolIds);
 
-        // Use the first school that has configured slot times, else any school
         $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $userSchools->first()?->id;
         $slotTimesForIndicator = $schoolSlotTimes[$indicatorSchoolId] ?? collect();
 
@@ -102,18 +96,20 @@ class ScheduleController extends Controller
                 });
         }
 
+        $schedulesData = $schedules->map(fn ($s) => [
+            'id'        => $s->id,
+            'school_id' => $s->school_id,
+            'school'    => $schoolsById->get($s->school_id)?->name,
+        ]);
+
         return Inertia::render('Schedules', [
-            'slots' => $slots,
-            'entries' => $entries,
-            'lessons' => $lessons,
-            'schools' => $userSchools,
-            'schedules' => $schedules->map(fn ($s) => [
-                'id' => $s->id,
-                'school_id' => $s->school_id,
-                'school' => $schoolsById->get($s->school_id)?->name,
-            ]),
+            'slots'         => $slots,
+            'entries'       => $entries,
+            'lessons'       => $lessons,
+            'schools'       => $userSchools,
+            'schedules'     => $schedulesData,
             'academicYears' => $academicYears,
-            'filters' => (object) ['year' => $selectedYearId ? (string) $selectedYearId : null],
+            'filters'       => (object) ['year' => $selectedYearId ? (string) $selectedYearId : null],
         ]);
     }
 }

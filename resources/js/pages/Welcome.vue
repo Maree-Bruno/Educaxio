@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
 import { Menu, X } from 'lucide-vue-next';
-import { computed, ref  } from 'vue';
-import type {Component} from 'vue';
+import { computed, ref } from 'vue';
+import type { Component } from 'vue';
+
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import FeatureCard from '@/components/widgets/FeatureCard.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
@@ -39,8 +40,13 @@ const menuOpen = ref(false);
 
 function closeMenu() {
     menuOpen.value = false;
-    const cb = document.getElementById('mobile-menu-toggle') as HTMLInputElement | null;
-    if (cb) cb.checked = false;
+    const cb = document.getElementById(
+        'mobile-menu-toggle',
+    ) as HTMLInputElement | null;
+
+    if (cb) {
+        cb.checked = false;
+    }
 }
 
 const CARD_SIZES = '(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)';
@@ -116,17 +122,18 @@ const testimonials: Testimonial[] = [
         ...tAvatar('sophie-dumont'),
     },
 ];
+
 </script>
 
 <template>
-    <Head title="Educaxio" />
+    <Head title="Educaxio — Gestion des présences et emplois du temps pour enseignants" />
 
     <div class="min-h-screen bg-bg-primary font-manrope">
         <header class="fixed inset-x-0 top-0 z-50 bg-white shadow-sm">
             <input
                 id="mobile-menu-toggle"
                 type="checkbox"
-                class="sr-only peer/menu"
+                class="peer/menu sr-only"
                 @change="menuOpen = ($event.target as HTMLInputElement).checked"
             />
             <nav class="flex items-center justify-between p-6">
@@ -183,7 +190,6 @@ const testimonials: Testimonial[] = [
                             size="sm"
                             label="Se connecter"
                         />
-
                     </template>
                 </div>
 
@@ -201,7 +207,7 @@ const testimonials: Testimonial[] = [
 
             <div
                 id="mobile-menu"
-                class="hidden peer-checked/menu:block border-t border-gray-100 bg-white px-6 pb-6 lg:hidden"
+                class="hidden border-t border-gray-100 bg-white px-6 pb-6 peer-checked/menu:block lg:hidden"
             >
                 <ul class="flex flex-col gap-1 py-4">
                     <li>
@@ -261,7 +267,6 @@ const testimonials: Testimonial[] = [
         </header>
 
         <main class="flex flex-col gap-8 pt-24">
-            <!-- Hero -->
             <section id="accueil" class="scroll-mt-24 px-8 py-16 lg:pl-32">
                 <div class="flex flex-col items-center gap-8 lg:flex-row">
                     <div class="flex flex-1 flex-col gap-6 lg:max-w-3/5">
@@ -297,10 +302,19 @@ const testimonials: Testimonial[] = [
                             />
                         </div>
                     </div>
-                    <div class="aspect-square w-full shrink-0 overflow-hidden rounded-3xl lg:size-116.25">
+                    <div
+                        class="aspect-square w-full shrink-0 overflow-hidden rounded-3xl lg:size-116.25"
+                    >
                         <img
                             src="/images/blackboard-640w.jpg"
-                            srcset="/images/blackboard-320w.jpg 320w, /images/blackboard-640w.jpg 640w, /images/blackboard-768w.jpg 768w, /images/blackboard-1024w.jpg 1024w, /images/blackboard-1280w.jpg 1280w, /images/blackboard-1536w.jpg 1536w"
+                            srcset="
+                                /images/blackboard-320w.jpg   320w,
+                                /images/blackboard-640w.jpg   640w,
+                                /images/blackboard-768w.jpg   768w,
+                                /images/blackboard-1024w.jpg 1024w,
+                                /images/blackboard-1280w.jpg 1280w,
+                                /images/blackboard-1536w.jpg 1536w
+                            "
                             sizes="(max-width: 1024px) calc(100vw - 4rem), 465px"
                             alt="Tableau de classe"
                             class="h-full w-full object-cover"
@@ -311,15 +325,17 @@ const testimonials: Testimonial[] = [
                 </div>
             </section>
 
-            <!-- Fonctionnalités -->
-            <section id="fonctionnalites" class="scroll-mt-24 bg-white pt-8 pb-16">
+            <section
+                id="fonctionnalites"
+                class="scroll-mt-24 bg-white pt-8 pb-16"
+            >
                 <div class="px-8">
-                    <h2 class="mb-6 text-2xl font-extrabold text-black lg:text-3xl">
+                    <h2
+                        class="mb-6 text-2xl font-extrabold text-black lg:text-3xl"
+                    >
                         Toutes les fonctionnalités dont vous avez besoin
                     </h2>
-                    <div
-                        class="grid grid-cols-1 gap-6 lg:grid-cols-3"
-                    >
+                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                         <FeatureCard
                             v-for="feature in features"
                             :key="feature.title"
@@ -342,7 +358,6 @@ const testimonials: Testimonial[] = [
                 </div>
             </section>
 
-            <!-- Avis -->
             <section id="avis" class="scroll-mt-24 px-8 py-16">
                 <h2 class="mb-6 text-2xl font-extrabold text-black lg:text-3xl">
                     Ils nous font confiance
@@ -362,7 +377,6 @@ const testimonials: Testimonial[] = [
                 </div>
             </section>
 
-            <!-- CTA -->
             <section
                 class="flex min-h-96 items-center justify-center bg-white p-8"
             >
@@ -373,7 +387,9 @@ const testimonials: Testimonial[] = [
                         >
                             Prêt à simplifier votre quotidien ?
                         </h2>
-                        <p class="text-base leading-7 font-normal text-text-base lg:text-lg lg:leading-8">
+                        <p
+                            class="text-base leading-7 font-normal text-text-base lg:text-lg lg:leading-8"
+                        >
                             Rejoignez des milliers d'enseignants qui ont déjà
                             adopté Educaxio
                         </p>
@@ -389,7 +405,6 @@ const testimonials: Testimonial[] = [
             </section>
         </main>
 
-        <!-- Footer -->
         <footer
             class="bg-white py-6 shadow-[0px_-2px_60px_0px_rgba(0,0,0,0.10)]"
         >

@@ -140,7 +140,6 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
 
 <template>
     <div class="min-w-0 flex-1 overflow-hidden rounded-2xl">
-        <!-- En-tête -->
         <div class="border-b border-neutral-300/10 bg-white px-6 py-5">
             <div class="flex items-start justify-between gap-3">
                 <div>
@@ -186,7 +185,6 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
             </div>
         </div>
 
-        <!-- État vide -->
         <EmptyState
             v-if="!selectedEntry"
             :message="entries.length === 0 ? 'Aucun cours planifié ce jour' : 'Sélectionnez un créneau horaire'"
@@ -194,7 +192,6 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
         />
 
         <template v-else>
-            <!-- Mobile -->
             <ul class="divide-y divide-neutral-100 bg-white sm:hidden">
                 <li
                     v-for="(student, index) in pageStudents"
@@ -208,6 +205,7 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                         {{ student.lastname }} {{ student.firstname }}
                     </span>
                     <select
+                        :aria-label="`Statut de ${student.lastname} ${student.firstname}`"
                         :disabled="!isEditable"
                         class="shrink-0 appearance-none rounded-xl px-3 py-2 text-xs font-bold transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
                         :class="attendanceStatusClasses(localStatuses[student.id])"
@@ -225,14 +223,14 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                 </li>
             </ul>
 
-            <!-- Desktop -->
             <table class="hidden w-full border-collapse bg-white text-left sm:table">
+                <caption class="sr-only">Liste des présences</caption>
                 <thead>
                     <tr class="bg-gray-100">
-                        <th class="w-16 px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
+                        <th scope="col" class="w-16 px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
                         <SortTh col="lastname" label="Nom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <SortTh col="firstname" label="Prénom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
-                        <th class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Statut</th>
+                        <th scope="col" class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Statut</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-neutral-100">

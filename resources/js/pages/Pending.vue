@@ -57,7 +57,7 @@ function cancelRequest(id: number) {
             </p>
         </div>
 
-        <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
+        <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
                 <h2 class="text-base font-bold text-text-base">Établissements</h2>
                 <button
@@ -101,9 +101,9 @@ function cancelRequest(id: number) {
                     @success="addingSchool = false"
                 />
             </div>
-        </div>
+        </section>
 
-        <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
+        <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
             <div class="border-b border-neutral-100 px-6 py-4">
                 <h2 class="text-base font-bold text-text-base">Matières enseignées</h2>
                 <p class="mt-0.5 text-sm text-stone-400">Sélectionnez les matières que vous pouvez enseigner.</p>
@@ -111,6 +111,6 @@ function cancelRequest(id: number) {
             <div class="px-6 py-4">
                 <SubjectPicker :subjects="allSubjects" :model-value="userSubjects" />
             </div>
-        </div>
+        </section>
     </div>
 </template>

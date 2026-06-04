@@ -11,9 +11,11 @@ import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
+import DashboardCard from '@/components/admin/DashboardCard.vue';
 import DateField from '@/components/widgets/DateField.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import SidebarLayout from '@/components/widgets/SidebarLayout.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useToasterStore } from '@/stores/toaster';
 import type { User } from '@/types';
@@ -93,40 +95,33 @@ onUnmounted(() => {
     if (midnightTimer) clearTimeout(midnightTimer);
 });
 
-const editModalRef      = ref<InstanceType<typeof BaseModal> | null>(null);
+const editModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const editingAssignment = ref<AgendaAssignment | null>(null);
 
 const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const pendingDelete = ref<{ id: number; title: string } | null>(null);
 const { hide: hideAssignment, show: showAssignment, isHidden: isAssignmentHidden } = useHiddenIds();
-const toaster          = useToasterStore();
+const toaster = useToasterStore();
 const editForm = useForm({
-    type:           'homework' as 'homework' | 'test',
-    title:          '',
+    type: 'homework' as 'homework' | 'test',
+    title: '',
     scheduled_date: '',
-    description:    '',
+    description: '',
 });
 
 function openEdit(id: number) {
     const a = upcomingAssignments.find((x) => x.id === id);
-
-    if (!a) {
-        return;
-    }
-
+    if (!a) return;
     editingAssignment.value = a;
-    editForm.type           = a.type;
-    editForm.title          = a.title;
+    editForm.type = a.type;
+    editForm.title = a.title;
     editForm.scheduled_date = a.scheduled_date;
-    editForm.description    = a.description ?? '';
+    editForm.description = a.description ?? '';
     editModalRef.value?.open();
 }
 
 function submitEdit() {
-    if (!editingAssignment.value) {
-        return;
-    }
-
+    if (!editingAssignment.value) return;
     editForm.patch(updateAssignment.url({ assignment: editingAssignment.value.id }), {
         preserveScroll: true,
         onSuccess: () => {
@@ -138,22 +133,14 @@ function submitEdit() {
 
 function requestDelete(id: number) {
     const a = upcomingAssignments.find((x) => x.id === id);
-
-    if (!a) {
-        return;
-    }
-
+    if (!a) return;
     pendingDelete.value = { id, title: a.title };
     confirmDeleteRef.value?.open();
 }
 
 function confirmDelete() {
-    if (!pendingDelete.value) {
-        return;
-    }
-
+    if (!pendingDelete.value) return;
     const { id, title } = pendingDelete.value;
-
     confirmDeleteRef.value?.close();
     pendingDelete.value = null;
     hideAssignment(id);
@@ -174,108 +161,95 @@ function confirmDelete() {
                 @update:model-value="changeDate"
             />
         </div>
-        <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
-            <!-- Colonne principale -->
-            <div class="flex min-w-0 flex-1 flex-col gap-6">
-                <!-- Horaire du jour -->
-                <div class="overflow-hidden rounded-2xl">
-                    <div class="border-b border-zinc-400/10 bg-white px-6 py-5">
-                        <h3 class="text-base font-bold text-stone-900">Horaire du jour</h3>
-                        <p class="mt-0.5 text-xs text-stone-400">Cliquez sur « Présences » pour enregistrer les présences d'un cours.</p>
-                    </div>
-                    <EmptyState
-                        v-if="slots.length === 0"
-                        message="Pas de cours aujourd'hui"
-                        class="bg-white"
-                    />
-                    <div v-else>
-                        <template v-for="(slot, index) in slots" :key="slot.id">
-                            <div
-                                v-if="slot.type === 'lunch'"
-                                class="flex items-center justify-center border-b border-zinc-400/10 py-3"
-                                :class="[
-                                    index === slots.length - 1 && 'border-b-0',
-                                    isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
-                                ]"
-                            >
-                                <span class="text-xs font-bold tracking-wider text-zinc-400 uppercase">Pause</span>
-                            </div>
-                            <div
-                                v-else
-                                class="flex items-center gap-3 border-b border-zinc-400/10 px-6 py-4"
-                                :class="[
-                                    index === slots.length - 1 && 'border-b-0',
-                                    isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
-                                ]"
-                            >
-                                <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ slot.label }}</span>
-                                <template v-if="slot.entry">
-                                    <div class="min-w-0 flex-1">
-                                        <p class="truncate text-sm font-extrabold text-text-base">
-                                            {{ slot.entry.group }} · {{ slot.entry.subject }}
-                                        </p>
-                                        <p class="truncate text-xs text-border-figma">
-                                            {{ slot.entry.room ?? '–' }} · {{ slot.entry.school }}
-                                        </p>
-                                    </div>
-                                    <a
-                                        v-if="isEditable"
-                                        :href="attendances.url({ query: { creneau: slot.entry.creneau } })"
-                                        class="shrink-0 text-xs font-bold text-blue hover:underline"
-                                    >
-                                        Présences
-                                    </a>
-                                </template>
-                                <p v-else class="flex-1 text-sm text-zinc-300">Libre</p>
-                            </div>
-                        </template>
-                    </div>
-                </div>
 
-                <!-- Devoirs & Interros -->
-                <div class="overflow-hidden rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10">
-                    <div class="flex items-center justify-between border-b border-neutral-300/10 px-6 py-5">
-                        <div>
-                            <h3 class="text-base font-bold text-stone-900">Devoirs & Interros</h3>
-                            <p class="mt-0.5 text-xs text-stone-400">Prochains devoirs et interrogations pour vos classes.</p>
-                        </div>
-                        <a
-                            v-if="upcomingAssignmentsTotal > 5"
-                            :href="agenda.url({ query: { tab: 'assignments' } })"
-                            class="text-xs font-bold text-blue hover:underline"
+        <SidebarLayout sidebar-width="sm">
+            <DashboardCard
+                title="Horaire du jour"
+                description="Cliquez sur « Présences » pour enregistrer les présences d'un cours."
+            >
+                <EmptyState
+                    v-if="slots.length === 0"
+                    message="Pas de cours aujourd'hui"
+                    class="bg-white"
+                />
+                <div v-else>
+                    <template v-for="(slot, index) in slots" :key="slot.id">
+                        <div
+                            v-if="slot.type === 'lunch'"
+                            class="flex items-center justify-center border-b border-zinc-400/10 py-3"
+                            :class="[
+                                index === slots.length - 1 && 'border-b-0',
+                                isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
+                            ]"
                         >
-                            Voir tout →
-                        </a>
-                    </div>
-                    <p v-if="upcomingAssignments.length === 0" class="px-6 py-8 text-center text-xs italic text-stone-400">
-                        Aucun devoir ni interrogation à venir
-                    </p>
-                    <ul v-else class="divide-y divide-neutral-100">
-                        <AgendaAssignmentRow
-                            v-for="a in upcomingAssignments.filter(({ id }) => !isAssignmentHidden(id))"
-                            :key="a.id"
-                            :assignment="a"
-                            @edit="openEdit"
-                            @delete="requestDelete"
-                        />
-                    </ul>
+                            <span class="text-xs font-bold tracking-wider text-zinc-400 uppercase">Pause</span>
+                        </div>
+                        <div
+                            v-else
+                            class="flex items-center gap-3 border-b border-zinc-400/10 px-6 py-4"
+                            :class="[
+                                index === slots.length - 1 && 'border-b-0',
+                                isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
+                            ]"
+                        >
+                            <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ slot.label }}</span>
+                            <template v-if="slot.entry">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-extrabold text-text-base">
+                                        {{ slot.entry.group }} · {{ slot.entry.subject }}
+                                    </p>
+                                    <p class="truncate text-xs text-border-figma">
+                                        {{ slot.entry.room ?? '–' }} · {{ slot.entry.school }}
+                                    </p>
+                                </div>
+                                <a
+                                    v-if="isEditable"
+                                    :href="attendances.url({ query: { creneau: slot.entry.creneau } })"
+                                    class="shrink-0 text-xs font-bold text-blue hover:underline"
+                                >
+                                    Présences
+                                </a>
+                            </template>
+                            <p v-else class="flex-1 text-sm text-zinc-300">Libre</p>
+                        </div>
+                    </template>
                 </div>
-            </div>
+            </DashboardCard>
 
-            <!-- Sidebar -->
-            <div class="flex w-full shrink-0 flex-col gap-6 xl:w-72">
-                <div class="overflow-hidden rounded-2xl">
-                    <div class="border-b border-neutral-300/10 bg-white px-6 py-5">
-                        <h3 class="text-base font-bold text-stone-900">Mes classes</h3>
-                        <p class="mt-0.5 text-xs text-stone-400">Accédez aux fiches de vos classes et à leurs présences.</p>
-                    </div>
+            <DashboardCard
+                title="Devoirs & Interros"
+                description="Prochains devoirs et interrogations pour vos classes."
+                class="bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10"
+            >
+                <template v-if="upcomingAssignmentsTotal > 5" #action>
+                    <a
+                        :href="agenda.url({ query: { tab: 'assignments' } })"
+                        class="text-xs font-bold text-blue hover:underline"
+                    >
+                        Voir tout →
+                    </a>
+                </template>
+                <p v-if="upcomingAssignments.length === 0" class="px-6 py-8 text-center text-xs italic text-stone-400">
+                    Aucun devoir ni interrogation à venir
+                </p>
+                <ul v-else class="divide-y divide-neutral-100">
+                    <AgendaAssignmentRow
+                        v-for="a in upcomingAssignments.filter(({ id }) => !isAssignmentHidden(id))"
+                        :key="a.id"
+                        :assignment="a"
+                        @edit="openEdit"
+                        @delete="requestDelete"
+                    />
+                </ul>
+            </DashboardCard>
 
+            <template #sidebar>
+                <DashboardCard title="Mes classes" description="Accédez aux fiches de vos classes et à leurs présences.">
                     <EmptyState
                         v-if="groups.length === 0"
                         message="Aucune classe assignée"
                         class="bg-white"
                     />
-
                     <ul v-else class="divide-y divide-neutral-100 bg-white">
                         <li
                             v-for="group in groups"
@@ -291,12 +265,11 @@ function confirmDelete() {
                             </Badge>
                         </li>
                     </ul>
-                </div>
-            </div>
-        </div>
+                </DashboardCard>
+            </template>
+        </SidebarLayout>
     </div>
 
-    <!-- Modale confirmation suppression -->
     <BaseModal ref="confirmDeleteRef">
         <div class="flex flex-col gap-5">
             <div>
@@ -313,7 +286,6 @@ function confirmDelete() {
         </div>
     </BaseModal>
 
-    <!-- Modale édition devoir -->
     <BaseModal ref="editModalRef">
         <div class="flex flex-col gap-5">
             <div>
@@ -353,10 +325,11 @@ function confirmDelete() {
                 />
 
                 <div class="flex flex-col gap-1.5">
-                    <label class="font-manrope text-xs font-bold uppercase leading-4 tracking-widest text-border-figma">
+                    <label for="edit-description" class="font-manrope text-xs font-bold uppercase leading-4 tracking-widest text-border-figma">
                         Description <span class="font-normal normal-case">(optionnel)</span>
                     </label>
                     <textarea
+                        id="edit-description"
                         v-model="editForm.description"
                         rows="3"
                         placeholder="Précisions…"

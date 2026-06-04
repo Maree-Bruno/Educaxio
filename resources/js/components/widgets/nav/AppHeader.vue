@@ -43,7 +43,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <!-- Backdrop mobile -->
     <Transition
         enter-active-class="transition-opacity duration-300 ease-out"
         enter-from-class="opacity-0"
@@ -60,7 +59,6 @@ onUnmounted(() => {
         />
     </Transition>
 
-    <!-- Sidebar -->
     <aside
         :class="[
             'fixed top-0 left-0 z-40 h-screen w-64 bg-white shadow-sm',
@@ -74,7 +72,6 @@ onUnmounted(() => {
     >
         <h2 class="sr-only">Navigation principale</h2>
         <div class="mt-4 flex h-full flex-col">
-            <!-- Logo + pin -->
             <div class="mx-2 mb-4 flex items-center justify-between pb-3">
                 <div
                     class="overflow-hidden transition-[opacity,max-width] ease-in-out"
@@ -87,7 +84,6 @@ onUnmounted(() => {
                     <AppLogoIcon class="h-8 w-32 text-blue-dark" />
                 </div>
 
-                <!-- Pin : desktop uniquement -->
                 <button
                     class="hidden cursor-pointer rounded-lg p-2 transition-all duration-200 ease-in-out hover:scale-110 hover:bg-hover-nav md:flex"
                     :class="[
@@ -116,12 +112,10 @@ onUnmounted(() => {
                 </button>
             </div>
 
-            <!-- Navigation -->
             <div class="flex-1 overflow-y-auto px-4 py-4">
                 <NavHeader :collapsed="nav.isCollapsed" />
             </div>
 
-            <!-- Profil (mobile uniquement) -->
             <div
                 class="border-t border-border-figma/30 px-2 pt-3 pb-1 md:hidden"
             >
@@ -153,7 +147,6 @@ onUnmounted(() => {
                 </Link>
             </div>
 
-            <!-- Logout -->
             <div class="mt-auto mb-8 px-2 pt-2 pb-4">
                 <Button
                     variant="danger"

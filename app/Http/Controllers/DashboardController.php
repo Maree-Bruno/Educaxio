@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Models\Assignment;
 use App\Models\Lesson;
 use App\Models\ScheduleEntry;
@@ -15,6 +16,7 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    use DetectsCurrentAcademicYear;
     public function __invoke(Request $request)
     {
         $user = auth()->user();
@@ -34,17 +36,7 @@ class DashboardController extends Controller
 
             $lessonsCount = Lesson::whereHas('group', fn ($q) => $q->where('school_id', $school->id))->count();
 
-            $joinRequests = SchoolJoinRequest::where('school_id', $school->id)
-                ->where('status', 'pending')
-                ->with(['user:id,name,email', 'user.subjects:id,name'])
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(fn ($r) => [
-                    'id' => $r->id,
-                    'user' => ['id' => $r->user->id, 'name' => $r->user->name, 'email' => $r->user->email],
-                    'subjects' => $r->user->subjects->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
-                ]);
+            $joinRequests = $this->pendingJoinRequests($school->id, 5);
 
             $studentsPaginator = $school->students()
                 ->orderByDesc('created_at')
@@ -113,8 +105,15 @@ class DashboardController extends Controller
         $request = request();
         $today = $request->filled('date') ? Carbon::parse($request->date) : now();
         $dow = $today->dayOfWeekIso;
+
+        $schoolIds = $user->schools()->pluck('schools.id');
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+
         $todayEntries = ScheduleEntry::where('schedule_entries.day_of_week', $dow)
             ->whereHas('lesson.users', fn ($q) => $q->where('users.id', $user->id))
+            ->when($currentYearId, fn ($q) => $q->whereHas('schedule', fn ($s) =>
+                $s->where('academic_year_id', $currentYearId)
+            ))
             ->join('schedule_slots', 'schedule_entries.schedule_slot_id', '=', 'schedule_slots.id')
             ->orderBy('schedule_slots.position')
             ->select('schedule_entries.*')
@@ -126,6 +125,13 @@ class DashboardController extends Controller
                 'group.school:id,name',
                 'subject:id,name',
             ])
+            ->when(
+                $currentYearId,
+                fn ($q) => $q->whereHas('group', fn ($g) => $g->where('academic_year_id', $currentYearId)),
+                fn ($q) => $q->whereHas('group', fn ($g) => $g->whereHas('academicYear.schools', fn ($s) =>
+                    $s->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
+                )),
+            )
             ->get()
             ->keyBy('id');
 
@@ -133,16 +139,9 @@ class DashboardController extends Controller
 
         $entriesBySlotId = $todayEntries->keyBy('schedule_slot_id');
 
-        $userSchoolIds = $user->schools()->pluck('schools.id');
-        $schoolSlotTimes = SchoolSlotTime::whereIn('school_id', $userSchoolIds)
-            ->get()
-            ->groupBy('school_id')
-            ->map(fn ($rows) => $rows->keyBy('schedule_slot_id')->map(fn ($r) => [
-                'start_time' => substr($r->start_time, 0, 5),
-                'end_time' => substr($r->end_time, 0, 5),
-            ]));
+        $schoolSlotTimes = $this->schoolSlotTimes($schoolIds);
 
-        $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $userSchoolIds->first();
+        $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $schoolIds->first();
         $slotTimesForIndicator = $schoolSlotTimes[$indicatorSchoolId] ?? collect();
 
         $slots = ScheduleSlot::orderBy('position')
