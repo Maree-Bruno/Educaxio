@@ -7,6 +7,7 @@ export interface TimedSlot {
 
 export function toMins(t: string): number {
     const [h, m] = t.split(':').map(Number);
+
     return h * 60 + m;
 }
 
@@ -16,21 +17,36 @@ export function useCurrentSlot(slots: TimedSlot[]) {
 
     onMounted(() => {
         now.value = new Date();
-        interval = setInterval(() => { now.value = new Date(); }, 60_000);
+        interval = setInterval(() => {
+            now.value = new Date();
+        }, 60_000);
     });
 
     onUnmounted(() => {
-        if (interval) clearInterval(interval);
+        if (interval) {
+            clearInterval(interval);
+        }
     });
 
     const activeSlotIndex = computed((): number | null => {
-        if (!now.value) return null;
+        if (!now.value) {
+            return null;
+        }
+
         const mins = now.value.getHours() * 60 + now.value.getMinutes();
+
         for (let i = 0; i < slots.length; i++) {
             const s = slots[i];
-            if (!s.start_time || !s.end_time) continue;
-            if (mins >= toMins(s.start_time) && mins < toMins(s.end_time)) return i;
+
+            if (!s.start_time || !s.end_time) {
+                continue;
+            }
+
+            if (mins >= toMins(s.start_time) && mins < toMins(s.end_time)) {
+                return i;
+            }
         }
+
         return null;
     });
 
