@@ -356,11 +356,14 @@ class DatabaseSeeder extends Seeder
 
     private function createUser(string $name, string $email): User
     {
-        return User::factory()->create([
-            'name' => $name,
-            'email' => $email,
-            'password' => 'password',
-        ]);
+        return User::firstOrCreate(
+            ['email' => $email],
+            [
+                'name' => $name,
+                'email' => $email,
+                'password' => 'password',
+            ]
+        );
     }
 
     private function createScheduleSlots(): Collection
