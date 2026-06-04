@@ -34,13 +34,18 @@ class DashboardController extends Controller
                 ->where('status', 'pending')
                 ->count();
 
+            $currentYearId = $this->currentAcademicYearId(collect([$school->id]));
+
             $lessonsCount = Lesson::whereHas('group', fn ($q) => $q->where('school_id', $school->id))->count();
 
             $joinRequests = $this->pendingJoinRequests($school->id, 5);
 
             $studentsPaginator = $school->students()
                 ->orderByDesc('created_at')
-                ->with('groups:id,grade,name,slug')
+                ->with(['groups' => fn ($q) => $q
+                    ->when($currentYearId, fn ($g) => $g->where('academic_year_id', $currentYearId))
+                    ->select('groups.id', 'groups.grade', 'groups.name', 'groups.slug'),
+                ])
                 ->paginate(5, ['id', 'firstname', 'lastname'], 'students_page')
                 ->onEachSide(1);
 

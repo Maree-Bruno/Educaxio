@@ -160,7 +160,7 @@ onUnmounted(() => {
                             ? 'Se déconnecter'
                             : undefined
                     "
-                    class="w-full"
+                    class="w-full cursor-pointer"
                     @click="handleLogout"
                 >
                     <template #icon>
