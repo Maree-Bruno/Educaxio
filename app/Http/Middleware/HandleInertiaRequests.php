@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -48,7 +49,7 @@ class HandleInertiaRequests extends Middleware
                 ]),
             ],
             'storage' => [
-                'users' => env('AWS_URL') ? rtrim(env('AWS_URL'), '/') : rtrim(url('/images'), '/'),
+                'users' => Storage::disk(config('images.disk'))->url(''),
             ],
             'csrf_token' => csrf_token(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
