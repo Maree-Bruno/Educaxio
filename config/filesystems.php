@@ -56,6 +56,7 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'public',
             'throw' => false,
             'report' => false,
         ],
@@ -91,7 +92,7 @@ return [
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
-        public_path('images') => storage_path('app/public/images'),
+        public_path('images/profile') => storage_path('app/public/images/profile'),
     ],
 
 ];
