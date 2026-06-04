@@ -12,4 +12,17 @@ return [
     'reformat_path' => 'profile/variants/%sx%s',
     'format' => ['webp', 'jpg', 'png', 'jpeg'],
     'compression' => 80,
+    'student' => [
+        'disk'          => 'public',
+        'sizes'         => [
+            'xs' => ['width' => 64,  'height' => 64],
+            'sm' => ['width' => 128, 'height' => 128],
+            'md' => ['width' => 256, 'height' => 256],
+            'lg' => ['width' => 512, 'height' => 512],
+        ],
+        'original_path' => 'students/originals',
+        'reformat_path' => 'students/variants/%sx%s',
+        'format'        => ['webp', 'jpg', 'png', 'jpeg'],
+        'compression'   => 80,
+    ],
 ];

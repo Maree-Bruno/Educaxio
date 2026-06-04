@@ -14,6 +14,7 @@ import SelectField from '@/components/widgets/SelectField.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import Eye from '@/components/widgets/svg/Eye.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
+import UserAvatar from '@/components/widgets/UserAvatar.vue';
 import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
@@ -26,7 +27,7 @@ import type { Paginator } from '@/types';
 
 interface School  { id: number; name: string; slug: string }
 interface Group   { id: number; grade: string; name: string; slug: string }
-interface Student { id: number; slug: string; lastname: string; firstname: string; email: string | null; school_id: number; groups: Group[] }
+interface Student { id: number; slug: string; lastname: string; firstname: string; email: string | null; picture: string | null; school_id: number; groups: Group[] }
 
 const props = defineProps<{
     school:        School;
@@ -148,6 +149,13 @@ function confirmDelete() {
                     <span class="mt-0.5 w-5 shrink-0 text-xs text-stone-400">
                         {{ rowNumber(index) }}
                     </span>
+                    <UserAvatar
+                        :name="`${student.firstname} ${student.lastname}`"
+                        :picture="student.picture"
+                        type="student"
+                        image-size="xs"
+                        class="mt-0.5 size-8 shrink-0 text-xs"
+                    />
                     <div class="flex min-w-0 flex-col gap-1">
                         <span class="truncate text-base font-medium text-text-base">
                             {{ student.lastname }} {{ student.firstname }}
@@ -181,6 +189,7 @@ function confirmDelete() {
                 <thead>
                     <tr class="bg-gray-100">
                         <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
+                        <th scope="col" class="px-3 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Photo</th>
                         <SortTh col="lastname" :current-col="sortCol" :current-dir="sortDir" label="Nom" @sort="sortBy" />
                         <SortTh col="firstname" :current-col="sortCol" :current-dir="sortDir" label="Prénom" @sort="sortBy" />
                         <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Groupes</th>
@@ -200,6 +209,15 @@ function confirmDelete() {
                                     ? String(students.total - (students.current_page - 1) * students.per_page - index).padStart(2, '0')
                                     : String((students.current_page - 1) * students.per_page + index + 1).padStart(2, '0')
                             }}
+                        </td>
+                        <td class="w-12 px-3 py-5">
+                            <UserAvatar
+                                :name="`${student.firstname} ${student.lastname}`"
+                                :picture="student.picture"
+                                type="student"
+                                image-size="xs"
+                                class="size-8 text-xs"
+                            />
                         </td>
                         <td class="px-6 py-5">
                             <span class="text-base font-medium text-text-base">{{ student.lastname }}</span>
@@ -230,7 +248,7 @@ function confirmDelete() {
                         </td>
                     </tr>
                     <tr v-if="students.total === 0">
-                        <td colspan="6"><EmptyState message="Aucun élève trouvé" /></td>
+                        <td colspan="7"><EmptyState message="Aucun élève trouvé" /></td>
                     </tr>
                 </tbody>
             </table>

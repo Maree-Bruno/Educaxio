@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Badge from '@/components/widgets/Badge.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
+import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
@@ -78,6 +79,26 @@ const filteredHistory = computed(() => {
         return sortDir.value === 'desc' ? -cmp : cmp;
     });
 });
+
+const PAGE_SIZE   = 10;
+const currentPage = ref(1);
+
+watch([historySearch, historyType, historySubject, historyTeacher, sortCol, sortDir], () => {
+    currentPage.value = 1;
+});
+
+const totalPages   = computed(() => Math.max(1, Math.ceil(filteredHistory.value.length / PAGE_SIZE)));
+const pagedHistory = computed(() =>
+    filteredHistory.value.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE),
+);
+const paginationLinks = computed(() => {
+    const links = [{ url: null, label: 'Previous', active: false }];
+    for (let i = 1; i <= totalPages.value; i++) {
+        links.push({ url: null, label: String(i), active: i === currentPage.value });
+    }
+    links.push({ url: null, label: 'Next', active: false });
+    return links;
+});
 </script>
 
 <template>
@@ -126,7 +147,7 @@ const filteredHistory = computed(() => {
         <template v-if="history.length">
             <ul class="divide-y divide-neutral-100 sm:hidden">
                 <li
-                    v-for="(record, i) in filteredHistory"
+                    v-for="(record, i) in pagedHistory"
                     :key="i"
                     class="flex items-start justify-between gap-3 px-4 py-4"
                 >
@@ -153,6 +174,7 @@ const filteredHistory = computed(() => {
                 </li>
             </ul>
 
+
             <div class="hidden overflow-x-auto sm:block">
                 <table class="w-full border-collapse text-left">
                     <caption class="sr-only">Historique des absences</caption>
@@ -168,7 +190,7 @@ const filteredHistory = computed(() => {
                     </thead>
                     <tbody class="divide-y divide-neutral-100">
                         <tr
-                            v-for="(record, i) in filteredHistory"
+                            v-for="(record, i) in pagedHistory"
                             :key="i"
                             class="transition-colors hover:bg-gray-50"
                         >
@@ -196,6 +218,14 @@ const filteredHistory = computed(() => {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+            <div v-if="totalPages > 1" class="rounded-b-2xl bg-gray-100 px-6 py-4">
+                <Pagination
+                    :links="paginationLinks"
+                    :current-page="currentPage"
+                    :last-page="totalPages"
+                    @update:model-value="currentPage = $event"
+                />
             </div>
         </template>
 

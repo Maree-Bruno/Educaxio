@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('firstname');
             $table->string('slug')->unique();
             $table->string('email')->nullable();
+            $table->string('picture')->nullable();
             $table->unique(['school_id', 'email']);
             $table->timestamps();
         });

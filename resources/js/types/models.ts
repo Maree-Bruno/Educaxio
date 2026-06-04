@@ -30,6 +30,7 @@ export interface Student {
     firstname: string;
     lastname: string;
     email?: string | null;
+    picture?: string | null;
     groups?: (Pick<Group, 'id' | 'grade' | 'name' | 'slug' | 'school_id'> & {
         school: Pick<School, 'id' | 'name'>;
     })[];

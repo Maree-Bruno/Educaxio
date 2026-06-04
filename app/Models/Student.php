@@ -18,6 +18,7 @@ class Student extends Model
         'lastname',
         'firstname',
         'email',
+        'picture',
         'school_id',
     ];
 
