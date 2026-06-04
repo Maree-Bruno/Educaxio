@@ -69,7 +69,7 @@ const iconSizeClasses = computed(
         :disabled="disabled || loading"
         v-bind="$attrs"
         :class="[
-            'inline-flex items-center justify-center gap-2.5 rounded-xl font-manrope font-medium transition-all duration-300',
+            'inline-flex items-center justify-center gap-2.5 rounded-xl font-manrope font-medium transition-all duration-300 cursor-pointer',
             'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
             'active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100',
             variantClasses,
