@@ -50,5 +50,31 @@ export const useUserHelpers = () => {
             .join(', ');
     };
 
-    return { getUserImageUrl, getUserImageSrcset };
+    const getStudentImageUrl = (
+        picture: string | null | undefined,
+        size: keyof typeof profileImageVariants = 'md',
+    ): string => {
+        if (!picture) {
+            return '';
+        }
+
+        return `${storageUrl()}/students/variants/${profileImageVariants[size]}/${picture}`;
+    };
+
+    const getStudentImageSrcset = (picture: string | null | undefined): string => {
+        if (!picture) {
+            return '';
+        }
+
+        const base = storageUrl();
+
+        return Object.values(profileImageVariants)
+            .map((size) => {
+                const width = size.split('x')[0];
+                return `${base}/students/variants/${size}/${picture} ${width}w`;
+            })
+            .join(', ');
+    };
+
+    return { getUserImageUrl, getUserImageSrcset, getStudentImageUrl, getStudentImageSrcset };
 };

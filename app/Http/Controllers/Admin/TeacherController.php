@@ -34,7 +34,7 @@ class TeacherController extends Controller
         }
 
         $teachers = $query
-            ->select(['users.id', 'users.name', 'users.email'])
+            ->select(['users.id', 'users.name', 'users.email', 'users.picture'])
             ->paginate(20)
             ->withQueryString();
 

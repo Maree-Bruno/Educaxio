@@ -11,13 +11,14 @@ import SelectField from '@/components/widgets/SelectField.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import StudentCount from '@/components/widgets/StudentCount.vue';
 import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
+import UserAvatar from '@/components/widgets/UserAvatar.vue';
 import { attendanceStatusClasses, type AttendanceStatus, type PaginationLink } from '@/types';
 
 const emit = defineEmits<{
     'update:localStatuses': [statuses: Record<number, AttendanceStatus | null>]
 }>();
 
-interface Student { id: number; lastname: string; firstname: string }
+interface Student { id: number; lastname: string; firstname: string; picture?: string | null }
 interface Entry   { creneau: string; lesson_id: number }
 interface Status  { student_id: number; type: string; motive: string | null }
 
@@ -201,6 +202,13 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                     <span class="w-6 shrink-0 text-xs text-stone-400">
                         {{ studentRowNumber(index, currentPage, PAGE_SIZE, filteredStudents.length, sortDir) }}
                     </span>
+                    <UserAvatar
+                        :name="`${student.firstname} ${student.lastname}`"
+                        :picture="student.picture ?? null"
+                        type="student"
+                        image-size="xs"
+                        class="size-7 shrink-0 text-xs"
+                    />
                     <span class="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
                         {{ student.lastname }} {{ student.firstname }}
                     </span>
@@ -228,6 +236,7 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                 <thead>
                     <tr class="bg-gray-100">
                         <th scope="col" class="w-16 px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">N°</th>
+                        <th scope="col" class="px-3 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Photo</th>
                         <SortTh col="lastname" label="Nom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <SortTh col="firstname" label="Prénom" :current-col="sortCol" :current-dir="sortDir" @sort="sortBy" />
                         <th scope="col" class="px-6 py-4 text-center text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Statut</th>
@@ -241,6 +250,15 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                     >
                         <td class="px-6 py-5 text-sm text-stone-400">
                             {{ studentRowNumber(index, currentPage, PAGE_SIZE, filteredStudents.length, sortDir) }}
+                        </td>
+                        <td class="w-12 px-3 py-5">
+                            <UserAvatar
+                                :name="`${student.firstname} ${student.lastname}`"
+                                :picture="student.picture ?? null"
+                                type="student"
+                                image-size="xs"
+                                class="size-8 text-xs"
+                            />
                         </td>
                         <td class="px-6 py-5 text-base font-medium text-stone-900">{{ student.lastname }}</td>
                         <td class="px-6 py-5 text-base text-stone-900">{{ student.firstname }}</td>
@@ -260,7 +278,7 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                         </td>
                     </tr>
                     <tr v-if="students.length === 0">
-                        <td colspan="4"><EmptyState message="Aucun élève dans ce groupe" /></td>
+                        <td colspan="5"><EmptyState message="Aucun élève dans ce groupe" /></td>
                     </tr>
                 </tbody>
             </table>

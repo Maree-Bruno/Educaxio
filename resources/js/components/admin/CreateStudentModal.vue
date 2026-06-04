@@ -5,6 +5,7 @@ import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import ProfileAvatarPicker from '@/components/settings/ProfileAvatarPicker.vue';
 import { store as adminStudentsStore } from '@/routes/admin/students';
 import { useToasterStore } from '@/stores/toaster';
 
@@ -16,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
-const form     = useForm({ lastname: '', firstname: '', email: '', group_ids: [] as string[] });
+const form     = useForm({ lastname: '', firstname: '', email: '', group_ids: [] as string[], picture: null as File | null });
 const toaster  = useToasterStore();
 
 const availableGroups = computed(() =>
@@ -52,6 +53,7 @@ function save() {
         email:     data.email || null,
         group_ids: data.group_ids.map(Number),
     })).post(adminStudentsStore.url({ school: props.school.slug }), {
+        forceFormData: true,
         preserveScroll: true,
         onSuccess: () => {
             close();
@@ -67,6 +69,13 @@ defineExpose({ open });
     <BaseModal ref="modalRef">
         <form class="flex flex-col gap-5" @submit.prevent="save">
             <h2 class="text-xl font-bold text-black">Nouvel élève</h2>
+            <div class="flex justify-center">
+                <ProfileAvatarPicker
+                    :current-picture="null"
+                    :name="(form.firstname || form.lastname) ? `${form.firstname} ${form.lastname}`.trim() : 'Élève'"
+                    @update:picture="form.picture = $event"
+                />
+            </div>
             <InputLabel v-model="form.lastname" label="Nom" placeholder="Dupont" :error="form.errors.lastname" />
             <InputLabel v-model="form.firstname" label="Prénom" placeholder="Marie" :error="form.errors.firstname" />
             <InputLabel v-model="form.email" type="email" label="Email (optionnel)" placeholder="marie@exemple.be" :error="form.errors.email" />

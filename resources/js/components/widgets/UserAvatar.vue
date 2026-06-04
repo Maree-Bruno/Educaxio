@@ -8,14 +8,27 @@ const props = defineProps<{
     previewUrl?: string | null;
     imageSize?: 'xs' | 'sm' | 'md' | 'lg';
     sizes?: string;
+    type?: 'user' | 'student';
 }>();
 
-const { getUserImageUrl, getUserImageSrcset } = useUserHelpers();
+const { getUserImageUrl, getUserImageSrcset, getStudentImageUrl, getStudentImageSrcset } = useUserHelpers();
 
+const isStudent = computed(() => props.type === 'student');
 const displayInitials = computed(() => getInitials(props.name));
 const hasImage = computed(() => !!(props.previewUrl || props.picture));
-const imageSrc = computed(() => props.previewUrl ?? (props.picture ? getUserImageUrl(props.picture, props.imageSize ?? 'sm') : ''));
-const imageSrcset = computed(() => props.previewUrl || !props.picture ? '' : getUserImageSrcset(props.picture));
+const imageSrc = computed(() => {
+    if (props.previewUrl) return props.previewUrl;
+    if (!props.picture) return '';
+    return isStudent.value
+        ? getStudentImageUrl(props.picture, props.imageSize ?? 'sm')
+        : getUserImageUrl(props.picture, props.imageSize ?? 'sm');
+});
+const imageSrcset = computed(() => {
+    if (props.previewUrl || !props.picture) return '';
+    return isStudent.value
+        ? getStudentImageSrcset(props.picture)
+        : getUserImageSrcset(props.picture);
+});
 </script>
 
 <template>
