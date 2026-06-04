@@ -91,14 +91,12 @@ class ProfileController extends Controller
         }
 
         if ($request->hasFile('picture')) {
-            $disk = config('images.disk');
-
             if ($user->picture) {
-                Storage::disk($disk)->delete(config('images.original_path').'/'.$user->picture);
+                Storage::disk(config('images.disk'))->delete(config('images.original_path').'/'.$user->picture);
             }
 
             $filename = Str::uuid().'.webp';
-            $originalPath = Storage::disk($disk)->putFileAs(
+            $originalPath = Storage::disk(config('images.disk'))->putFileAs(
                 config('images.original_path'),
                 $request->file('picture'),
                 $filename
