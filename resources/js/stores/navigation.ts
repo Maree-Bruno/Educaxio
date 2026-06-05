@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useNavigationStore = defineStore('navigation', () => {
-    const isPinned = ref(localStorage.getItem('nav-pinned') === 'true');
+    const isPinned = ref(typeof localStorage !== 'undefined' && localStorage.getItem('nav-pinned') === 'true');
     const isCollapsed = ref(!isPinned.value);
 
     function togglePin() {
