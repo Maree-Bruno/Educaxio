@@ -126,7 +126,13 @@ const testimonials: Testimonial[] = [
 </script>
 
 <template>
-    <Head title="Educaxio — Gestion des présences et emplois du temps pour enseignants" />
+    <Head title="Educaxio — Gestion des présences et emplois du temps pour enseignants">
+        <link rel="preload" as="image"
+            href="/images/blackboard-640w.jpg"
+            imagesrcset="/images/blackboard-320w.jpg 320w, /images/blackboard-640w.jpg 640w, /images/blackboard-768w.jpg 768w, /images/blackboard-1024w.jpg 1024w, /images/blackboard-1280w.jpg 1280w, /images/blackboard-1536w.jpg 1536w"
+            imagesizes="(max-width: 1024px) calc(100vw - 4rem), 465px"
+        >
+    </Head>
 
     <div class="min-h-screen bg-bg-primary font-manrope">
         <header class="fixed inset-x-0 top-0 z-50 bg-white shadow-sm">

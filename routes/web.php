@@ -34,9 +34,12 @@ Route::middleware('guest')->post('register/validate', function (Request $request
     return redirect()->back();
 });
 
-Route::inertia('/', 'Welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', function () {
+    return view('welcome', [
+        'canRegister' => Features::enabled(Features::registration()),
+        'isLoggedIn'  => auth()->check(),
+    ]);
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Accessible sans école approuvée
