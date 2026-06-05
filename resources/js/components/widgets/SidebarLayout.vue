@@ -13,7 +13,6 @@ withDefaults(defineProps<{
         class="flex flex-col xl:flex-row xl:items-start"
         :class="gap === 'sm' ? 'gap-4' : 'gap-6'"
     >
-        <h2 class="sr-only">Sidebar</h2>
         <div class="flex min-w-0 flex-1 flex-col gap-6">
             <slot />
         </div>
@@ -21,6 +20,7 @@ withDefaults(defineProps<{
             class="flex w-full shrink-0 flex-col gap-4 xl:sticky xl:top-20"
             :class="sidebarWidth === 'sm' ? 'xl:w-72' : 'xl:w-80'"
         >
+            <h2 class="sr-only">Sidebar</h2>
             <slot name="sidebar" />
         </aside>
     </div>
