@@ -13,6 +13,7 @@ withDefaults(defineProps<{
         class="flex flex-col xl:flex-row xl:items-start"
         :class="gap === 'sm' ? 'gap-4' : 'gap-6'"
     >
+        <h2 class="sr-only">Sidebar</h2>
         <div class="flex min-w-0 flex-1 flex-col gap-6">
             <slot />
         </div>
