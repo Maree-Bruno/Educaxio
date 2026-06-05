@@ -87,15 +87,14 @@ const features: Feature[] = [
     },
 ];
 
-const T = '/images/testimonials%20user';
+const T = '/images/testimonials_user';
 
-function tAvatar(slug: string, suffix = '') {
-    const enc = suffix ? `%20${suffix}` : '';
+function tAvatar(slug: string) {
     const base = `${T}/${slug}`;
 
     return {
-        avatarSrc: `${base}-64w${enc}.jpg`,
-        avatarSrcset: `${base}-64w${enc}.jpg 64w, ${base}-128w${enc}.jpg 128w, ${base}-256w${enc}.jpg 256w`,
+        avatarSrc: `${base}-64w.jpg`,
+        avatarSrcset: `${base}-64w.jpg 64w, ${base}-128w.jpg 128w, ${base}-256w.jpg 256w`,
     };
 }
 
@@ -112,7 +111,7 @@ const testimonials: Testimonial[] = [
         role: 'Professeur de français',
         text: 'Interface claire, intuitive et agréable à utiliser. Je recommande à tous mes collègues. Le suivi des élèves est enfin centralisé en un seul endroit.',
         rating: 4,
-        ...tAvatar('thomas-renard', '2'),
+        ...tAvatar('thomas-renard'),
     },
     {
         name: 'Sophie Dumont',
