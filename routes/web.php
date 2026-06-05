@@ -34,7 +34,10 @@ Route::middleware('guest')->post('register/validate', function (Request $request
     return redirect()->back();
 });
 
-Route::get('/', function () {
+Route::get('/', function (Request $request) {
+    if ($request->header('X-Inertia')) {
+        return \Inertia\Inertia::location('/');
+    }
     return view('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
         'isLoggedIn'  => auth()->check(),
