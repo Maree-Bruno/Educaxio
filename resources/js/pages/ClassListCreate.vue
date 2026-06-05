@@ -10,7 +10,7 @@ import { store } from '@/routes/classlist';
 setPageTitle('Nouvelle classe');
 
 defineProps<{
-    academicYears: Pick<AcademicYear, 'id' | 'year'>[];
+    academicYears: Pick<AcademicYear, 'id' | 'year' | 'is_current'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
     defaults: { school_id: number | null; academic_year_id: number | null };
     breadcrumb: { label: string; href?: string }[];

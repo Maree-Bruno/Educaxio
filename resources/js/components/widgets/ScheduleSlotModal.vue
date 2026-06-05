@@ -2,10 +2,12 @@
 import { useForm } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
+import SelectField from '@/components/widgets/SelectField.vue';
+import type { SelectOption } from '@/components/widgets/SelectField.vue';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
+import { store } from '@/routes/schedule-entries';
 import { useToasterStore } from '@/stores/toaster';
 import type { LessonOption, ScheduleEntry, SlotRow } from '@/types';
-import { store } from '@/routes/schedule-entries';
 
 const props = defineProps<{
     open: boolean;
@@ -34,9 +36,9 @@ const DAY_OPTIONS = [
     { value: 5, label: 'Vendredi' },
 ];
 
-const filterEcole      = ref<number | ''>('');
-const filterClasse     = ref<number | ''>('');
-const selectedLesson   = ref<number | ''>('');
+const filterEcole      = ref<number | null>(null);
+const filterClasse     = ref<number | null>(null);
+const selectedLesson   = ref<number | null>(null);
 const selectedDay      = ref<number>(1);
 const selectedSlotId   = ref<number | null>(null);
 const form             = useForm({ classroom: '' });
@@ -47,18 +49,28 @@ const toaster          = useToasterStore();
 const selectedDayLabel = computed(() => DAY_OPTIONS.find((d) => d.value === selectedDay.value)?.label ?? '');
 const selectedSlot     = computed(() => props.slots.find((s) => s.id === selectedSlotId.value) ?? null);
 const slotOptions      = computed(() => props.slots.filter((s) => s.type === 'slot'));
+const slotSelectOptions = computed<SelectOption[]>(() => slotOptions.value.map((s) => ({ value: s.id, label: s.label ?? String(s.id) })));
 const currentEntry     = computed<ScheduleEntry | null>(() => {
     const slot = selectedSlot.value;
-    if (!slot) return null;
+
+    if (!slot) {
+return null;
+}
+
     return props.entries?.[slot.position]?.[selectedDay.value] ?? null;
 });
 
 const ecoleOptions = computed(() => {
     const seen = new Set<number>();
+
     return props.lessons
         .filter((l) => {
-            if (seen.has(l.group.school_id)) return false;
+            if (seen.has(l.group.school_id)) {
+return false;
+}
+
             seen.add(l.group.school_id);
+
             return true;
         })
         .map((l) => ({ value: l.group.school_id, label: l.group.school.name }));
@@ -69,10 +81,15 @@ const classeOptions = computed(() => {
         ? props.lessons.filter((l) => l.group.school_id === filterEcole.value)
         : props.lessons;
     const seen = new Set<number>();
+
     return filtered
         .filter((l) => {
-            if (seen.has(l.group_id)) return false;
+            if (seen.has(l.group_id)) {
+return false;
+}
+
             seen.add(l.group_id);
+
             return true;
         })
         .map((l) => ({
@@ -89,27 +106,34 @@ const coursOptions = computed(() =>
 );
 
 watch(filterEcole, () => {
-    if (syncing.value) return;
-    filterClasse.value = '';
-    selectedLesson.value = '';
+    if (syncing.value) {
+return;
+}
+
+    filterClasse.value = null;
+    selectedLesson.value = null;
 });
 watch(filterClasse, () => {
-    if (syncing.value) return;
-    selectedLesson.value = '';
+    if (syncing.value) {
+return;
+}
+
+    selectedLesson.value = null;
 });
 
 async function syncFormFromEntry(entry: ScheduleEntry | null) {
     form.classroom = entry?.room ?? '';
+
     if (entry) {
         const lesson = props.lessons.find((l) => l.id === entry.lesson_id);
-        filterEcole.value = lesson?.group.school_id ?? '';
-        filterClasse.value = lesson?.group_id ?? '';
+        filterEcole.value = lesson?.group.school_id ?? null;
+        filterClasse.value = lesson?.group_id ?? null;
         await nextTick();
         selectedLesson.value = entry.lesson_id;
     } else {
-        filterEcole.value = '';
-        filterClasse.value = '';
-        selectedLesson.value = '';
+        filterEcole.value = null;
+        filterClasse.value = null;
+        selectedLesson.value = null;
     }
 }
 
@@ -124,7 +148,10 @@ async function syncFromEntry() {
 }
 
 watch(currentEntry, async (entry) => {
-    if (syncing.value) return;
+    if (syncing.value) {
+return;
+}
+
     syncing.value = true;
     confirmingDelete.value = false;
     await syncFormFromEntry(entry);
@@ -132,13 +159,18 @@ watch(currentEntry, async (entry) => {
 });
 
 onMounted(() => {
-    if (props.open) dialogRef.value?.showModal();
+    if (props.open) {
+dialogRef.value?.showModal();
+}
 });
 
 watch(
     () => props.open,
     async (isOpen) => {
-        if (!dialogRef.value) return;
+        if (!dialogRef.value) {
+return;
+}
+
         if (isOpen) {
             await syncFromEntry();
             dialogRef.value.showModal();
@@ -149,7 +181,9 @@ watch(
 );
 
 function onBackdropClick(event: MouseEvent) {
-    if (event.target === dialogRef.value) emit('close');
+    if (event.target === dialogRef.value) {
+emit('close');
+}
 }
 
 function onCancel(event: Event) {
@@ -158,7 +192,9 @@ function onCancel(event: Event) {
 }
 
 function save() {
-    if (!selectedSlot.value || !selectedLesson.value) return;
+    if (!selectedSlot.value || !selectedLesson.value) {
+return;
+}
 
     const lesson = props.lessons.find((l) => l.id === selectedLesson.value);
     const schedule = props.schedules.find((s) => s.school_id === lesson?.group.school_id);
@@ -180,6 +216,7 @@ function save() {
 
 function deleteEntry() {
     const entry = currentEntry.value;
+
     if (!entry) {
         return;
     }
@@ -212,83 +249,52 @@ function deleteEntry() {
 
             <div class="flex flex-col gap-5">
                 <div class="flex gap-3">
-                    <div class="flex flex-1 flex-col gap-2">
-                        <label for="slot-jour" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Jour</label>
-                        <select
-                            id="slot-jour"
-                            v-model="selectedDay"
-                            class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
-                        >
-                            <option v-for="d in DAY_OPTIONS" :key="d.value" :value="d.value">{{ d.label }}</option>
-                        </select>
-                    </div>
-                    <div class="flex flex-1 flex-col gap-2">
-                        <label for="slot-heure" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Heure</label>
-                        <select
-                            id="slot-heure"
-                            v-model="selectedSlotId"
-                            class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
-                        >
-                            <option v-for="s in slotOptions" :key="s.id" :value="s.id">{{ s.label }}</option>
-                        </select>
-                    </div>
+                    <SelectField
+                        id="slot-jour"
+                        class="flex-1"
+                        label="Jour"
+                        :options="DAY_OPTIONS"
+                        :model-value="selectedDay"
+                        @update:model-value="selectedDay = ($event as number) ?? 1"
+                    />
+                    <SelectField
+                        id="slot-heure"
+                        class="flex-1"
+                        label="Heure"
+                        :options="slotSelectOptions"
+                        :model-value="selectedSlotId"
+                        @update:model-value="selectedSlotId = $event as number | null"
+                    />
                 </div>
 
-                <div class="flex flex-col gap-2">
-                    <label for="slot-ecole" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">École</label>
-                    <select
-                        id="slot-ecole"
-                        v-model="filterEcole"
-                        class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma"
-                    >
-                        <option value="">Choisir une école</option>
-                        <option
-                            v-for="opt in ecoleOptions"
-                            :key="opt.value"
-                            :value="opt.value"
-                        >
-                            {{ opt.label }}
-                        </option>
-                    </select>
-                </div>
+                <SelectField
+                    id="slot-ecole"
+                    label="École"
+                    placeholder="Choisir une école"
+                    :options="ecoleOptions"
+                    :model-value="filterEcole"
+                    @update:model-value="filterEcole = $event as number | null"
+                />
 
-                <div class="flex flex-col gap-2">
-                    <label for="slot-classe" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Classe</label>
-                    <select
-                        id="slot-classe"
-                        v-model="filterClasse"
-                        :disabled="!filterEcole"
-                        class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma disabled:opacity-50"
-                    >
-                        <option value="">Choisir une classe</option>
-                        <option
-                            v-for="opt in classeOptions"
-                            :key="opt.value"
-                            :value="opt.value"
-                        >
-                            {{ opt.label }}
-                        </option>
-                    </select>
-                </div>
+                <SelectField
+                    id="slot-classe"
+                    label="Classe"
+                    placeholder="Choisir une classe"
+                    :options="classeOptions"
+                    :model-value="filterClasse"
+                    :disabled="!filterEcole"
+                    @update:model-value="filterClasse = $event as number | null"
+                />
 
-                <div class="flex flex-col gap-2">
-                    <label for="slot-cours" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Cours</label>
-                    <select
-                        id="slot-cours"
-                        v-model="selectedLesson"
-                        :disabled="!filterClasse"
-                        class="w-full rounded-2xl bg-white px-3 py-3 text-sm font-bold text-text-base outline outline-1 -outline-offset-1 outline-border-figma disabled:opacity-50"
-                    >
-                        <option value="">Choisir un cours</option>
-                        <option
-                            v-for="opt in coursOptions"
-                            :key="opt.value"
-                            :value="opt.value"
-                        >
-                            {{ opt.label }}
-                        </option>
-                    </select>
-                </div>
+                <SelectField
+                    id="slot-cours"
+                    label="Cours"
+                    placeholder="Choisir un cours"
+                    :options="coursOptions"
+                    :model-value="selectedLesson"
+                    :disabled="!filterClasse"
+                    @update:model-value="selectedLesson = $event as number | null"
+                />
 
                 <div class="flex flex-col gap-2">
                     <label for="slot-local" class="text-xs leading-4 font-bold tracking-wide text-border-figma uppercase">Local</label>
