@@ -46,7 +46,7 @@ function jumpToPage(page: number) {
     >
         <button
             :disabled="currentPage === 1"
-            class="flex h-7 w-7 items-center justify-center rounded-lg outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex h-7 w-7 items-center justify-center rounded-lg outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Page précédente"
             @click="navigate(prevLink.url, currentPage - 1)"
         >
@@ -57,7 +57,7 @@ function jumpToPage(page: number) {
             <label for="pagination-select-mobile" class="sr-only">Aller à la page</label>
             <select
                 id="pagination-select-mobile"
-                class="h-7 appearance-none cursor-pointer rounded-lg bg-white pl-2 pr-6 text-xs font-medium text-text-base outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10"
+                class="h-7 appearance-none cursor-pointer rounded-lg bg-white pl-2 pr-6 text-xs font-medium text-text-base outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 focus-visible:outline-2"
                 :value="currentPage"
                 @change="jumpToPage(Number(($event.target as HTMLSelectElement).value))"
             >
@@ -71,7 +71,7 @@ function jumpToPage(page: number) {
                 v-if="link.label !== '...'"
                 :aria-current="link.active ? 'page' : undefined"
                 :class="link.active ? 'bg-blue text-white' : 'text-text-base outline-1 -outline-offset-1 outline-blue hover:bg-blue/10'"
-                class="hidden sm:flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors"
+                class="hidden sm:flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-blue"
                 @click="navigate(link.url, Number(link.label))"
             >
                 {{ link.label }}
@@ -81,7 +81,7 @@ function jumpToPage(page: number) {
 
         <button
             :disabled="currentPage === lastPage"
-            class="flex h-7 w-7 items-center justify-center rounded-lg outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex h-7 w-7 items-center justify-center rounded-lg outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Page suivante"
             @click="navigate(nextLink.url, currentPage + 1)"
         >
@@ -92,7 +92,7 @@ function jumpToPage(page: number) {
             <label for="pagination-select-desktop" class="sr-only">Aller à la page</label>
             <select
                 id="pagination-select-desktop"
-                class="h-7 appearance-none cursor-pointer rounded-lg bg-white pl-2 pr-6 text-xs font-medium text-text-base outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10"
+                class="h-7 appearance-none cursor-pointer rounded-lg bg-white pl-2 pr-6 text-xs font-medium text-text-base outline-1 -outline-offset-1 outline-blue transition-colors hover:bg-blue/10 focus-visible:outline-2"
                 :value="currentPage"
                 @change="jumpToPage(Number(($event.target as HTMLSelectElement).value))"
             >

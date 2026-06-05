@@ -19,8 +19,11 @@ defineEmits<{ click: [] }>();
 
 <template>
     <li
-        class="group flex cursor-pointer items-start gap-4 px-6 py-5 transition-colors hover:bg-gray-50"
+        class="group flex cursor-pointer items-start gap-4 px-6 py-5 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue"
+        tabindex="0"
         @click="$emit('click')"
+        @keydown.enter="$emit('click')"
+        @keydown.space.prevent="$emit('click')"
     >
         <div class="flex w-14 shrink-0 flex-col items-center rounded-xl bg-stone-100 py-2 text-center">
             <span class="text-xs font-bold uppercase text-stone-400">
