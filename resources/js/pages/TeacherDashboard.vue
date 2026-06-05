@@ -155,7 +155,7 @@ function confirmDelete() {
 <template>
     <div class="flex flex-col gap-6">
         <div class="flex items-center justify-between gap-4">
-            <h2 class="text-xl font-bold capitalize text-text-base">{{ date }}</h2>
+            <h2 class="text-xl font-bold capitalize text-text-base"><time :datetime="date">{{ date }}</time></h2>
             <DateField
                 :model-value="selectedDate"
                 @update:model-value="changeDate"

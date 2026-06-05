@@ -40,6 +40,8 @@ withDefaults(
                         srcset="/images/blackboard-320w.jpg 320w, /images/blackboard-640w.jpg 640w, /images/blackboard-768w.jpg 768w, /images/blackboard-1024w.jpg 1024w, /images/blackboard-1280w.jpg 1280w, /images/blackboard-1536w.jpg 1536w"
                         sizes="588px"
                         alt="Tableau de classe"
+                        width="1024"
+                        height="682"
                         class="h-full w-full object-cover"
                         loading="lazy"
                         decoding="async"

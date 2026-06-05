@@ -153,7 +153,7 @@ const paginationLinks = computed(() => {
                 >
                     <div class="flex min-w-0 flex-col gap-1">
                         <span class="text-sm font-medium text-text-base">
-                            {{ formatDate(record.date) }}
+                            <time :datetime="record.date ?? ''">{{ formatDate(record.date) }}</time>
                             <span v-if="record.time" class="text-stone-400"> · {{ record.time }}</span>
                         </span>
                         <span class="flex items-center gap-1.5 text-xs text-stone-500">
@@ -194,7 +194,7 @@ const paginationLinks = computed(() => {
                             :key="i"
                             class="transition-colors hover:bg-gray-50"
                         >
-                            <td class="px-6 py-4 text-sm text-text-base">{{ formatDate(record.date) }}</td>
+                            <td class="px-6 py-4 text-sm text-text-base"><time :datetime="record.date ?? ''">{{ formatDate(record.date) }}</time></td>
                             <td class="px-6 py-4 text-sm text-text-base">{{ record.time ?? '—' }}</td>
                             <td class="px-6 py-4 text-sm text-text-base">{{ record.subject ?? '—' }}</td>
                             <td class="px-6 py-4">

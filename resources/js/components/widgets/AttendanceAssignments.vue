@@ -194,7 +194,7 @@ function confirmDelete() {
                 >{{ a.type === 'test' ? 'Interro' : 'Devoir' }}</span>
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-medium text-text-base">{{ a.title }}</p>
-                    <p class="text-xs text-stone-400">{{ formatDate(a.scheduled_date) }}</p>
+                    <p class="text-xs text-stone-400"><time :datetime="a.scheduled_date">{{ formatDate(a.scheduled_date) }}</time></p>
                 </div>
                 <button
                     type="button"

@@ -25,6 +25,8 @@ defineProps<{
                 :srcset="imageSrcset"
                 :sizes="imageSizes"
                 :alt="title"
+                width="640"
+                height="480"
                 class="h-full w-full object-cover object-top"
                 loading="lazy"
                 decoding="async"

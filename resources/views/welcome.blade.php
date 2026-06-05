@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link rel="dns-prefetch" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=manrope:400,500,600,700,800&display=swap" rel="stylesheet" />
-    
+
     @vite(['resources/css/app.css'])
 
     @php
@@ -59,6 +59,8 @@
     @endphp
 
     <meta name="description" content="{{ $appDesc }}">
+    <meta name="author" content="Educaxio">
+    <meta name="keywords" content="gestion présences, emploi du temps, suivi élèves, journal de classe, enseignants, école, plateforme scolaire">
     {!! $ldScripts !!}
 
     <style>
@@ -78,7 +80,7 @@
         <nav class="flex items-center justify-between p-6">
             <h2 class="sr-only">Navigation de haut de page</h2>
 
-            <a href="{{ url('/') }}" class="flex items-center gap-1">
+            <a href="{{ url('/') }}" title="Accueil Educaxio" class="flex items-center gap-1">
                 <div class="inline-flex h-9 w-9 items-center justify-center gap-2.5 rounded-2xl bg-blue p-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <path d="M22 10V16M22 10L12 5L2 10L12 15L22 10Z" stroke="#F5F0EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -89,9 +91,9 @@
             </a>
 
             <ul class="hidden items-center gap-8 lg:flex">
-                <li><a href="#accueil" class="text-base font-bold text-text-base transition-colors hover:text-blue">Accueil</a></li>
-                <li><a href="#fonctionnalites" class="text-base font-bold text-text-base transition-colors hover:text-blue">Fonctionnalités</a></li>
-                <li><a href="#avis" class="text-base font-bold text-text-base transition-colors hover:text-blue">Avis</a></li>
+                <li><a href="#accueil" hreflang="fr" class="text-base font-bold text-text-base transition-colors hover:text-blue">Accueil</a></li>
+                <li><a href="#fonctionnalites" hreflang="fr" class="text-base font-bold text-text-base transition-colors hover:text-blue">Fonctionnalités</a></li>
+                <li><a href="#avis" hreflang="fr" class="text-base font-bold text-text-base transition-colors hover:text-blue">Avis</a></li>
             </ul>
 
             <div class="hidden items-center gap-4 lg:flex">
@@ -158,6 +160,7 @@
                         srcset="/images/blackboard-320w.jpg 320w, /images/blackboard-640w.jpg 640w, /images/blackboard-768w.jpg 768w, /images/blackboard-1024w.jpg 1024w, /images/blackboard-1280w.jpg 1280w, /images/blackboard-1536w.jpg 1536w"
                         sizes="(max-width: 1024px) calc(100vw - 4rem), 465px"
                         alt="Tableau de classe"
+                        width="640" height="640"
                         class="h-full w-full object-cover"
                         fetchpriority="high"
                         decoding="async"
@@ -183,7 +186,7 @@
                                 automatique et historique complet pour chaque élève.</p>
                         </div>
                         <div class="min-h-36 flex-1 overflow-hidden rounded-2xl bg-white/20">
-                            <img src="/images/attendance-640w.jpg" srcset="/images/attendance-320w.jpg 320w, /images/attendance-640w.jpg 640w, /images/attendance-768w.jpg 768w, /images/attendance-1024w.jpg 1024w, /images/attendance-1280w.jpg 1280w, /images/attendance-1536w.jpg 1536w" sizes="(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)" alt="Gestion des présences" class="h-full w-full object-cover object-top" loading="lazy" decoding="async"/>
+                            <img src="/images/attendance-640w.jpg" srcset="/images/attendance-320w.jpg 320w, /images/attendance-640w.jpg 640w, /images/attendance-768w.jpg 768w, /images/attendance-1024w.jpg 1024w, /images/attendance-1280w.jpg 1280w, /images/attendance-1536w.jpg 1536w" sizes="(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)" alt="Gestion des présences" width="640" height="480" class="h-full w-full object-cover object-top" loading="lazy" decoding="async"/>
                         </div>
                     </div>
 
@@ -199,7 +202,7 @@
                                 accès rapide au profil détaillé de chaque élève.</p>
                         </div>
                         <div class="min-h-36 flex-1 overflow-hidden rounded-2xl bg-white/20">
-                            <img src="/images/class-480w.jpeg" srcset="/images/class-320w.jpeg 320w, /images/class-480w.jpeg 480w, /images/class-768w.jpeg 768w, /images/class-1024w.jpeg 1024w, /images/class-1280w.jpeg 1280w, /images/class-1536w.jpeg 1536w" sizes="(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)" alt="Visualisation de ses classes" class="h-full w-full object-cover object-top" loading="lazy" decoding="async"/>
+                            <img src="/images/class-480w.jpeg" srcset="/images/class-320w.jpeg 320w, /images/class-480w.jpeg 480w, /images/class-768w.jpeg 768w, /images/class-1024w.jpeg 1024w, /images/class-1280w.jpeg 1280w, /images/class-1536w.jpeg 1536w" sizes="(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)" alt="Visualisation de ses classes" width="640" height="480" class="h-full w-full object-cover object-top" loading="lazy" decoding="async"/>
                         </div>
                     </div>
 
@@ -215,7 +218,7 @@
                                 hebdomadaires. Export PDF disponible en un seul clic.</p>
                         </div>
                         <div class="min-h-36 flex-1 overflow-hidden rounded-2xl bg-white/20">
-                            <img src="/images/schedule-480w.jpeg" srcset="/images/schedule-320w.jpeg 320w, /images/schedule-480w.jpeg 480w, /images/schedule-768w.jpeg 768w, /images/schedule-1024w.jpeg 1024w, /images/schedule-1280w.jpeg 1280w, /images/schedule-1536w.jpeg 1536w" sizes="(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)" alt="Emploi du temps" class="h-full w-full object-cover object-top" loading="lazy" decoding="async"/>
+                            <img src="/images/schedule-480w.jpeg" srcset="/images/schedule-320w.jpeg 320w, /images/schedule-480w.jpeg 480w, /images/schedule-768w.jpeg 768w, /images/schedule-1024w.jpeg 1024w, /images/schedule-1280w.jpeg 1280w, /images/schedule-1536w.jpeg 1536w" sizes="(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)" alt="Emploi du temps" width="640" height="480" class="h-full w-full object-cover object-top" loading="lazy" decoding="async"/>
                         </div>
                     </div>
 
@@ -231,14 +234,14 @@
                     <h3 class="sr-only">Avis de Marie Lambert</h3>
                     <div class="flex items-center gap-3.5">
                         <div class="size-20 shrink-0 overflow-hidden rounded-full bg-zinc-300">
-                            <img src="/images/testimonials_user/marie-lambert-64w.jpg" srcset="/images/testimonials_user/marie-lambert-64w.jpg 64w, /images/testimonials_user/marie-lambert-128w.jpg 128w, /images/testimonials_user/marie-lambert-256w.jpg 256w" sizes="80px" alt="Marie Lambert" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
+                            <img src="/images/testimonials_user/marie-lambert-64w.jpg" srcset="/images/testimonials_user/marie-lambert-64w.jpg 64w, /images/testimonials_user/marie-lambert-128w.jpg 128w, /images/testimonials_user/marie-lambert-256w.jpg 256w" sizes="80px" alt="Marie Lambert" width="80" height="80" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <p class="text-base font-bold text-text-base">Marie Lambert</p>
+                            <cite class="text-base font-bold not-italic text-text-base">Marie Lambert</cite>
                             <p class="text-sm text-text-base">Enseignante de mathématiques</p>
                         </div>
                     </div>
-                    <p class="flex-1 text-sm text-text-base">Educaxio a complètement transformé ma façon de gérer mes classes. La prise des présences est devenue un jeu d'enfant et je gagne un temps précieux chaque jour.</p>
+                    <q class="flex-1 text-sm not-italic text-text-base">Educaxio a complètement transformé ma façon de gérer mes classes. La prise des présences est devenue un jeu d'enfant et je gagne un temps précieux chaque jour.</q>
                     <div class="flex gap-1" role="img" aria-label="5 étoiles sur 5">
                         <span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span>
                     </div>
@@ -248,14 +251,14 @@
                     <h3 class="sr-only">Avis de Thomas Renard</h3>
                     <div class="flex items-center gap-3.5">
                         <div class="size-20 shrink-0 overflow-hidden rounded-full bg-zinc-300">
-                            <img src="/images/testimonials_user/thomas-renard-64w.jpg" srcset="/images/testimonials_user/thomas-renard-64w.jpg 64w, /images/testimonials_user/thomas-renard-128w.jpg 128w, /images/testimonials_user/thomas-renard-256w.jpg 256w" sizes="80px" alt="Thomas Renard" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
+                            <img src="/images/testimonials_user/thomas-renard-64w.jpg" srcset="/images/testimonials_user/thomas-renard-64w.jpg 64w, /images/testimonials_user/thomas-renard-128w.jpg 128w, /images/testimonials_user/thomas-renard-256w.jpg 256w" sizes="80px" alt="Thomas Renard" width="80" height="80" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <p class="text-base font-bold text-text-base">Thomas Renard</p>
+                            <cite class="text-base font-bold not-italic text-text-base">Thomas Renard</cite>
                             <p class="text-sm text-text-base">Professeur de français</p>
                         </div>
                     </div>
-                    <p class="flex-1 text-sm text-text-base">Interface claire, intuitive et agréable à utiliser. Je recommande à tous mes collègues. Le suivi des élèves est enfin centralisé en un seul endroit.</p>
+                    <q class="flex-1 text-sm not-italic text-text-base">Interface claire, intuitive et agréable à utiliser. Je recommande à tous mes collègues. Le suivi des élèves est enfin centralisé en un seul endroit.</q>
                     <div class="flex gap-1" role="img" aria-label="4 étoiles sur 5">
                         <span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-zinc-300" aria-hidden="true">★</span>
                     </div>
@@ -265,14 +268,14 @@
                     <h3 class="sr-only">Avis de Sophie Dumont</h3>
                     <div class="flex items-center gap-3.5">
                         <div class="size-20 shrink-0 overflow-hidden rounded-full bg-zinc-300">
-                        <img src="/images/testimonials_user/sophie-dumont-64w.jpg" srcset="/images/testimonials_user/sophie-dumont-64w.jpg 64w, /images/testimonials_user/sophie-dumont-128w.jpg 128w, /images/testimonials_user/sophie-dumont-256w.jpg 256w" sizes="80px" alt="Sophie Dumont" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
+                        <img src="/images/testimonials_user/sophie-dumont-64w.jpg" srcset="/images/testimonials_user/sophie-dumont-64w.jpg 64w, /images/testimonials_user/sophie-dumont-128w.jpg 128w, /images/testimonials_user/sophie-dumont-256w.jpg 256w" sizes="80px" alt="Sophie Dumont" width="80" height="80" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <p class="text-base font-bold text-text-base">Sophie Dumont</p>
+                            <cite class="text-base font-bold not-italic text-text-base">Sophie Dumont</cite>
                             <p class="text-sm text-text-base">Directrice adjointe</p>
                         </div>
                     </div>
-                    <p class="flex-1 text-sm text-text-base">Un outil indispensable pour notre établissement. La vision d'ensemble sur toutes les classes facilite énormément le travail administratif au quotidien.</p>
+                    <q class="flex-1 text-sm not-italic text-text-base">Un outil indispensable pour notre établissement. La vision d'ensemble sur toutes les classes facilite énormément le travail administratif au quotidien.</q>
                     <div class="flex gap-1" role="img" aria-label="5 étoiles sur 5">
                         <span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span><span class="text-base leading-none text-orange-500" aria-hidden="true">★</span>
                     </div>
@@ -314,7 +317,7 @@
                     <a href="#" class="text-sm text-text-base transition-colors hover:text-blue">Support</a>
                 </nav>
             </div>
-            <p class="text-center text-xs text-text-base">© <strong>Educaxio</strong> 2026 — Tous droits réservés</p>
+            <p class="text-center text-xs text-text-base">© <strong>Educaxio</strong> <time datetime="2026">2026</time> — Tous droits réservés</p>
         </div>
     </footer>
 

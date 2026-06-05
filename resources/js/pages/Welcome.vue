@@ -322,6 +322,8 @@ const testimonials: Testimonial[] = [
                             "
                             sizes="(max-width: 1024px) calc(100vw - 4rem), 465px"
                             alt="Tableau de classe"
+                            width="640"
+                            height="640"
                             class="h-full w-full object-cover"
                             fetchpriority="high"
                             decoding="async"
