@@ -14,13 +14,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link rel="dns-prefetch" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=manrope:400,500,600,700,800&display=swap" rel="stylesheet" />
-
-    <link rel="preload" as="image"
-        href="/images/blackboard-640w.jpg"
-        imagesrcset="/images/blackboard-320w.jpg 320w, /images/blackboard-640w.jpg 640w, /images/blackboard-768w.jpg 768w, /images/blackboard-1024w.jpg 1024w, /images/blackboard-1280w.jpg 1280w, /images/blackboard-1536w.jpg 1536w"
-        imagesizes="(max-width: 1024px) calc(100vw - 4rem), 465px"
-    >
-
+    
     @vite(['resources/css/app.css'])
 
     @php
