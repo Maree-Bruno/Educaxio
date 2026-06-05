@@ -271,13 +271,13 @@ const testimonials: Testimonial[] = [
                 <div class="flex flex-col items-center gap-8 lg:flex-row">
                     <div class="flex flex-1 flex-col gap-6 lg:max-w-3/5">
                         <h2
-                            class="text-4xl leading-tight font-extrabold text-stone-900 lg:text-5xl lg:leading-tight"
+                            class="text-4xl leading-tight font-extrabold text-text-base lg:text-5xl lg:leading-tight"
                         >
                             Simplifiez la gestion de vos classes avec
                             <span class="text-blue"> Educaxio</span>
                         </h2>
                         <p
-                            class="text-base leading-7 font-normal text-gray-700 lg:text-lg lg:leading-8"
+                            class="text-base leading-7 font-normal text-text-base lg:text-lg lg:leading-8"
                         >
                             La plateforme tout-en-un pour les enseignants :
                             gestion des présences, emplois du temps, suivi des
@@ -331,7 +331,7 @@ const testimonials: Testimonial[] = [
             >
                 <div class="px-8">
                     <h2
-                        class="mb-6 text-2xl font-extrabold text-black lg:text-3xl"
+                        class="mb-6 text-2xl font-extrabold text-text-base lg:text-3xl"
                     >
                         Toutes les fonctionnalités dont vous avez besoin
                     </h2>
@@ -359,7 +359,7 @@ const testimonials: Testimonial[] = [
             </section>
 
             <section id="avis" class="scroll-mt-24 px-8 py-16">
-                <h2 class="mb-6 text-2xl font-extrabold text-black lg:text-3xl">
+                <h2 class="mb-6 text-2xl font-extrabold text-text-base lg:text-3xl">
                     Ils nous font confiance
                 </h2>
                 <div class="flex flex-col gap-8 lg:flex-row">
@@ -440,7 +440,7 @@ const testimonials: Testimonial[] = [
                         >
                     </nav>
                 </div>
-                <p class="text-center text-xs text-black">
+                <p class="text-center text-xs text-text-base">
                     © <strong>Educaxio</strong> 2026 — Tous droits réservés
                 </p>
             </div>

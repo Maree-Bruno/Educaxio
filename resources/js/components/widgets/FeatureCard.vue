@@ -16,7 +16,7 @@ defineProps<{
         </div>
         <div class="flex flex-col gap-2">
             <h3 class="text-lg font-semibold text-bg-primary">{{ title }}</h3>
-            <p class="text-sm font-normal text-stone-100">{{ description }}</p>
+            <p class="text-sm font-normal text-white">{{ description }}</p>
         </div>
         <div class="min-h-36 flex-1 overflow-hidden rounded-2xl bg-white/20">
             <img
