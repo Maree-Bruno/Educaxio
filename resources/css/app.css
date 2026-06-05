@@ -177,18 +177,24 @@
 @theme inline {
     --color-bg-primary: #F5F0EB;
     --color-text-base: #303030;
-    --color-blue: #0891B2;
-    --color-blue-dark: #155E75;
-    --color-blue-hover: rgba(8 145 178 0.55);
-    --color-pink: #EC4899;
-    --color-pink-hover: rgba(221 62 141 0.55);
-    --color-orange: #F97316;
-    --color-orange-hover: rgba(249 115 22  0.55);
-    --color-gray: #475569;
-    --color-green: #22C55E;
-    --color-border-figma: #AFAFAF;
-    --color-hover-nav:#DEDEDE;
+
+    --color-blue: #0E6E8C;
+    --color-blue-dark: #0A4A5E;
+    --color-blue-hover: rgba(14 110 140 / 0.55);
+
+    --color-pink: #C2185B;
+    --color-pink-hover: rgba(194 24 91 / 0.55);
+
+    --color-orange: #C2510A;
+    --color-orange-hover: rgba(194 81 10 / 0.55);
+
+    --color-gray: #374151;
+    --color-green: #166534;
+
+    --color-border-figma: #8A8A8A;
+    --color-hover-nav: #DEDEDE;         
     --color-white: #FFFFFF;
+
     --radius-card: 16px;
     --radius-modal: 24px;
     --spacing-section: 32px;

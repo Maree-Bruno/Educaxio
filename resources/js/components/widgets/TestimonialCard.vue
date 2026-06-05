@@ -29,12 +29,12 @@ withDefaults(
                 />
             </div>
             <div class="flex flex-col gap-1">
-                <p class="text-base font-bold text-black">{{ name }}</p>
-                <p class="text-sm text-black">{{ role }}</p>
+                <p class="text-base font-bold text-text-base">{{ name }}</p>
+                <p class="text-sm text-text-base">{{ role }}</p>
             </div>
         </div>
-        <p class="flex-1 text-sm text-black">{{ text }}</p>
-        <div class="flex gap-1" :aria-label="`${rating} étoiles sur 5`">
+        <p class="flex-1 text-sm text-text-base">{{ text }}</p>
+        <div class="flex gap-1" role="img" :aria-label="`${rating} étoiles sur 5`">
             <span
                 v-for="i in 5"
                 :key="i"
