@@ -40,9 +40,12 @@ function shortDate(dateStr: string): string {
 
 <template>
     <li
-        class="flex items-center gap-4 px-6 py-4 transition-colors"
+        class="flex items-center gap-4 px-6 py-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue"
         :class="past ? 'opacity-60' : 'cursor-pointer hover:bg-gray-50'"
+        :tabindex="past ? -1 : 0"
         @click="!past && emit('edit', assignment.id)"
+        @keydown.enter="!past && emit('edit', assignment.id)"
+        @keydown.space.prevent="!past && emit('edit', assignment.id)"
     >
         <time :datetime="assignment.scheduled_date" class="w-20 shrink-0">
             <p class="text-xs font-bold text-stone-900">{{ shortDate(assignment.scheduled_date) }}</p>
