@@ -23,17 +23,19 @@ withDefaults(
                     :srcset="avatarSrcset"
                     sizes="80px"
                     :alt="name"
+                    width="80"
+                    height="80"
                     class="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
                 />
             </div>
             <div class="flex flex-col gap-1">
-                <p class="text-base font-bold text-text-base">{{ name }}</p>
+                <cite class="text-base font-bold not-italic text-text-base">{{ name }}</cite>
                 <p class="text-sm text-text-base">{{ role }}</p>
             </div>
         </div>
-        <p class="flex-1 text-sm text-text-base">{{ text }}</p>
+        <q class="flex-1 text-sm not-italic text-text-base">{{ text }}</q>
         <div class="flex gap-1" role="img" :aria-label="`${rating} étoiles sur 5`">
             <span
                 v-for="i in 5"

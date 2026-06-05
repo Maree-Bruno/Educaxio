@@ -13,6 +13,9 @@ const props = defineProps<{
 
 const { getUserImageUrl, getUserImageSrcset, getStudentImageUrl, getStudentImageSrcset } = useUserHelpers();
 
+const sizeMap = { xs: 36, sm: 64, md: 80, lg: 128 } as const;
+const avatarPx = computed(() => sizeMap[props.imageSize ?? 'sm']);
+
 const isStudent = computed(() => props.type === 'student');
 const displayInitials = computed(() => getInitials(props.name));
 const hasImage = computed(() => !!(props.previewUrl || props.picture));
@@ -39,6 +42,8 @@ const imageSrcset = computed(() => {
             :srcset="imageSrcset || undefined"
             :sizes="sizes"
             :alt="`Photo de ${name}`"
+            :width="avatarPx"
+            :height="avatarPx"
             class="h-full w-full rounded-full object-cover"
         />
         <span v-else aria-hidden="true">{{ displayInitials }}</span>

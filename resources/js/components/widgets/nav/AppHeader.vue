@@ -132,6 +132,8 @@ onUnmounted(() => {
                             :srcset="getUserImageSrcset(auth.user.picture)"
                             sizes="36px"
                             :alt="`Photo de ${auth.user.name}`"
+                            width="36"
+                            height="36"
                             class="h-full w-full rounded-full object-cover"
                         />
                         <span v-else>{{ auth.initials }}</span>

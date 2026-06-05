@@ -44,10 +44,10 @@ function shortDate(dateStr: string): string {
         :class="past ? 'opacity-60' : 'cursor-pointer hover:bg-gray-50'"
         @click="!past && emit('edit', assignment.id)"
     >
-        <div class="w-20 shrink-0">
+        <time :datetime="assignment.scheduled_date" class="w-20 shrink-0">
             <p class="text-xs font-bold text-stone-900">{{ shortDate(assignment.scheduled_date) }}</p>
             <p class="text-[11px] capitalize text-stone-400">{{ dayOfWeek(assignment.scheduled_date) }}</p>
-        </div>
+        </time>
 
         <span
             class="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
