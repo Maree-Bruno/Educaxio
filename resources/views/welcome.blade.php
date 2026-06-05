@@ -237,7 +237,7 @@
                     <h3 class="sr-only">Avis de Marie Lambert</h3>
                     <div class="flex items-center gap-3.5">
                         <div class="size-20 shrink-0 overflow-hidden rounded-full bg-zinc-300">
-                            <img src="/images/testimonials%20user/marie-lambert-64w.jpg" srcset="/images/testimonials%20user/marie-lambert-64w.jpg 64w, /images/testimonials%20user/marie-lambert-128w.jpg 128w, /images/testimonials%20user/marie-lambert-256w.jpg 256w" sizes="80px" alt="Marie Lambert" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
+                            <img src="/images/testimonials_user/marie-lambert-64w.jpg" srcset="/images/testimonials_user/marie-lambert-64w.jpg 64w, /images/testimonials_user/marie-lambert-128w.jpg 128w, /images/testimonials_user/marie-lambert-256w.jpg 256w" sizes="80px" alt="Marie Lambert" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
                         </div>
                         <div class="flex flex-col gap-1">
                             <p class="text-base font-bold text-text-base">Marie Lambert</p>
@@ -254,7 +254,7 @@
                     <h3 class="sr-only">Avis de Thomas Renard</h3>
                     <div class="flex items-center gap-3.5">
                         <div class="size-20 shrink-0 overflow-hidden rounded-full bg-zinc-300">
-                            <img src="/images/testimonials%20user/thomas-renard-64w%202.jpg" srcset="/images/testimonials%20user/thomas-renard-64w%202.jpg 64w, /images/testimonials%20user/thomas-renard-128w%202.jpg 128w, /images/testimonials%20user/thomas-renard-256w%202.jpg 256w" sizes="80px" alt="Thomas Renard" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
+                            <img src="/images/testimonials_user/thomas-renard-64w.jpg" srcset="/images/testimonials_user/thomas-renard-64w.jpg 64w, /images/testimonials_user/thomas-renard-128w.jpg 128w, /images/testimonials_user/thomas-renard-256w.jpg 256w" sizes="80px" alt="Thomas Renard" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
                         </div>
                         <div class="flex flex-col gap-1">
                             <p class="text-base font-bold text-text-base">Thomas Renard</p>
@@ -271,7 +271,7 @@
                     <h3 class="sr-only">Avis de Sophie Dumont</h3>
                     <div class="flex items-center gap-3.5">
                         <div class="size-20 shrink-0 overflow-hidden rounded-full bg-zinc-300">
-                            <img src="/images/testimonials%20user/sophie-dumont-64w.jpg" srcset="/images/testimonials%20user/sophie-dumont-64w.jpg 64w, /images/testimonials%20user/sophie-dumont-128w.jpg 128w, /images/testimonials%20user/sophie-dumont-256w.jpg 256w" sizes="80px" alt="Sophie Dumont" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
+                        <img src="/images/testimonials_user/sophie-dumont-64w.jpg" srcset="/images/testimonials_user/sophie-dumont-64w.jpg 64w, /images/testimonials_user/sophie-dumont-128w.jpg 128w, /images/testimonials_user/sophie-dumont-256w.jpg 256w" sizes="80px" alt="Sophie Dumont" class="h-full w-full object-cover" loading="lazy" decoding="async"/>
                         </div>
                         <div class="flex flex-col gap-1">
                             <p class="text-base font-bold text-text-base">Sophie Dumont</p>
