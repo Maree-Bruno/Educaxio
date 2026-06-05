@@ -139,8 +139,10 @@ class ClassListController extends Controller
 
         $adminSchools = auth()->user()->schools()->wherePivot('role', 'admin')->orderBy('name')->get(['schools.id', 'schools.name', 'schools.slug']);
         $adminSchoolIds = $adminSchools->pluck('id');
+        $currentYearId = $this->currentAcademicYearId($adminSchoolIds);
         $academicYears = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $adminSchoolIds))
-            ->orderByDesc('year')->get(['id', 'year']);
+            ->orderByDesc('year')->get(['id', 'year'])
+            ->map(fn ($y) => ['id' => $y->id, 'year' => $y->year, 'is_current' => $y->id === $currentYearId]);
 
         $defaultSchoolId = null;
         $schoolSlug = $request->string('school')->toString();
@@ -169,7 +171,7 @@ class ClassListController extends Controller
                 ->orderBy('name')->get(['id', 'name']),
             'defaults' => [
                 'school_id' => $defaultSchoolId,
-                'academic_year_id' => $academicYears->first()?->id,
+                'academic_year_id' => $currentYearId ?? $academicYears->first()['id'] ?? null,
             ],
             'breadcrumb' => $breadcrumb,
         ]);
@@ -257,7 +259,8 @@ class ClassListController extends Controller
         $attendanceStats = $this->groupAttendanceStats($group, $isTeacher ? $userId : null, $dateRange);
 
         $academicYears = AcademicYear::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
-            ->orderByDesc('year')->get(['id', 'year']);
+            ->orderByDesc('year')->get(['id', 'year'])
+            ->map(fn ($y) => ['id' => $y->id, 'year' => $y->year, 'is_current' => $y->id === $currentYearId]);
         $subjects = Subject::whereHas('schools', fn ($q) => $q->whereIn('schools.id', $schoolIds))
             ->orderBy('name')->get(['id', 'name']);
 

@@ -65,7 +65,10 @@ class ScheduleController extends Controller
                 'group:id,grade,name,school_id',
                 'subject:id,name',
             ])
-            ->whereHas('group', fn ($q) => $q->whereIn('school_id', $schoolIds))
+            ->whereHas('group', fn ($q) => $q
+                ->whereIn('school_id', $schoolIds)
+                ->when($selectedYearId, fn ($q) => $q->where('academic_year_id', $selectedYearId))
+            )
             ->get(['id', 'group_id', 'subject_id', 'lm_level']);
 
         $schoolsById = $userSchools->keyBy('id');

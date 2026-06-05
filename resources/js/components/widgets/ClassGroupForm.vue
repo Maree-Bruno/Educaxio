@@ -8,7 +8,7 @@ import { useToasterStore } from '@/stores/toaster';
 import type { AcademicYear, Subject } from '@/types';
 
 const props = defineProps<{
-    academicYears: Pick<AcademicYear, 'id' | 'year'>[];
+    academicYears: Pick<AcademicYear, 'id' | 'year' | 'is_current'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
     initialData?: {
         grade: string;
@@ -23,7 +23,7 @@ const props = defineProps<{
 
 const yearOptions = props.academicYears.map((y) => ({
     value: y.id,
-    label: String(y.year),
+    label: y.is_current ? `${y.year} (Actuelle)` : String(y.year),
 }));
 const subjectOptions = props.subjects.map((s) => ({
     value: s.id,

@@ -17,7 +17,7 @@ const props = defineProps<{
     students: Paginator<Student>;
     canManage: boolean;
     isTeacher: boolean;
-    academicYears: Pick<AcademicYear, 'id' | 'year'>[];
+    academicYears: Pick<AcademicYear, 'id' | 'year' | 'is_current'>[];
     subjects: Pick<Subject, 'id' | 'name'>[];
     filters: { sort?: string; dir?: 'asc' | 'desc'; search?: string };
     schoolStudents: {

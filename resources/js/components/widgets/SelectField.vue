@@ -29,8 +29,13 @@ const emit = defineEmits<{
 }>();
 
 function onChange(event: Event) {
-    const val = (event.target as HTMLSelectElement).value;
-    emit('update:modelValue', val === '' ? null : val);
+    const raw = (event.target as HTMLSelectElement).value;
+    if (raw === '') {
+        emit('update:modelValue', null);
+        return;
+    }
+    const matched = props.options.find((o) => String(o.value) === raw);
+    emit('update:modelValue', matched ? matched.value : raw);
 }
 </script>
 
@@ -50,7 +55,7 @@ function onChange(event: Event) {
                 :value="modelValue ?? ''"
                 :disabled="disabled"
                 :class="modelValue != null && modelValue !== '' ? 'text-text-base' : 'text-border-figma'"
-                class="w-full cursor-pointer appearance-none rounded-2xl bg-white px-3 py-3 font-manrope text-sm leading-5 font-bold outline-1 -outline-offset-1 outline-border-figma transition-colors focus:ring-0 focus:outline-2 focus:outline-border-figma focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+                class="w-full cursor-pointer appearance-none rounded-2xl bg-white px-3 py-3 font-manrope text-sm leading-5 font-bold outline-1 -outline-offset-1 outline-border-figma transition-colors focus:ring-0 focus:outline-2 focus:outline-border-figma disabled:cursor-not-allowed disabled:opacity-40"
                 @change="onChange"
             >
                 <option value="" selected>{{ placeholder }}</option>
