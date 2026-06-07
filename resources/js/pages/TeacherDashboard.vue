@@ -204,7 +204,7 @@ function confirmDelete() {
                                 </div>
                                 <a
                                     v-if="isEditable"
-                                    :href="attendances.url({ query: { creneau: slot.entry.creneau } })"
+                                    :href="attendances.url({ query: { creneau: slot.entry.creneau, date: selectedDate } })"
                                     class="shrink-0 text-xs font-bold text-blue hover:underline"
                                 >
                                     Présences

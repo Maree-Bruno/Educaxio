@@ -49,7 +49,17 @@ const toaster          = useToasterStore();
 const selectedDayLabel = computed(() => DAY_OPTIONS.find((d) => d.value === selectedDay.value)?.label ?? '');
 const selectedSlot     = computed(() => props.slots.find((s) => s.id === selectedSlotId.value) ?? null);
 const slotOptions      = computed(() => props.slots.filter((s) => s.type === 'slot'));
-const slotSelectOptions = computed<SelectOption[]>(() => slotOptions.value.map((s) => ({ value: s.id, label: s.label ?? String(s.id) })));
+const isOriginalSlotDay = computed(
+    () => selectedSlotId.value === props.scheduleSlot?.id && selectedDay.value === props.dayOfWeek,
+);
+const slotSelectOptions = computed<SelectOption[]>(() =>
+    slotOptions.value
+        .filter((s) => {
+            const occupied = props.entries?.[s.position]?.[selectedDay.value];
+            return !occupied || (s.id === props.scheduleSlot?.id && isOriginalSlotDay.value);
+        })
+        .map((s) => ({ value: s.id, label: s.label ?? String(s.id) })),
+);
 const currentEntry     = computed<ScheduleEntry | null>(() => {
     const slot = selectedSlot.value;
 
@@ -105,6 +115,13 @@ const coursOptions = computed(() =>
     ).map((l) => ({ value: l.id, label: resolveSubjectLabel(l.subject.name, l.lm_level) })),
 );
 
+watch(slotSelectOptions, (options) => {
+    if (syncing.value) return;
+    if (selectedSlotId.value !== null && !options.some((o) => o.value === selectedSlotId.value)) {
+        selectedSlotId.value = null;
+    }
+});
+
 watch(filterEcole, () => {
     if (syncing.value) {
 return;
@@ -152,10 +169,13 @@ watch(currentEntry, async (entry) => {
 return;
 }
 
-    syncing.value = true;
     confirmingDelete.value = false;
-    await syncFormFromEntry(entry);
-    syncing.value = false;
+
+    if (entry) {
+        syncing.value = true;
+        await syncFormFromEntry(entry);
+        syncing.value = false;
+    }
 });
 
 onMounted(() => {
@@ -199,17 +219,24 @@ return;
     const lesson = props.lessons.find((l) => l.id === selectedLesson.value);
     const schedule = props.schedules.find((s) => s.school_id === lesson?.group.school_id);
 
+    const originalEntry = props.entry;
+    const isMoving = !!originalEntry && (
+        selectedSlotId.value !== props.scheduleSlot?.id ||
+        selectedDay.value !== props.dayOfWeek
+    );
+
     form.transform((data) => ({
-        schedule_id: schedule?.id,
-        lesson_id: selectedLesson.value,
-        position: selectedSlot.value!.position,
-        day_of_week: selectedDay.value,
-        classroom: data.classroom || null,
+        schedule_id:     schedule?.id,
+        lesson_id:       selectedLesson.value,
+        position:        selectedSlot.value!.position,
+        day_of_week:     selectedDay.value,
+        classroom:       data.classroom || null,
+        delete_entry_id: isMoving ? originalEntry!.id : null,
     })).post(store.url(), {
         preserveScroll: true,
         onSuccess: () => {
             emit('close');
-            toaster.success('Créneau enregistré');
+            toaster.success(isMoving ? 'Créneau déplacé' : 'Créneau enregistré');
         },
     });
 }

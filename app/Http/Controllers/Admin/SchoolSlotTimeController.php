@@ -25,6 +25,6 @@ class SchoolSlotTimeController extends Controller
             );
         }
 
-        return back();
+        return to_route('profile.edit');
     }
 }
