@@ -18,7 +18,7 @@ class JoinRequestController extends Controller
 
         $joinRequest->update(['status' => 'approved']);
 
-        return back();
+        return to_route('dashboard');
     }
 
     public function reject(School $school, SchoolJoinRequest $joinRequest)
@@ -27,6 +27,6 @@ class JoinRequestController extends Controller
 
         $joinRequest->update(['status' => 'rejected']);
 
-        return back();
+        return to_route('dashboard');
     }
 }

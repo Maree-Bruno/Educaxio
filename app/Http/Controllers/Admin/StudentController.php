@@ -144,7 +144,7 @@ class StudentController extends Controller
             $this->handlePictureUpload($request, $student);
         }
 
-        return back();
+        return to_route('students.show', $student);
     }
 
     public function destroy(School $school, Student $student)

@@ -6,6 +6,7 @@ use App\Models\Schedule;
 use App\Models\ScheduleEntry;
 use App\Models\ScheduleSlot;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ScheduleEntryController extends Controller
 {
@@ -19,6 +20,7 @@ class ScheduleEntryController extends Controller
             'position' => ['required', 'integer', 'min:1'],
             'day_of_week' => ['required', 'integer', 'min:1', 'max:5'],
             'classroom' => ['nullable', 'string', 'max:50'],
+            'delete_entry_id' => ['nullable', 'integer', 'exists:schedule_entries,id'],
         ]);
 
         $lesson = $user->lessons()->with('group:id,school_id')->findOrFail($validated['lesson_id']);
@@ -31,20 +33,44 @@ class ScheduleEntryController extends Controller
             ->where('school_id', $lesson->group->school_id)
             ->firstOrFail();
 
-        ScheduleEntry::updateOrCreate(
-            ['schedule_id' => $schedule->id, 'schedule_slot_id' => $slot->id, 'day_of_week' => $validated['day_of_week']],
-            ['lesson_id' => $lesson->id, 'classroom' => $validated['classroom']],
-        );
+        DB::transaction(function () use ($validated, $schedule, $slot, $lesson, $user) {
+            if ($validated['delete_entry_id'] ?? null) {
+                ScheduleEntry::whereHas('schedule', fn ($q) => $q->where('user_id', $user->id))
+                    ->where('id', $validated['delete_entry_id'])
+                    ->forceDelete();
+            }
 
-        return back();
+            $entry = ScheduleEntry::withTrashed()
+                ->where('schedule_id', $schedule->id)
+                ->where('schedule_slot_id', $slot->id)
+                ->where('day_of_week', $validated['day_of_week'])
+                ->first();
+
+            if ($entry) {
+                if ($entry->trashed()) {
+                    $entry->restore();
+                }
+                $entry->update(['lesson_id' => $lesson->id, 'classroom' => $validated['classroom']]);
+            } else {
+                ScheduleEntry::create([
+                    'schedule_id' => $schedule->id,
+                    'schedule_slot_id' => $slot->id,
+                    'day_of_week' => $validated['day_of_week'],
+                    'lesson_id' => $lesson->id,
+                    'classroom' => $validated['classroom'],
+                ]);
+            }
+        });
+
+        return to_route('schedules');
     }
 
     public function destroy(ScheduleEntry $scheduleEntry)
     {
         $this->authorize('delete', $scheduleEntry);
 
-        $scheduleEntry->delete();
+        $scheduleEntry->forceDelete();
 
-        return back();
+        return to_route('schedules');
     }
 }

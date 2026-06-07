@@ -32,7 +32,7 @@ class ScheduleSlotController extends Controller
             'end_time'   => $validated['end_time'] ?? null,
         ]);
 
-        return back();
+        return to_route('schedules');
     }
 
     public function destroy(ScheduleSlot $scheduleSlot)
@@ -45,7 +45,7 @@ class ScheduleSlotController extends Controller
         $scheduleSlot->entries()->delete();
         $scheduleSlot->delete();
 
-        return back();
+        return to_route('schedules');
     }
 
     public function updateType(Request $request)
@@ -64,6 +64,6 @@ class ScheduleSlotController extends Controller
             ScheduleEntry::withTrashed()->where('schedule_slot_id', $slot->id)->restore();
         }
 
-        return back();
+        return to_route('schedules');
     }
 }

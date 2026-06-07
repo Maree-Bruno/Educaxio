@@ -61,6 +61,6 @@ class SchoolAcademicYearController extends Controller
 
         $school->academicYears()->updateExistingPivot($academicYear->id, $validated);
 
-        return back();
+        return to_route('admin.academic-years.index', $school);
     }
 }

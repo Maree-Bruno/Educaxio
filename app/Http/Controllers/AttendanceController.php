@@ -119,6 +119,7 @@ class AttendanceController extends Controller
             $lesson = $selected->lesson->load('scheduleEntries.scheduleSlot');
 
             $assignments = Assignment::where('lesson_id', $selected->lesson_id)
+                ->where('scheduled_date', '>=', $date)
                 ->orderBy('scheduled_date')
                 ->get(['id', 'type', 'title', 'scheduled_date', 'description']);
             $nextAssignmentDate = $this->nextOccurrence($lesson);
