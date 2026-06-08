@@ -48,11 +48,12 @@ interface Group {
     subjects: string[];
 }
 
-const { user, selectedDate, upcomingAssignments, slots } = defineProps<{
+const { user, selectedDate, upcomingAssignments, slots, singleSchool } = defineProps<{
     slots: Slot[];
     groups: Group[];
     date: string;
     selectedDate: string;
+    singleSchool: boolean;
     upcomingAssignments: AgendaAssignment[];
     upcomingAssignmentsTotal: number;
     user: User;
@@ -214,7 +215,12 @@ return;
                                 isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
                             ]"
                         >
-                            <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ slot.label }}</span>
+                            <div class="w-20 shrink-0">
+                                <p class="text-xs font-extrabold text-border-figma">{{ slot.label }}</p>
+                                <p v-if="slot.start_time && slot.end_time && (singleSchool || slot.entry !== null)" class="tabular-nums text-[10px] text-stone-400">
+                                    {{ slot.start_time }}–{{ slot.end_time }}
+                                </p>
+                            </div>
                             <template v-if="slot.entry">
                                 <div class="min-w-0 flex-1">
                                     <p class="truncate text-sm font-extrabold text-text-base">
