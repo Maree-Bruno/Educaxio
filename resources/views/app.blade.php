@@ -76,7 +76,12 @@
 
 </head>
 <body class="font-sans antialiased">
+<a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-blue-700 focus:shadow-lg focus:outline-none">
+    Aller au contenu principal
+</a>
 <h1 class="sr-only">{{config('app.name', 'Educaxio')}}</h1>
+<div id="main-content">
 @inertia
+</div>
 </body>
 </html>

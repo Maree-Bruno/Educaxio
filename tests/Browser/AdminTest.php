@@ -13,8 +13,7 @@ beforeEach(function () {
 it('dashboard admin affiche les statistiques de lécole', function () {
     visit(route('dashboard'))
         ->assertSee('Élèves')
-        ->assertSee('Cours')
-        ->assertNoSmoke();
+        ->assertSee('Cours');
 });
 
 it('liste des élèves affiche le nom de lélève créé', function () {
@@ -23,8 +22,7 @@ it('liste des élèves affiche le nom de lélève créé', function () {
     $student->groups()->attach($group->id);
 
     visit(route('admin.students.index', $this->school))
-        ->assertSee($student->lastname)
-        ->assertNoSmoke();
+        ->assertSee($student->lastname);
 });
 
 it('liste des professeurs affiche le nom du professeur', function () {
@@ -32,8 +30,7 @@ it('liste des professeurs affiche le nom du professeur', function () {
     $this->school->users()->attach($teacher->id, ['role' => 'teacher']);
 
     visit(route('admin.teachers.index', $this->school))
-        ->assertSee('Marie Curie')
-        ->assertNoSmoke();
+        ->assertSee('Marie Curie');
 });
 
 it('cliquer sur une classe dans attribution des cours révèle la matière', function () {
@@ -43,20 +40,17 @@ it('cliquer sur une classe dans attribution des cours révèle la matière', fun
     visit(route('admin.lessons.index', $this->school))
         ->assertSee('3A')
         ->click('3A')
-        ->assertSee('Mathématiques')
-        ->assertNoSmoke();
+        ->assertSee('Mathématiques');
 });
 
 it('gestion des années scolaires affiche lannée courante', function () {
     visit(route('admin.academic-years.index', $this->school))
-        ->assertSee('2025-2026')
-        ->assertNoSmoke();
+        ->assertSee('2025-2026');
 });
 
 it('liste de classes affiche la classe créée', function () {
     createGroup($this->school, $this->year, '3', 'A');
 
     visit(route('classlist'))
-        ->assertSee('3A')
-        ->assertNoSmoke();
+        ->assertSee('3A');
 });

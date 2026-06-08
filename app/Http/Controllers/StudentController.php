@@ -75,40 +75,38 @@ class StudentController extends Controller
             ? $student->groups->where('academic_year_id', $selectedYearId)
             : $student->groups;
 
+        $groupIds = $filteredGroups->pluck('id');
+        $teacherLessonIds = $isAdmin ? null : auth()->user()
+            ->lessons()
+            ->whereIn('group_id', $groupIds)
+            ->pluck('lessons.id');
+
         $absenceHistory = null;
 
         if ($isAdmin) {
             $absenceHistory = $student->attendanceStatuses()
                 ->whereHas('attendance.classsession.lesson', fn ($q) =>
-                    $q->whereIn('group_id', $filteredGroups->pluck('id'))
+                    $q->whereIn('group_id', $groupIds)
                 )
                 ->with($eagerLoads)
                 ->get()
                 ->sortByDesc(fn ($s) => $s->attendance?->classsession?->date)
                 ->values()
                 ->map($mapRecord);
-        } else {
-            $teacherLessonIds = auth()->user()
-                ->lessons()
-                ->whereIn('group_id', $filteredGroups->pluck('id'))
-                ->pluck('lessons.id');
-
-            if ($teacherLessonIds->isNotEmpty()) {
-                $absenceHistory = $student->attendanceStatuses()
-                    ->whereHas('attendance.classsession', fn ($q) => $q->whereIn('lesson_id', $teacherLessonIds)
-                    )
-                    ->with($eagerLoads)
-                    ->get()
-                    ->sortByDesc(fn ($s) => $s->attendance?->classsession?->date)
-                    ->values()
-                    ->map($mapRecord);
-            }
+        } elseif ($teacherLessonIds->isNotEmpty()) {
+            $absenceHistory = $student->attendanceStatuses()
+                ->whereHas('attendance.classsession', fn ($q) => $q->whereIn('lesson_id', $teacherLessonIds)
+                )
+                ->with($eagerLoads)
+                ->get()
+                ->sortByDesc(fn ($s) => $s->attendance?->classsession?->date)
+                ->values()
+                ->map($mapRecord);
         }
 
-        $groupIds = $filteredGroups->pluck('id');
         $lessonIds = $isAdmin
             ? Lesson::whereIn('group_id', $groupIds)->pluck('id')
-            : auth()->user()->lessons()->whereIn('group_id', $groupIds)->pluck('lessons.id');
+            : $teacherLessonIds;
 
         $sessionIds = ClassSession::whereIn('lesson_id', $lessonIds)->pluck('id');
         $sessions = $sessionIds->count();

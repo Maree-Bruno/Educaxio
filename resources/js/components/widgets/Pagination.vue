@@ -70,6 +70,8 @@ function jumpToPage(page: number) {
             <button
                 v-if="link.label !== '...'"
                 :aria-current="link.active ? 'page' : undefined"
+                :aria-label="`Page ${link.label}`"
+                :title="`Page ${link.label}`"
                 :class="link.active ? 'bg-blue text-white' : 'text-text-base outline-1 -outline-offset-1 outline-blue hover:bg-blue/10'"
                 class="hidden sm:flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-blue"
                 @click="navigate(link.url, Number(link.label))"

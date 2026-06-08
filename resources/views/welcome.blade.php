@@ -20,7 +20,7 @@
     @php
         $appName = config('app.name', 'Educaxio');
         $appUrl  = url('/');
-        $appDesc = 'Educaxio est la plateforme tout-en-un pour les enseignants : gestion des présences, emplois du temps, suivi des élèves et journal de classe. Essai gratuit.';
+        $appDesc = 'Educaxio est la plateforme tout-en-un pour les enseignants : gestion des présences, emplois du temps, suivi des élèves et journal de classe.';
 
         $ldScripts = \Illuminate\Support\Facades\Cache::rememberForever('welcome.jsonld', function () use ($appName, $appUrl, $appDesc) {
             $ld = \Spatie\SchemaOrg\Schema::webApplication()
@@ -215,7 +215,7 @@
                         <div class="flex flex-col gap-2">
                             <h3 class="text-lg font-semibold text-bg-primary">Emploi du temps</h3>
                             <p class="text-sm font-normal text-bg-primary">Créez et modifiez facilement vos plannings
-                                hebdomadaires. Export PDF disponible en un seul clic.</p>
+                                hebdomadaires. Export PDF bientôt disponible.</p>
                         </div>
                         <div class="min-h-36 flex-1 overflow-hidden rounded-2xl bg-white/20">
                             <img src="/images/schedule-480w.jpeg" srcset="/images/schedule-320w.jpeg 320w, /images/schedule-480w.jpeg 480w, /images/schedule-768w.jpeg 768w, /images/schedule-1024w.jpeg 1024w, /images/schedule-1280w.jpeg 1280w, /images/schedule-1536w.jpeg 1536w" sizes="(max-width: 1024px) calc(100vw - 4rem), calc(33vw - 4rem)" alt="Emploi du temps" width="640" height="480" class="h-full w-full object-cover object-top" loading="lazy" decoding="async"/>

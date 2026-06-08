@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::middleware('guest')->post('register/validate', function (Request $request) {
@@ -36,11 +37,12 @@ Route::middleware('guest')->post('register/validate', function (Request $request
 
 Route::get('/', function (Request $request) {
     if ($request->header('X-Inertia')) {
-        return \Inertia\Inertia::location('/');
+        return Inertia::location('/');
     }
+
     return view('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
-        'isLoggedIn'  => auth()->check(),
+        'isLoggedIn' => auth()->check(),
     ]);
 })->name('home');
 
