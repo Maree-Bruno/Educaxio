@@ -40,8 +40,7 @@ class StudentController extends Controller
                 ->when($selectedYearId, fn ($g) => $g->where('academic_year_id', $selectedYearId))
                 ->select('groups.id', 'grade', 'name', 'slug'),
             ])
-            ->when($selectedYearId, fn ($q) => $q->whereHas('groups', fn ($g) =>
-                $g->where('academic_year_id', $selectedYearId)
+            ->when($selectedYearId, fn ($q) => $q->whereHas('groups', fn ($g) => $g->where('academic_year_id', $selectedYearId)
             ))
             ->orderBy($sort, $dir)
             ->orderBy($sort === 'lastname' ? 'firstname' : 'lastname');
@@ -65,22 +64,22 @@ class StudentController extends Controller
         );
 
         return Inertia::render('admin/Students', [
-            'school'        => $school->only('id', 'name', 'slug'),
-            'students'      => $students,
-            'groups'        => $groups,
+            'school' => $school->only('id', 'name', 'slug'),
+            'students' => $students,
+            'groups' => $groups,
             'academicYears' => $academicYears,
-            'filters'       => $filters,
+            'filters' => $filters,
         ]);
     }
 
     public function store(Request $request, School $school)
     {
         $validated = $request->validate([
-            'lastname'    => ['required', 'string', 'max:100'],
-            'firstname'   => ['required', 'string', 'max:100'],
-            'email'       => ['nullable', 'email', 'max:255'],
-            'picture'     => ['nullable', 'image', 'max:2048'],
-            'group_ids'   => ['nullable', 'array'],
+            'lastname' => ['required', 'string', 'max:100'],
+            'firstname' => ['required', 'string', 'max:100'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'picture' => ['nullable', 'image', 'max:2048'],
+            'group_ids' => ['nullable', 'array'],
             'group_ids.*' => ['integer', 'exists:groups,id'],
         ]);
 
@@ -90,9 +89,9 @@ class StudentController extends Controller
             ->filter(fn ($id) => $schoolGroupIds->contains($id));
 
         $student = Student::create([
-            'lastname'  => $validated['lastname'],
+            'lastname' => $validated['lastname'],
             'firstname' => $validated['firstname'],
-            'email'     => $validated['email'] ?? null,
+            'email' => $validated['email'] ?? null,
             'school_id' => $school->id,
         ]);
 
@@ -112,20 +111,20 @@ class StudentController extends Controller
         abort_unless($student->school_id === $school->id, 403);
 
         $validated = $request->validate([
-            'lastname'       => ['sometimes', 'required', 'string', 'max:100'],
-            'firstname'      => ['sometimes', 'required', 'string', 'max:100'],
-            'email'          => ['nullable', 'email', 'max:255'],
-            'picture'        => ['nullable', 'image', 'max:2048'],
+            'lastname' => ['sometimes', 'required', 'string', 'max:100'],
+            'firstname' => ['sometimes', 'required', 'string', 'max:100'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'picture' => ['nullable', 'image', 'max:2048'],
             'remove_picture' => ['nullable', 'boolean'],
-            'group_ids'      => ['nullable', 'array'],
-            'group_ids.*'    => ['integer', 'exists:groups,id'],
+            'group_ids' => ['nullable', 'array'],
+            'group_ids.*' => ['integer', 'exists:groups,id'],
         ]);
 
         if (isset($validated['lastname'])) {
             $student->update([
-                'lastname'  => $validated['lastname'],
+                'lastname' => $validated['lastname'],
                 'firstname' => $validated['firstname'],
-                'email'     => $validated['email'] ?? null,
+                'email' => $validated['email'] ?? null,
             ]);
 
             $schoolGroupIds = $school->groups()->pluck('groups.id');
@@ -136,7 +135,7 @@ class StudentController extends Controller
             $student->groups()->sync($groupIds->all());
         }
 
-        if (!empty($validated['remove_picture']) && $student->picture) {
+        if (! empty($validated['remove_picture']) && $student->picture) {
             $disk = config('images.disk');
             Storage::disk($disk)->delete(config('images.student.original_path').'/'.$student->picture);
             $student->update(['picture' => null]);
@@ -169,7 +168,7 @@ class StudentController extends Controller
             Storage::disk($disk)->delete(config('images.student.original_path').'/'.$student->picture);
         }
 
-        $filename     = Str::uuid().'.webp';
+        $filename = Str::uuid().'.webp';
         $originalPath = Storage::disk($disk)->putFileAs(
             config('images.student.original_path'),
             $request->file('picture'),

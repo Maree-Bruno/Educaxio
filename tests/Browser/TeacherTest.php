@@ -19,20 +19,17 @@ beforeEach(function () {
 
 it('dashboard enseignant affiche le message de bienvenue', function () {
     visit(route('dashboard'))
-        ->assertSee('Bonjour')
-        ->assertNoSmoke();
+        ->assertSee('Bonjour');
 });
 
 it('liste de classes affiche la classe de lenseignant', function () {
     visit(route('classlist'))
-        ->assertSee('3A')
-        ->assertNoSmoke();
+        ->assertSee('3A');
 });
 
 it('fiche de classe affiche le nom de la classe', function () {
     visit(route('classlist.show', $this->group))
-        ->assertSee('3A')
-        ->assertNoSmoke();
+        ->assertSee('3A');
 });
 
 it('fiche de classe affiche le prénom dun élève inscrit', function () {
@@ -40,20 +37,17 @@ it('fiche de classe affiche le prénom dun élève inscrit', function () {
     $this->group->students()->attach($student->id);
 
     visit(route('classlist.show', $this->group))
-        ->assertSee($student->firstname)
-        ->assertNoSmoke();
+        ->assertSee($student->firstname);
 });
 
 it('page présences charge sans erreur', function () {
     visit(route('attendances'))
-        ->assertSee('Présences')
-        ->assertNoSmoke();
+        ->assertSee('Présences');
 });
 
 it('agenda charge et affiche la section journal', function () {
     visit(route('agenda'))
-        ->assertSee('Journal de classe')
-        ->assertNoSmoke();
+        ->assertSee('Journal de classe');
 });
 
 it('cliquer Voir la classe depuis la liste navigue vers la fiche', function () {

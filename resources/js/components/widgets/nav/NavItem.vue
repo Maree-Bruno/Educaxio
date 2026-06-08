@@ -23,7 +23,7 @@ const props = withDefaults(
         <Link
             :href="props.href"
             :method="props.method"
-            :title="props.collapsed ? props.title : undefined"
+            :title="props.title"
             class="flex cursor-pointer items-center text-base gap-2.5 rounded-md px-4 py-2 font-bold transition-all hover:text-blue-dark hover:bg-hover-nav"
             :class="[
                 props.active ? 'text-blue-dark bg-hover-nav' : 'text-text-base',

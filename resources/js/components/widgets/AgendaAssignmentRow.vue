@@ -40,7 +40,7 @@ function shortDate(dateStr: string): string {
 
 <template>
     <li
-        class="flex items-center gap-4 px-6 py-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue"
+        class="flex items-center gap-3 px-3 py-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue sm:gap-4 sm:px-6"
         :class="past ? 'opacity-60' : 'cursor-pointer hover:bg-gray-50'"
         :tabindex="past ? -1 : 0"
         @click="!past && emit('edit', assignment.id)"
@@ -59,7 +59,7 @@ function shortDate(dateStr: string): string {
 
         <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-stone-900">{{ assignment.title }}</p>
-            <div class="mt-0.5 flex items-center gap-1.5">
+            <div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
                 <span class="text-xs text-stone-400">{{ assignment.subject }}</span>
                 <Badge variant="neutral">{{ assignment.group }}</Badge>
                 <span class="text-xs text-stone-400">· {{ assignment.school }}</span>

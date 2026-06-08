@@ -123,6 +123,7 @@ function confirmDelete() {
                         v-model="profileForm.name"
                         label="Nom d'utilisateur"
                         :placeholder="user.name"
+                        autocomplete="name"
                         :error="profileForm.errors.name"
                         class="w-full"
                     />
@@ -131,6 +132,7 @@ function confirmDelete() {
                         label="Adresse email"
                         type="email"
                         :placeholder="user.email"
+                        autocomplete="email"
                         :error="profileForm.errors.email"
                         class="w-full"
                     />
@@ -288,6 +290,7 @@ function confirmDelete() {
                         label="Mot de passe actuel"
                         type="password"
                         placeholder="••••••••••"
+                        autocomplete="current-password"
                         :error="passwordForm.errors.current_password"
                         class="w-full"
                     />
@@ -297,6 +300,7 @@ function confirmDelete() {
                             label="Nouveau mot de passe"
                             type="password"
                             placeholder="•••••••"
+                            autocomplete="new-password"
                             :error="passwordForm.errors.password"
                             class="flex-1"
                         />
@@ -305,6 +309,7 @@ function confirmDelete() {
                             label="Confirmer le mot de passe"
                             type="password"
                             placeholder="••••••••••"
+                            autocomplete="new-password"
                             :error="passwordForm.errors.password_confirmation"
                             class="flex-1"
                         />

@@ -15,21 +15,21 @@ const nav = useNavigationStore();
 
 <template>
     <header
-        class="sticky top-0 z-30 flex h-16 w-full items-center justify-between bg-white px-3 lg:px-6 shadow-[0px_1px_2px_0px_rgba(48,48,48,0.05)]"
+        class="sticky top-0 z-30 flex h-16 w-full items-center bg-white px-3 lg:px-6 shadow-[0px_1px_2px_0px_rgba(48,48,48,0.05)]"
     >
         <button
-            class="rounded-lg p-2 transition-colors hover:bg-hover-nav md:hidden"
+            class="relative z-10 rounded-lg p-2 transition-colors hover:bg-hover-nav md:hidden"
             aria-label="Ouvrir le menu"
             @click="nav.toggleMobile()"
         >
             <Menu :size="20" :stroke-width="2" class="text-text-base" aria-hidden="true" />
         </button>
 
-        <p class="text-xl lg:text-3xl font-bold tracking-[-2px] text-text-base ">
+        <p class="pointer-events-none absolute inset-x-0 text-center text-xl font-bold tracking-[-2px] text-text-base lg:text-3xl">
             {{ title }}
         </p>
 
-        <div class="flex items-center gap-4">
+        <div class="relative z-10 ml-auto flex items-center gap-4">
 <!--            <button
                 class="rounded-full p-2 transition-colors hover:bg-hover-nav"
                 aria-label="Notifications"

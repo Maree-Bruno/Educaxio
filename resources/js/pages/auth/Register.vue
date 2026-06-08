@@ -31,6 +31,17 @@ const step = ref(1);
 const stepErrors = ref<Record<string, string>>({});
 const schoolSearch = ref('');
 
+const passwordCriteria = computed(() => {
+    const p = form.password;
+
+    return [
+        { label: 'Au moins 8 caractères',  met: p.length >= 8 },
+        { label: 'Une lettre majuscule',   met: /[A-Z]/.test(p) },
+        { label: 'Un chiffre',             met: /[0-9]/.test(p) },
+        { label: 'Un caractère spécial',   met: /[^A-Za-z0-9]/.test(p) },
+    ];
+});
+
 const form = useForm({
     name:                  '',
     email:                 '',
@@ -77,8 +88,8 @@ function validateStep1(): boolean {
 
     if (!form.password) {
         errors.password = 'Le mot de passe est requis.';
-    } else if (form.password.length < 8) {
-        errors.password = 'Le mot de passe doit contenir au moins 8 caractères.';
+    } else if (passwordCriteria.value.some((c) => !c.met)) {
+        errors.password = 'Le mot de passe ne respecte pas tous les critères requis.';
     }
 
     if (form.password !== form.password_confirmation) {
@@ -178,15 +189,28 @@ watch(
             required
             :error="stepErrors.email ?? form.errors.email ?? serverErrors.email"
         />
-        <InputLabel
-            v-model="form.password"
-            type="password"
-            label="Mot de passe"
-            placeholder="••••••••"
-            autocomplete="new-password"
-            required
-            :error="stepErrors.password ?? form.errors.password ?? serverErrors.password"
-        />
+        <div class="flex flex-col gap-2">
+            <InputLabel
+                v-model="form.password"
+                type="password"
+                label="Mot de passe"
+                placeholder="••••••••"
+                autocomplete="new-password"
+                required
+                :error="stepErrors.password ?? form.errors.password ?? serverErrors.password"
+            />
+            <ul class="flex flex-col gap-0.5 pl-1" aria-label="Critères du mot de passe">
+                <li
+                    v-for="c in passwordCriteria"
+                    :key="c.label"
+                    :class="c.met ? 'text-green-600' : 'text-stone-400'"
+                    class="flex items-center gap-1.5 text-xs"
+                >
+                    <span aria-hidden="true">{{ c.met ? '✓' : '○' }}</span>
+                    {{ c.label }}
+                </li>
+            </ul>
+        </div>
         <InputLabel
             v-model="form.password_confirmation"
             type="password"
