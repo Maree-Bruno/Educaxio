@@ -94,7 +94,7 @@ const lessonsBySchool = computed(() => {
     return [...map.entries()].map(([school, lessons]) => ({ school, lessons }));
 });
 
-const { slotTimeForms, saveSlotTimes } = useSlotTimeForms(
+const { slotTimeForms, slotTimeErrors, saveSlotTimes } = useSlotTimeForms(
     auth.adminSchools,
     props.scheduleSlots,
     props.adminSchoolSlotTimes,
@@ -267,7 +267,14 @@ function confirmDelete() {
                                     {{ scheduleSlots[i].label }}
                                 </th>
                                 <td class="py-1.5 pr-4">
-                                    <InputLabel v-model="row.start_time" type="time" size="sm" :fluid="false" />
+                                    <InputLabel
+                                        v-model="row.start_time"
+                                        type="time"
+                                        size="sm"
+                                        :fluid="false"
+                                        :min="i > 0 ? slotTimeForms[school.id][i - 1].end_time : undefined"
+                                        :error="slotTimeErrors[school.id]?.[i] ?? ''"
+                                    />
                                 </td>
                                 <td class="py-1.5">
                                     <InputLabel v-model="row.end_time" type="time" size="sm" :fluid="false" />
