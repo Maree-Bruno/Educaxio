@@ -31,6 +31,27 @@ const step = ref(1);
 const stepErrors = ref<Record<string, string>>({});
 const schoolSearch = ref('');
 
+const visibleSchoolCount = computed(() => {
+    const q = schoolSearch.value.trim().toLowerCase();
+
+    return q
+        ? props.schools.filter((s) => s.name.toLowerCase().includes(q)).length
+        : props.schools.length;
+});
+
+const selectSize = computed(() => Math.min(Math.max(visibleSchoolCount.value, 2), 7));
+
+const passwordCriteria = computed(() => {
+    const p = form.password;
+
+    return [
+        { label: 'Au moins 8 caractères',  met: p.length >= 8 },
+        { label: 'Une lettre majuscule',   met: /[A-Z]/.test(p) },
+        { label: 'Un chiffre',             met: /[0-9]/.test(p) },
+        { label: 'Un caractère spécial',   met: /[^A-Za-z0-9]/.test(p) },
+    ];
+});
+
 const form = useForm({
     name:                  '',
     email:                 '',
@@ -39,22 +60,6 @@ const form = useForm({
     subject_ids:           [] as number[],
     school_ids:            [] as number[],
 });
-
-const filteredSchools = computed(() => {
-    const q = schoolSearch.value.trim().toLowerCase();
-
-    return q ? props.schools.filter((s) => s.name.toLowerCase().includes(q)) : props.schools;
-});
-
-function toggleSchool(id: number) {
-    const idx = form.school_ids.indexOf(id);
-
-    if (idx === -1) {
-        form.school_ids.push(id);
-    } else {
-        form.school_ids.splice(idx, 1);
-    }
-}
 
 function validateStep1(): boolean {
     const errors: Record<string, string> = {};
@@ -77,8 +82,8 @@ function validateStep1(): boolean {
 
     if (!form.password) {
         errors.password = 'Le mot de passe est requis.';
-    } else if (form.password.length < 8) {
-        errors.password = 'Le mot de passe doit contenir au moins 8 caractères.';
+    } else if (passwordCriteria.value.some((c) => !c.met)) {
+        errors.password = 'Le mot de passe ne respecte pas tous les critères requis.';
     }
 
     if (form.password !== form.password_confirmation) {
@@ -178,15 +183,28 @@ watch(
             required
             :error="stepErrors.email ?? form.errors.email ?? serverErrors.email"
         />
-        <InputLabel
-            v-model="form.password"
-            type="password"
-            label="Mot de passe"
-            placeholder="••••••••"
-            autocomplete="new-password"
-            required
-            :error="stepErrors.password ?? form.errors.password ?? serverErrors.password"
-        />
+        <div class="flex flex-col gap-2">
+            <InputLabel
+                v-model="form.password"
+                type="password"
+                label="Mot de passe"
+                placeholder="••••••••"
+                autocomplete="new-password"
+                required
+                :error="stepErrors.password ?? form.errors.password ?? serverErrors.password"
+            />
+            <ul class="flex flex-col gap-0.5 pl-1" aria-label="Critères du mot de passe">
+                <li
+                    v-for="c in passwordCriteria"
+                    :key="c.label"
+                    :class="c.met ? 'text-green-600' : 'text-stone-400'"
+                    class="flex items-center gap-1.5 text-xs"
+                >
+                    <span aria-hidden="true">{{ c.met ? '✓' : '○' }}</span>
+                    {{ c.label }}
+                </li>
+            </ul>
+        </div>
         <InputLabel
             v-model="form.password_confirmation"
             type="password"
@@ -229,34 +247,31 @@ watch(
             </p>
         </div>
 
-        <SearchInput v-model="schoolSearch" placeholder="Rechercher un établissement..." />
-
-        <div class="flex max-h-52 flex-col gap-2 overflow-y-auto pr-1">
-            <button
-                v-for="school in filteredSchools"
-                :key="school.id"
-                type="button"
-                :class="[
-                    'flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-150',
-                    form.school_ids.includes(school.id)
-                        ? 'border-blue bg-blue/5'
-                        : 'border-border-figma hover:border-blue',
-                ]"
-                @click="toggleSchool(school.id)"
-            >
-                <span
-                    :class="[
-                        'size-4 flex-shrink-0 rounded-md border-2 transition-colors',
-                        form.school_ids.includes(school.id) ? 'border-blue bg-blue' : 'border-gray-300',
-                    ]"
-                />
-                <span class="text-sm font-medium text-text-base">{{ school.name }}</span>
-            </button>
-
-            <p v-if="filteredSchools.length === 0" class="py-3 text-center text-sm text-gray-400">
-                Aucun résultat
+        <div class="flex flex-col gap-1.5">
+            <SearchInput v-model="schoolSearch" placeholder="Rechercher un établissement..." />
+            <p class="text-right text-xs text-stone-400">
+                <span v-if="form.school_ids.length > 0" class="font-semibold text-blue">
+                    {{ form.school_ids.length }} sélectionné{{ form.school_ids.length > 1 ? 's' : '' }}
+                </span>
+                <span v-else>Ctrl+clic pour sélectionner plusieurs établissements</span>
             </p>
         </div>
+
+        <select
+            v-model="form.school_ids"
+            multiple
+            :size="selectSize"
+            class="w-full rounded-2xl border border-border-figma bg-white font-manrope text-sm text-text-base transition-all focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/20 [&>option]:cursor-pointer [&>option]:px-4 [&>option]:py-2.5 [&>option:checked]:bg-blue [&>option:checked]:text-white"
+        >
+            <option
+                v-for="school in schools"
+                :key="school.id"
+                :value="school.id"
+                :hidden="!!schoolSearch.trim() && !school.name.toLowerCase().includes(schoolSearch.trim().toLowerCase())"
+            >
+                {{ school.name }}
+            </option>
+        </select>
 
         <p v-if="form.errors.school_ids" class="text-sm font-medium text-pink">
             {{ form.errors.school_ids }}

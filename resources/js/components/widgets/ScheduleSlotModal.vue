@@ -132,10 +132,14 @@ return;
 });
 watch(filterClasse, () => {
     if (syncing.value) {
-return;
-}
+        return;
+    }
 
-    selectedLesson.value = null;
+    const lessons = filterClasse.value
+        ? props.lessons.filter((l) => l.group_id === filterClasse.value)
+        : [];
+
+    selectedLesson.value = lessons.length === 1 ? lessons[0].id : null;
 });
 
 async function syncFormFromEntry(entry: ScheduleEntry | null) {
@@ -148,9 +152,30 @@ async function syncFormFromEntry(entry: ScheduleEntry | null) {
         await nextTick();
         selectedLesson.value = entry.lesson_id;
     } else {
-        filterEcole.value = null;
-        filterClasse.value = null;
-        selectedLesson.value = null;
+        const uniqueSchoolIds = [...new Set(props.lessons.map((l) => l.group.school_id))];
+        filterEcole.value = uniqueSchoolIds.length === 1 ? uniqueSchoolIds[0] : null;
+
+        if (filterEcole.value === null) {
+            filterClasse.value = null;
+            selectedLesson.value = null;
+            return;
+        }
+
+        const uniqueGroupIds = [...new Set(
+            props.lessons
+                .filter((l) => l.group.school_id === filterEcole.value)
+                .map((l) => l.group_id),
+        )];
+        filterClasse.value = uniqueGroupIds.length === 1 ? uniqueGroupIds[0] : null;
+
+        if (filterClasse.value === null) {
+            selectedLesson.value = null;
+            return;
+        }
+
+        await nextTick();
+        const lessonsForGroup = props.lessons.filter((l) => l.group_id === filterClasse.value);
+        selectedLesson.value = lessonsForGroup.length === 1 ? lessonsForGroup[0].id : null;
     }
 }
 

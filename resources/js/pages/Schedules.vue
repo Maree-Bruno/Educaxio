@@ -224,6 +224,7 @@ const indicatorTop = computed((): number | null => {
                         @click="toggleSlotType(row)"
                     >
                         <span class="text-xs leading-4 font-extrabold text-border-figma" aria-hidden="true">{{ row.label }}</span>
+                        <span v-if="schools.length === 1 && row.start_time && row.end_time" class="tabular-nums text-[9px] text-stone-400" aria-hidden="true">{{ row.start_time }}–{{ row.end_time }}</span>
                         <span class="text-[8px] text-stone-300 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">pause</span>
                     </button>
 

@@ -18,7 +18,17 @@ class SchoolSlotTimeController extends Controller
             'slots.*.end_time' => ['required', 'date_format:H:i', 'after:slots.*.start_time'],
         ]);
 
-        foreach ($validated['slots'] as $row) {
+        $slots = $validated['slots'];
+
+        for ($i = 1; $i < count($slots); $i++) {
+            if ($slots[$i]['start_time'] < $slots[$i - 1]['end_time']) {
+                return back()->withErrors([
+                    "slots.{$i}.start_time" => "L'heure de début doit être après {$slots[$i - 1]['end_time']}.",
+                ])->withInput();
+            }
+        }
+
+        foreach ($slots as $row) {
             SchoolSlotTime::updateOrCreate(
                 ['school_id' => $school->id, 'schedule_slot_id' => $row['slot_id']],
                 ['start_time' => $row['start_time'], 'end_time' => $row['end_time']],

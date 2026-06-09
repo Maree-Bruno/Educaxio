@@ -129,6 +129,7 @@ class DashboardController extends Controller
                 'group:id,grade,name,slug,school_id',
                 'group.school:id,name',
                 'subject:id,name',
+                'scheduleEntries.scheduleSlot',
             ])
             ->when(
                 $currentYearId,
@@ -146,17 +147,18 @@ class DashboardController extends Controller
 
         $schoolSlotTimes = $this->schoolSlotTimes($schoolIds);
 
-        $indicatorSchoolId = $schoolSlotTimes->keys()->first() ?? $schoolIds->first();
-        $slotTimesForIndicator = $schoolSlotTimes[$indicatorSchoolId] ?? collect();
-
         $slots = ScheduleSlot::orderBy('position')
             ->get(['id', 'position', 'label', 'type', 'start_time', 'end_time'])
-            ->map(function ($s) use ($entriesBySlotId, $lessons, $slotTimesForIndicator) {
-                $override = $slotTimesForIndicator[$s->id] ?? null;
-                $globalStart = $s->start_time ? substr($s->start_time, 0, 5) : null;
-                $globalEnd = $s->end_time ? substr($s->end_time, 0, 5) : null;
+            ->map(function ($s) use ($entriesBySlotId, $lessons, $schoolSlotTimes, $schoolIds) {
                 $entry = $entriesBySlotId->get($s->id);
                 $lesson = $entry ? $lessons->get($entry->lesson_id) : null;
+
+                $schoolId = $lesson ? $lesson->group->school_id : $schoolIds->first();
+                $slotTimes = $schoolSlotTimes[$schoolId] ?? collect();
+                $override = $slotTimes[$s->id] ?? null;
+
+                $globalStart = $s->start_time ? substr($s->start_time, 0, 5) : null;
+                $globalEnd = $s->end_time ? substr($s->end_time, 0, 5) : null;
 
                 return [
                     'id' => $s->id,
@@ -207,10 +209,13 @@ class DashboardController extends Controller
                 'group_slug'     => $lessons[$a->lesson_id]->group->slug,
                 'subject'        => $lessons[$a->lesson_id]->subjectLabel(),
                 'school'         => $lessons[$a->lesson_id]->group->school->name,
-                'slot_label'     => null,
+                'slot_label'     => $a->slot_label ?? $lessons[$a->lesson_id]->scheduleEntries
+                    ->first(fn ($e) => $e->day_of_week === \Carbon\Carbon::parse($a->scheduled_date)->dayOfWeekIso)
+                    ?->scheduleSlot?->label,
             ]);
 
         return Inertia::render('TeacherDashboard', [
+            'singleSchool' => $schoolIds->count() === 1,
             'slots' => $slots,
             'groups' => $groups,
             'date' => $today->locale('fr')->isoFormat('dddd D MMMM YYYY'),

@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { useCurrentSlot } from '@/composables/useCurrentSlot';
-import { useHiddenIds } from '@/composables/useHiddenIds';
-import { dashboard, agenda, attendances } from '@/routes';
-import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
-import { show as showClasslist } from '@/routes/classlist';
-import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
+import DashboardCard from '@/components/admin/DashboardCard.vue';
 import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
+import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
 import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
-import DashboardCard from '@/components/admin/DashboardCard.vue';
 import DateField from '@/components/widgets/DateField.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SidebarLayout from '@/components/widgets/SidebarLayout.vue';
+import { useCurrentSlot } from '@/composables/useCurrentSlot';
+import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { dashboard, agenda, attendances } from '@/routes';
+import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
+import { show as showClasslist } from '@/routes/classlist';
 import { useToasterStore } from '@/stores/toaster';
 import type { User } from '@/types';
 
@@ -48,11 +48,12 @@ interface Group {
     subjects: string[];
 }
 
-const { user, selectedDate, upcomingAssignments, slots } = defineProps<{
+const { user, selectedDate, upcomingAssignments, slots, singleSchool } = defineProps<{
     slots: Slot[];
     groups: Group[];
     date: string;
     selectedDate: string;
+    singleSchool: boolean;
     upcomingAssignments: AgendaAssignment[];
     upcomingAssignmentsTotal: number;
     user: User;
@@ -70,17 +71,23 @@ function changeDate(value: string) {
 const { now, activeSlotIndex } = useCurrentSlot(slots);
 
 const isViewingToday = computed(() => {
-    if (!now.value) return false;
+    if (!now.value) {
+return false;
+}
+
     const localDate = new Date(now.value.getTime() - now.value.getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 10);
+
     return selectedDate === localDate;
 });
 
 let midnightTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(() => {
-    if (selectedDate !== today) return;
+    if (selectedDate !== today) {
+return;
+}
 
     const n = new Date();
     const midnight = new Date(n);
@@ -92,7 +99,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    if (midnightTimer) clearTimeout(midnightTimer);
+    if (midnightTimer) {
+clearTimeout(midnightTimer);
+}
 });
 
 const editModalRef = ref<InstanceType<typeof BaseModal> | null>(null);
@@ -111,7 +120,11 @@ const editForm = useForm({
 
 function openEdit(id: number) {
     const a = upcomingAssignments.find((x) => x.id === id);
-    if (!a) return;
+
+    if (!a) {
+return;
+}
+
     editingAssignment.value = a;
     editForm.type = a.type;
     editForm.title = a.title;
@@ -121,7 +134,10 @@ function openEdit(id: number) {
 }
 
 function submitEdit() {
-    if (!editingAssignment.value) return;
+    if (!editingAssignment.value) {
+return;
+}
+
     editForm.patch(updateAssignment.url({ assignment: editingAssignment.value.id }), {
         preserveScroll: true,
         onSuccess: () => {
@@ -133,13 +149,20 @@ function submitEdit() {
 
 function requestDelete(id: number) {
     const a = upcomingAssignments.find((x) => x.id === id);
-    if (!a) return;
+
+    if (!a) {
+return;
+}
+
     pendingDelete.value = { id, title: a.title };
     confirmDeleteRef.value?.open();
 }
 
 function confirmDelete() {
-    if (!pendingDelete.value) return;
+    if (!pendingDelete.value) {
+return;
+}
+
     const { id, title } = pendingDelete.value;
     confirmDeleteRef.value?.close();
     pendingDelete.value = null;
@@ -192,7 +215,12 @@ function confirmDelete() {
                                 isViewingToday && activeSlotIndex === index ? 'bg-blue/10' : 'bg-white',
                             ]"
                         >
-                            <span class="w-20 shrink-0 text-xs font-extrabold text-border-figma">{{ slot.label }}</span>
+                            <div class="w-20 shrink-0">
+                                <p class="text-xs font-extrabold text-border-figma">{{ slot.label }}</p>
+                                <p v-if="slot.start_time && slot.end_time && (singleSchool || slot.entry !== null)" class="tabular-nums text-[10px] text-stone-400">
+                                    {{ slot.start_time }}–{{ slot.end_time }}
+                                </p>
+                            </div>
                             <template v-if="slot.entry">
                                 <div class="min-w-0 flex-1">
                                     <p class="truncate text-sm font-extrabold text-text-base">

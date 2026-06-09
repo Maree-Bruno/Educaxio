@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { update as updateSlotTimes } from '@/routes/admin/slot-times';
 import { useToasterStore } from '@/stores/toaster';
@@ -30,7 +30,31 @@ export function useSlotTimeForms(
         ),
     );
 
+    const slotTimeErrors = computed(() =>
+        Object.fromEntries(
+            adminSchools.map((school) => {
+                const rows = slotTimeForms.value[school.id];
+                const errors = rows.map((row, i) => {
+                    if (i === 0 || !rows[i - 1].end_time || !row.start_time) {
+                        return null;
+                    }
+
+                    return row.start_time < rows[i - 1].end_time
+                        ? `Après ${rows[i - 1].end_time}`
+                        : null;
+                });
+
+                return [school.id, errors];
+            }),
+        )
+    );
+
     function saveSlotTimes(schoolSlug: string, schoolId: number) {
+        if (slotTimeErrors.value[schoolId].some((e) => e !== null)) {
+            toaster.error('Corrigez les horaires avant d\'enregistrer');
+            return;
+        }
+
         router.put(
             updateSlotTimes.url({ school: schoolSlug }),
             { slots: slotTimeForms.value[schoolId] },
@@ -42,5 +66,5 @@ export function useSlotTimeForms(
         );
     }
 
-    return { slotTimeForms, saveSlotTimes };
+    return { slotTimeForms, slotTimeErrors, saveSlotTimes };
 }

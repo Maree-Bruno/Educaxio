@@ -13,8 +13,8 @@ return [
     'format' => ['webp', 'jpg', 'png', 'jpeg'],
     'compression' => 80,
     'student' => [
-        'disk'          => 'public',
-        'sizes'         => [
+        'disk' => 'public',
+        'sizes' => [
             'xs' => ['width' => 64,  'height' => 64],
             'sm' => ['width' => 128, 'height' => 128],
             'md' => ['width' => 256, 'height' => 256],
@@ -22,7 +22,7 @@ return [
         ],
         'original_path' => 'students/originals',
         'reformat_path' => 'students/variants/%sx%s',
-        'format'        => ['webp', 'jpg', 'png', 'jpeg'],
-        'compression'   => 80,
+        'format' => ['webp', 'jpg', 'png', 'jpeg'],
+        'compression' => 80,
     ],
 ];

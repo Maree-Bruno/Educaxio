@@ -16,6 +16,7 @@ const props = withDefaults(
         size?: 'sm' | 'md';
         fluid?: boolean;
         autocomplete?: string;
+        min?: string;
     }>(),
     {
         modelValue: '',
@@ -72,6 +73,7 @@ const inputClasses = computed(() => [
             :disabled="disabled"
             :required="required || undefined"
             :autocomplete="autocomplete"
+            :min="min"
             :class="inputClasses"
             :aria-invalid="hasError"
             :aria-required="required ? 'true' : undefined"
