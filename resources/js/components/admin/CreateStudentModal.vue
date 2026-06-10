@@ -7,6 +7,8 @@ import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { store as adminStudentsStore } from '@/routes/admin/students';
 import { useToasterStore } from '@/stores/toaster';
 
@@ -22,6 +24,7 @@ const props = defineProps<{
 }>();
 
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
+const isOpen   = ref(false);
 const form = useForm({
     lastname: '',
     firstname: '',
@@ -54,11 +57,13 @@ function removeGroup(id: string) {
 }
 
 function open() {
+    isOpen.value = true;
     form.reset();
     nextTick(() => modalRef.value?.open());
 }
 
 function close() {
+    isOpen.value = false;
     modalRef.value?.close();
 }
 
@@ -76,6 +81,12 @@ function save() {
         },
     });
 }
+
+useSaveShortcut(() => {
+    if (isOpen.value) {
+        save();
+    }
+});
 
 defineExpose({ open });
 </script>
@@ -162,11 +173,12 @@ defineExpose({ open });
                     type="submit"
                     variant="primary"
                     size="sm"
-                    label="Enregistrer"
                     class="flex-1"
                     :disabled="!form.lastname || !form.firstname"
                     :loading="form.processing"
-                />
+                >
+                    Enregistrer <KbdShortcut keys="⌘S" />
+                </Button>
                 <Button
                     type="button"
                     variant="danger"

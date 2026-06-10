@@ -49,8 +49,9 @@ const yearOptions = props.academicYears.map((y) => ({
 const filterGroup = ref<string>(props.filters.group ?? '');
 const filterYear  = ref<string | null>(props.filters.year ?? null);
 const search      = ref(props.filters.search ?? '');
+const validSortCols = ['firstname', 'group'] as const;
 const { sortCol, sortDir, sortBy } = useStudentSort({
-    col: props.filters.sort === 'firstname' ? 'firstname' : 'lastname',
+    col: validSortCols.includes(props.filters.sort as never) ? props.filters.sort : 'lastname',
     dir: props.filters.dir === 'desc' ? 'desc' : 'asc',
 });
 
@@ -192,7 +193,7 @@ function confirmDelete() {
                         <th scope="col" class="px-3 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Photo</th>
                         <SortTh col="lastname" :current-col="sortCol" :current-dir="sortDir" label="Nom" @sort="sortBy" />
                         <SortTh col="firstname" :current-col="sortCol" :current-dir="sortDir" label="Prénom" @sort="sortBy" />
-                        <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Groupes</th>
+                        <SortTh col="group" :current-col="sortCol" :current-dir="sortDir" label="Groupe" @sort="sortBy" />
                         <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Email</th>
                         <th scope="col" class="px-6 py-4 text-xs font-bold uppercase leading-4 tracking-wider text-stone-500">Action</th>
                     </tr>

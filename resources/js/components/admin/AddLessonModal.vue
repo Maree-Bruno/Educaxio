@@ -4,6 +4,8 @@ import { useForm } from '@inertiajs/vue3';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { store as adminLessonsStore } from '@/routes/admin/lessons';
 import { useToasterStore } from '@/stores/toaster';
 
@@ -93,6 +95,12 @@ function submit() {
     });
 }
 
+useSaveShortcut(() => {
+    if (addingToGroup.value) {
+        submit();
+    }
+});
+
 defineExpose({ open, availableSubjectsFor });
 </script>
 
@@ -151,11 +159,12 @@ defineExpose({ open, availableSubjectsFor });
                     type="submit"
                     variant="primary"
                     size="sm"
-                    label="Enregistrer"
                     class="flex-1"
                     :disabled="!form.subject_id"
                     :loading="form.processing"
-                />
+                >
+                    Enregistrer <KbdShortcut keys="⌘S" />
+                </Button>
                 <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="close" />
             </div>
         </form>

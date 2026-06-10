@@ -9,8 +9,10 @@ import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SchoolJoinForm from '@/components/widgets/SchoolJoinForm.vue';
 import SubjectPicker from '@/components/widgets/SubjectPicker.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { useSlotTimeForms } from '@/composables/useSlotTimeForms';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useAuthStore } from '@/stores/auth';
@@ -100,6 +102,8 @@ const { slotTimeForms, slotTimeErrors, saveSlotTimes } = useSlotTimeForms(
     props.adminSchoolSlotTimes,
 );
 
+useSaveShortcut(() => submitProfileWithUndo());
+
 const showDeleteModal = ref(false);
 const deleteForm = useForm({});
 
@@ -139,10 +143,11 @@ function confirmDelete() {
                     <Button
                         variant="primary"
                         size="sm"
-                        label="Enregistrer"
                         :loading="profileForm.processing"
                         @click="submitProfileWithUndo"
-                    />
+                    >
+                        Enregistrer <KbdShortcut keys="⌘S" />
+                    </Button>
                 </div>
             </div>
         </ProfileSection>
@@ -284,7 +289,9 @@ function confirmDelete() {
                     </table>
                 </div>
                 <div class="flex justify-end">
-                    <Button variant="primary" size="sm" label="Enregistrer" @click="saveSlotTimes(school.slug, school.id)" />
+                    <Button variant="primary" size="sm" @click="saveSlotTimes(school.slug, school.id)">
+                        Enregistrer <KbdShortcut keys="⌘S" />
+                    </Button>
                 </div>
             </ProfileSection>
         </template>
@@ -324,10 +331,11 @@ function confirmDelete() {
                     <Button
                         variant="primary"
                         size="sm"
-                        label="Enregistrer"
                         :loading="passwordForm.processing"
                         @click="submitPassword"
-                    />
+                    >
+                        Enregistrer <KbdShortcut keys="⌘S" />
+                    </Button>
                 </div>
             </ProfileSection>
 

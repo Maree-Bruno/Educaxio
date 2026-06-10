@@ -5,6 +5,8 @@ import Badge from '@/components/widgets/Badge.vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import { approve, reject } from '@/routes/admin/join-requests';
+import { index as lessonsIndex } from '@/routes/admin/lessons';
+import { useToasterStore } from '@/stores/toaster';
 
 interface Subject     { id: number; name: string }
 interface JoinRequest { id: number; user: { id: number; name: string; email: string }; subjects: Subject[] }
@@ -15,9 +17,18 @@ const props = defineProps<{
 }>();
 
 const modal = ref<InstanceType<typeof BaseModal> | null>(null);
+const toaster = useToasterStore();
 
-function approveRequest(id: number) {
-    router.patch(approve.url({ school: props.school.slug, joinRequest: id }));
+function approveRequest(id: number, teacherName: string) {
+    router.patch(approve.url({ school: props.school.slug, joinRequest: id }), {}, {
+        onSuccess: () => {
+            toaster.actionable(
+                `${teacherName} a été approuvé(e)`,
+                'Attribuer des cours →',
+                () => router.visit(lessonsIndex.url({ school: props.school.slug })),
+            );
+        },
+    });
 }
 
 function rejectRequest(id: number) {
@@ -76,7 +87,7 @@ function rejectRequest(id: number) {
                     </div>
                     <div class="flex justify-end gap-2">
                         <Button variant="danger" size="sm" label="Refuser" @click="rejectRequest(req.id)" />
-                        <Button variant="primary" size="sm" label="Accepter" @click="approveRequest(req.id)" />
+                        <Button variant="primary" size="sm" label="Accepter" @click="approveRequest(req.id, req.user.name)" />
                     </div>
                 </li>
             </ul>

@@ -4,6 +4,8 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import Button from '@/components/widgets/Button.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import type { SelectOption } from '@/components/widgets/SelectField.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { store } from '@/routes/schedule-entries';
 import { useToasterStore } from '@/stores/toaster';
@@ -236,6 +238,12 @@ function onCancel(event: Event) {
     emit('close');
 }
 
+useSaveShortcut(() => {
+    if (props.open) {
+        save();
+    }
+});
+
 function save() {
     if (!selectedSlot.value || !selectedLesson.value) {
 return;
@@ -368,7 +376,7 @@ function deleteEntry() {
                         :loading="form.processing"
                         @click="save"
                     >
-                        Enregistrer
+                        Enregistrer <KbdShortcut keys="⌘S" size="md" />
                     </Button>
                     <Button variant="danger" size="md" class="flex-1" @click="emit('close')">
                         Annuler

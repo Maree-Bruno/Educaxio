@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { computed, nextTick, ref } from 'vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
+import SearchInput from '@/components/widgets/SearchInput.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { sync as syncLessonTeachers } from '@/routes/admin/lessons/teachers';
 import { useToasterStore } from '@/stores/toaster';
@@ -21,11 +24,22 @@ const modalRef      = ref<InstanceType<typeof BaseModal> | null>(null);
 const editingLesson = ref<Lesson | null>(null);
 const form          = useForm({ teacher_ids: [] as number[] });
 const toaster       = useToasterStore();
+const search        = ref('');
+
+const filteredTeachers = computed(() => {
+    const subjectId = editingLesson.value?.subject.id;
+    const q = search.value.trim().toLowerCase();
+
+    return props.teachers
+        .filter((t) => !subjectId || t.subject_ids.includes(subjectId))
+        .filter((t) => !q || t.name.toLowerCase().includes(q));
+});
 
 function open(lesson: Lesson) {
     editingLesson.value = lesson;
     form.teacher_ids = lesson.users.map((u) => u.id);
     form.clearErrors();
+    search.value = '';
     nextTick(() => modalRef.value?.open());
 }
 
@@ -57,6 +71,12 @@ function save() {
     });
 }
 
+useSaveShortcut(() => {
+    if (editingLesson.value) {
+        save();
+    }
+});
+
 defineExpose({ open });
 </script>
 
@@ -70,9 +90,11 @@ defineExpose({ open });
                 </p>
             </div>
 
-            <div class="flex flex-col gap-1.5">
+            <SearchInput v-model="search" placeholder="Rechercher un professeur…" />
+
+            <div class="flex max-h-72 flex-col gap-1.5 overflow-y-auto">
                 <label
-                    v-for="teacher in teachers"
+                    v-for="teacher in filteredTeachers"
                     :key="teacher.id"
                     class="flex cursor-pointer items-center gap-3 rounded-xl bg-white px-3 py-2.5 outline outline-1 -outline-offset-1"
                     :class="form.teacher_ids.includes(teacher.id) ? 'outline-blue' : 'outline-border-figma'"
@@ -85,13 +107,15 @@ defineExpose({ open });
                     />
                     <span class="text-sm font-bold text-text-base">{{ teacher.name }}</span>
                 </label>
-                <p v-if="teachers.length === 0" class="text-xs text-border-figma italic">
-                    Aucun prof dans cette école
+                <p v-if="filteredTeachers.length === 0" class="text-xs italic text-border-figma">
+                    {{ search ? 'Aucun résultat' : 'Aucun prof dans cette école' }}
                 </p>
             </div>
 
             <div class="flex gap-3">
-                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1" :loading="form.processing" />
+                <Button type="submit" variant="primary" size="sm" class="flex-1" :loading="form.processing">
+                    Enregistrer <KbdShortcut keys="⌘S" />
+                </Button>
                 <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="close" />
             </div>
         </form>

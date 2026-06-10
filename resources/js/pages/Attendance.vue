@@ -7,9 +7,10 @@ import AttendanceJournal from '@/components/widgets/AttendanceJournal.vue';
 import AttendanceStats from '@/components/widgets/AttendanceStats.vue';
 import AttendanceStudentList from '@/components/widgets/AttendanceStudentList.vue';
 import DateField from '@/components/widgets/DateField.vue';
+import type { AfterSave } from '@/components/widgets/SaveSplitButton.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
-import { attendances } from '@/routes';
+import { agenda, attendances } from '@/routes';
 
 setPageTitle('Présences');
 
@@ -95,6 +96,12 @@ const entryOptions = computed(() =>
 const liveStatuses = ref<Record<number, string | null>>(
     Object.fromEntries(props.statuses.map((s) => [s.student_id, s.type])),
 );
+
+function onSaved(afterSave: AfterSave) {
+    if (afterSave === 'journal') {
+        router.get(agenda.url());
+    }
+}
 
 const sessionStats = computed(() => {
     const total = props.students.length;
@@ -223,6 +230,7 @@ const sessionStats = computed(() => {
                 :lesson-id="lessonId"
                 :date="date"
                 :selected-entry="selectedEntry"
+                @saved="onSaved"
             />
 
             <AttendanceAssignments

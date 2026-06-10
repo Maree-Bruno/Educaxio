@@ -353,8 +353,6 @@ class ClassListController extends Controller
         ];
     }
 
-    public function edit(Group $group): void {}
-
     public function update(Request $request, Group $group)
     {
         $this->authorize('update', $group);

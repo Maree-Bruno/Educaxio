@@ -16,9 +16,6 @@ use Inertia\Inertia;
 class StudentController extends Controller
 {
     use DetectsCurrentAcademicYear;
-    public function index() {}
-
-    public function store() {}
 
     public function show(Request $request, Student $student)
     {

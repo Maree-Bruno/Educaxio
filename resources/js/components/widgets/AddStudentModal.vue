@@ -7,6 +7,8 @@ import Button from '@/components/widgets/Button.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { attach } from '@/routes/classlist/students';
 
 const props = defineProps<{
@@ -15,6 +17,7 @@ const props = defineProps<{
 }>();
 
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
+const isOpen   = ref(false);
 const addTab = ref<'new' | 'existing'>('existing');
 const addForm = useForm({ lastname: '', firstname: '', email: '' });
 const attachForm = useForm({ student_ids: [] as number[] });
@@ -39,6 +42,7 @@ const filteredSchoolStudents = computed(() => {
 });
 
 function open() {
+    isOpen.value = true;
     addTab.value = 'existing';
     addForm.reset();
     studentSearch.value = '';
@@ -47,6 +51,7 @@ function open() {
 }
 
 function close() {
+    isOpen.value = false;
     modalRef.value?.close();
 }
 
@@ -69,6 +74,12 @@ function attachSelected() {
         onSuccess: close,
     });
 }
+
+useSaveShortcut(() => {
+    if (!isOpen.value) return;
+    if (addTab.value === 'new') submitNew();
+    else attachSelected();
+});
 
 defineExpose({ open });
 </script>
@@ -102,8 +113,10 @@ defineExpose({ open });
                 <InputLabel v-model="addForm.firstname" label="Prénom" placeholder="Marie" :error="addForm.errors.firstname" />
                 <InputLabel v-model="addForm.email" type="email" label="Email (optionnel)" placeholder="marie@exemple.be" :error="addForm.errors.email" />
                 <div class="flex gap-3">
-                    <Button type="submit" variant="primary" size="md" label="Ajouter" class="flex-1"
-                        :disabled="!addForm.lastname || !addForm.firstname" :loading="addForm.processing" />
+                    <Button type="submit" variant="primary" size="md" class="flex-1"
+                        :disabled="!addForm.lastname || !addForm.firstname" :loading="addForm.processing">
+                        Ajouter <KbdShortcut keys="⌘S" size="md" />
+                    </Button>
                     <Button type="button" variant="danger" size="md" label="Annuler" class="flex-1" @click="close" />
                 </div>
             </form>
@@ -142,11 +155,13 @@ defineExpose({ open });
                         type="submit"
                         variant="primary"
                         size="md"
-                        :label="selectedStudentIds.length ? `Ajouter (${selectedStudentIds.length})` : 'Ajouter'"
                         class="flex-1"
                         :disabled="!selectedStudentIds.length"
                         :loading="attachForm.processing"
-                    />
+                    >
+                        {{ selectedStudentIds.length ? `Ajouter (${selectedStudentIds.length})` : 'Ajouter' }}
+                        <KbdShortcut keys="⌘S" size="md" />
+                    </Button>
                     <Button type="button" variant="danger" size="md" label="Annuler" class="flex-1" @click="close" />
                 </div>
             </form>

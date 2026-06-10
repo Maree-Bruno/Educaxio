@@ -9,6 +9,7 @@ use App\Jobs\ProcessUploadedImage;
 use App\Models\School;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -33,17 +34,33 @@ class StudentController extends Controller
         $academicYears = $this->academicYearsForSchools(collect([$school->id]), $currentYearId);
 
         $dir = $this->sortDir($request);
-        $sort = $this->sortCol($request, ['lastname', 'firstname'], 'lastname');
+        $sort = $this->sortCol($request, ['lastname', 'firstname', 'group'], 'lastname');
 
         $query = Student::where('school_id', $school->id)
             ->with(['groups' => fn ($q) => $q
                 ->when($selectedYearId, fn ($g) => $g->where('academic_year_id', $selectedYearId))
                 ->select('groups.id', 'grade', 'name', 'slug'),
             ])
-            ->when($selectedYearId, fn ($q) => $q->whereHas('groups', fn ($g) => $g->where('academic_year_id', $selectedYearId)
-            ))
-            ->orderBy($sort, $dir)
-            ->orderBy($sort === 'lastname' ? 'firstname' : 'lastname');
+            ->when($selectedYearId, fn ($q) => $q->whereHas('groups', fn ($g) => $g->where('academic_year_id', $selectedYearId)));
+
+        if ($sort === 'group') {
+            $groupSort = DB::table('group_student')
+                ->join('groups', 'groups.id', '=', 'group_student.group_id')
+                ->select('group_student.student_id', DB::raw("MIN(grade || name) as group_sort"))
+                ->when($selectedYearId, fn ($q) => $q->where('groups.academic_year_id', $selectedYearId))
+                ->groupBy('group_student.student_id');
+
+            $query
+                ->select('students.*')
+                ->leftJoinSub($groupSort, 'gs', 'gs.student_id', '=', 'students.id')
+                ->orderByRaw("COALESCE(gs.group_sort, 'zzz') ".($dir === 'desc' ? 'DESC' : 'ASC'))
+                ->orderBy('students.lastname')
+                ->orderBy('students.firstname');
+        } else {
+            $query
+                ->orderBy($sort, $dir)
+                ->orderBy($sort === 'lastname' ? 'firstname' : 'lastname');
+        }
 
         if ($request->filled('group')) {
             $query->whereHas('groups', fn ($q) => $q->where('groups.id', $request->integer('group')));
