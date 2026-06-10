@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import InputError from '@/components/InputError.vue';
-import PasswordInput from '@/components/PasswordInput.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import Button from '@/components/widgets/Button.vue';
+import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import NoScriptWarning from '@/components/widgets/NoScriptWarning.vue';
+import { login } from '@/routes';
 import { update } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Reset password',
-        description: 'Please enter your new password below',
+        title: 'Nouveau mot de passe',
+        description: 'Choisissez un nouveau mot de passe pour votre compte.',
     },
 });
 
@@ -21,67 +19,70 @@ const props = defineProps<{
     email: string;
 }>();
 
-const inputEmail = ref(props.email);
+const page = usePage();
+const serverErrors = computed(() => page.props.errors);
+
+const form = useForm({
+    token: props.token,
+    email: props.email,
+    password: '',
+    password_confirmation: '',
+});
+
+function submit() {
+    form.post(update.url(), {
+        onFinish: () => form.reset('password', 'password_confirmation'),
+    });
+}
 </script>
 
 <template>
-    <Head title="Reset password" />
+    <Head title="Nouveau mot de passe" />
 
-    <Form
-        v-bind="update.form()"
-        :transform="(data) => ({ ...data, token, email })"
-        :reset-on-success="['password', 'password_confirmation']"
-        v-slot="{ errors, processing }"
-    >
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">Email</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    autocomplete="email"
-                    v-model="inputEmail"
-                    class="mt-1 block w-full"
-                    readonly
-                />
-                <InputError :message="errors.email" class="mt-2" />
-            </div>
+    <NoScriptWarning />
 
-            <div class="grid gap-2">
-                <Label for="password">Password</Label>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    autofocus
-                    placeholder="Password"
-                />
-                <InputError :message="errors.password" />
-            </div>
+    <form method="post" :action="update.url()" class="flex flex-col gap-5" @submit.prevent="submit">
+        <input type="hidden" name="_token" :value="page.props.csrf_token" />
 
-            <div class="grid gap-2">
-                <Label for="password_confirmation"> Confirm password </Label>
-                <PasswordInput
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    placeholder="Confirm password"
-                />
-                <InputError :message="errors.password_confirmation" />
-            </div>
-
-            <Button
-                type="submit"
-                class="mt-4 w-full"
-                :disabled="processing"
-                data-test="reset-password-button"
-            >
-                <Spinner v-if="processing" />
-                Reset password
-            </Button>
+        <div class="flex flex-col gap-1.5">
+            <p class="font-manrope text-xs font-bold uppercase tracking-widest leading-4 text-border-figma">Email</p>
+            <p class="rounded-2xl border border-border-figma bg-stone-50 px-3 py-3 font-manrope text-base font-semibold text-text-base opacity-60">
+                {{ email }}
+            </p>
         </div>
-    </Form>
+
+        <InputLabel
+            v-model="form.password"
+            label="Nouveau mot de passe"
+            type="password"
+            placeholder="••••••••••"
+            autocomplete="new-password"
+            required
+            :error="form.errors.password || serverErrors.password"
+        />
+
+        <InputLabel
+            v-model="form.password_confirmation"
+            label="Confirmer le mot de passe"
+            type="password"
+            placeholder="••••••••••"
+            autocomplete="new-password"
+            required
+            :error="form.errors.password_confirmation || serverErrors.password_confirmation"
+        />
+
+        <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            label="Réinitialiser le mot de passe"
+            :loading="form.processing"
+            class="w-full"
+        />
+
+        <p class="text-center text-sm">
+            <span class="text-neutral-500">Retour à la </span>
+            <a :href="login.url()" class="font-medium text-blue hover:underline">connexion</a>
+        </p>
+    </form>
 </template>
