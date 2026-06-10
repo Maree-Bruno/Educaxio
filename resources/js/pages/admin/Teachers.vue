@@ -7,6 +7,7 @@ import Badge from '@/components/widgets/Badge.vue';
 import Button from '@/components/widgets/Button.vue';
 import ConfirmModal from '@/components/widgets/ConfirmModal.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
+import LinkButton from '@/components/widgets/LinkButton.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
@@ -16,6 +17,7 @@ import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { useSort } from '@/composables/useStudentSort';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
+import { index as adminLessonsIndex } from '@/routes/admin/lessons';
 import { index as adminTeachersIndex, destroy as adminTeachersDestroy } from '@/routes/admin/teachers';
 import { useToasterStore } from '@/stores/toaster';
 import type { Paginator } from '@/types';
@@ -129,7 +131,7 @@ function confirmUnlink() {
                         <Badge v-for="l in teacher.lessons" :key="l.id">
                             {{ l.group.grade }}{{ l.group.name }} — {{ resolveSubjectLabel(l.subject.name, l.lm_level) }}
                         </Badge>
-                        <span v-if="teacher.lessons.length === 0" class="text-xs text-border-figma">Aucun cours attribué</span>
+                        <LinkButton v-if="teacher.lessons.length === 0" :href="adminLessonsIndex.url({ school: school.slug })" variant="secondary" size="sm" label="Attribuer des cours" />
                     </div>
                 </div>
                 <Button variant="danger" size="sm" :icon-only="true" title="Retirer de l'établissement" @click="pendingDelete = teacher">
@@ -185,7 +187,7 @@ function confirmUnlink() {
                                 <Badge v-for="l in teacher.lessons" :key="l.id" variant="blue">
                                     {{ l.group.grade }}{{ l.group.name }} — {{ resolveSubjectLabel(l.subject.name, l.lm_level) }}
                                 </Badge>
-                                <span v-if="teacher.lessons.length === 0" class="text-sm text-border-figma">—</span>
+                                <LinkButton v-if="teacher.lessons.length === 0" :href="adminLessonsIndex.url({ school: school.slug })" variant="secondary" size="sm" label="Attribuer des cours" />
                             </div>
                         </td>
                         <td class="px-6 py-5">

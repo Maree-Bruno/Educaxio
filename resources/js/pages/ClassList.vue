@@ -9,7 +9,7 @@ import GroupCard from '@/components/widgets/GroupCard.vue';
 import LinkButton from '@/components/widgets/LinkButton.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
-import ArrowUpDown from '@/components/widgets/svg/ArrowUpDown.vue';
+import SortSelect from '@/components/widgets/SortSelect.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { classlist } from '@/routes';
 import { create, show, destroy } from '@/routes/classlist';
@@ -104,7 +104,7 @@ const filterSchool = ref<string | null>(props.filters.school ?? null);
 const filterClass = ref<string | null>(props.filters.class ?? null);
 const filterYear = ref<string | null>(props.filters.year ?? null);
 const search = ref(props.filters.search ?? '');
-const sortBy = ref(props.filters.sort ?? '');
+const sortBy = ref<string | null>(props.filters.sort ?? null);
 const sortDir = ref<'asc' | 'desc'>(props.filters.dir ?? 'asc');
 
 const sortOptions = [
@@ -220,46 +220,13 @@ watch(sortDir, applyFilters);
                 placeholder="Rechercher"
                 class="w-full lg:w-[22%]"
             />
-            <div class="flex w-full flex-col gap-2 lg:w-[22%]">
-                <p
-                    class="text-xs font-bold tracking-wide text-border-figma uppercase"
-                >
-                    Trier
-                </p>
-                <div class="flex items-center gap-1">
-                    <SelectField
-                        id="filter-sort"
-                        v-model="sortBy"
-                        placeholder="Par défaut"
-                        :options="sortOptions"
-                        class="flex-1"
-                    />
-                    <button
-                        type="button"
-                        :disabled="!sortBy"
-                        class="flex h-11.5 w-10 shrink-0 items-center justify-center rounded-2xl bg-white outline-1 -outline-offset-1 outline-border-figma transition-all hover:bg-gray-50"
-                        :class="
-                            sortBy
-                                ? 'text-text-base'
-                                : 'pointer-events-none opacity-30'
-                        "
-                        :title="
-                            sortDir === 'asc'
-                                ? 'Ordre ascendant'
-                                : 'Ordre descendant'
-                        "
-                        @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
-                    >
-                        <ArrowUpDown
-                            :size="16"
-                            :stroke-width="2"
-                            class="transition-transform duration-200"
-                            :class="{ 'rotate-180': sortDir === 'desc' }"
-                            aria-hidden="true"
-                        />
-                    </button>
-                </div>
-            </div>
+            <SortSelect
+                id="filter-sort"
+                v-model="sortBy"
+                v-model:direction="sortDir"
+                :options="sortOptions"
+                class="w-full lg:w-[22%]"
+            />
         </template>
         <template v-if="canCreate" #action>
             <LinkButton

@@ -39,9 +39,25 @@ export const useToasterStore = defineStore('toaster', () => {
         toasts.value.push({ id, text, status: 'warning', action: { label: 'Annuler', onClick: undo } });
     }
 
+    function actionable(text: string, actionLabel: string, onAction: () => void, timeout = 6000) {
+        const id = Math.random() * 1_000_000;
+
+        const timer = setTimeout(() => {
+            toasts.value = toasts.value.filter((t) => t.id !== id);
+        }, timeout);
+
+        const action = () => {
+            clearTimeout(timer);
+            toasts.value = toasts.value.filter((t) => t.id !== id);
+            onAction();
+        };
+
+        toasts.value.push({ id, text, status: 'success', action: { label: actionLabel, onClick: action } });
+    }
+
     const success = (text: string, timeout?: number) => add(text, 'success', timeout);
     const warning = (text: string, timeout?: number) => add(text, 'warning', timeout);
     const error   = (text: string, timeout?: number) => add(text, 'error',   timeout);
 
-    return { toasts, success, warning, error, deletable };
+    return { toasts, success, warning, error, deletable, actionable };
 });

@@ -28,7 +28,7 @@ function doSave() {
     form.post(store.url(), { preserveState: true, preserveScroll: true });
 }
 
-const save = useDebounceFn(() => { if (autoSave.value) doSave(); }, 800);
+const save = useDebounceFn(() => { if (autoSave.value) doSave(); }, 1000);
 </script>
 
 <template>

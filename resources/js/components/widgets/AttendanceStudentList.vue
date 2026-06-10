@@ -161,7 +161,7 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                         Enregistré le {{ lastSavedAt }}
                     </span>
                     <template v-if="isEditable">
-                        <Button variant="ghost" size="sm" @click="setAllPresent">Tous présent</Button>
+                        <Button variant="ghost" size="sm" @click="setAllPresent">Tous présents</Button>
                         <Button variant="primary" size="sm" :loading="form.processing" @click="save">Valider</Button>
                     </template>
                     <span v-else class="text-xs font-bold text-stone-400">Lecture seule</span>
