@@ -23,7 +23,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class DatabaseSeeder extends Seeder
+class DemoSeeder extends Seeder
 {
     private const ROOMS = [
         '101', '102', '103', '201', '202', '203', '301', '302', '303', 'Labo 1', 'Labo 2', 'Salle informatique',
