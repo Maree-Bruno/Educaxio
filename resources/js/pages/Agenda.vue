@@ -3,6 +3,8 @@ import { router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
 import AgendaAssignmentsPanel from '@/components/widgets/AgendaAssignmentsPanel.vue';
+import AgendaCreateAssignmentModal from '@/components/widgets/AgendaCreateAssignmentModal.vue';
+import AgendaCreateJournalModal from '@/components/widgets/AgendaCreateJournalModal.vue';
 import AgendaEditAssignmentModal from '@/components/widgets/AgendaEditAssignmentModal.vue';
 import AgendaJournalPanel from '@/components/widgets/AgendaJournalPanel.vue';
 import type { AgendaJournalEntry } from '@/components/widgets/AgendaJournalRow.vue';
@@ -19,12 +21,20 @@ import type { Paginator } from '@/types';
 
 setPageTitle('Agenda');
 
+interface AgendaLessonOption {
+    id: number;
+    label: string;
+    schedule_pattern: { day_of_week: number; slot_label: string }[];
+    next_assignment_date: string | null;
+}
+
 const props = defineProps<{
     journalEntries:      Paginator<AgendaJournalEntry>;
     upcomingAssignments: Paginator<AgendaAssignment>;
     pastAssignments:     Paginator<AgendaAssignment>;
     groupOptions:        string[];
     schoolOptions:       string[];
+    lessonOptions:       AgendaLessonOption[];
     academicYears: {
         id: number;
         year: string;
@@ -150,6 +160,10 @@ const hiddenIds = ref(new Set<number>());
 const visibleUpcoming = computed(() => props.upcomingAssignments.data.filter((a) => !hiddenIds.value.has(a.id)));
 const visiblePast     = computed(() => props.pastAssignments.data.filter((a) => !hiddenIds.value.has(a.id)));
 
+// ── Création ─────────────────────────────────────────────────────────────────
+const createAssignmentRef = ref<InstanceType<typeof AgendaCreateAssignmentModal> | null>(null);
+const createJournalRef    = ref<InstanceType<typeof AgendaCreateJournalModal> | null>(null);
+
 // ── Édition ───────────────────────────────────────────────────────────────────
 const editModalRef = ref<InstanceType<typeof AgendaEditAssignmentModal> | null>(null);
 
@@ -208,6 +222,8 @@ function goToAttendance(entry: AgendaJournalEntry) {
     />
 
     <AgendaEditAssignmentModal ref="editModalRef" />
+    <AgendaCreateAssignmentModal ref="createAssignmentRef" :lesson-options="lessonOptions" />
+    <AgendaCreateJournalModal ref="createJournalRef" :lesson-options="lessonOptions" />
 
     <FilterBar
         title="Journal de classe"
@@ -241,6 +257,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
         <template #filters>
             <SelectField
                 v-if="isAdmin && yearOptions.length > 1"
+                label="Année"
                 placeholder="Année en cours"
                 :options="yearOptions"
                 :model-value="filterYear"
@@ -250,6 +267,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
 
             <SelectField
                 v-if="activeTab === 'assignments'"
+                label="Type"
                 placeholder="Tous les types"
                 :options="typeOptions"
                 :model-value="filterType || null"
@@ -259,6 +277,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
 
             <SelectField
                 v-if="groupSelectOptions.length > 1"
+                label="Classe"
                 placeholder="Toutes les classes"
                 :options="groupSelectOptions"
                 :model-value="filterGroup || null"
@@ -268,6 +287,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
 
             <SelectField
                 v-if="schoolSelectOptions.length > 1"
+                label="École"
                 placeholder="Toutes les écoles"
                 :options="schoolSelectOptions"
                 :model-value="filterSchool || null"
@@ -309,6 +329,7 @@ function goToAttendance(entry: AgendaJournalEntry) {
         :journal-entries="journalEntries"
         :has-active-filters="hasJournalFilters"
         @click-entry="goToAttendance"
+        @create="createJournalRef?.open()"
     />
 
     <AgendaAssignmentsPanel
@@ -320,5 +341,6 @@ function goToAttendance(entry: AgendaJournalEntry) {
         :has-active-filters="hasAssignmentFilters"
         @edit="openEdit"
         @delete="requestDelete"
+        @create="createAssignmentRef?.open()"
     />
 </template>

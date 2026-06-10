@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ComputesNextOccurrence;
 use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Http\Controllers\Concerns\HandlesSorting;
 use App\Models\Assignment;
@@ -14,6 +15,7 @@ use Inertia\Inertia;
 
 class AgendaController extends Controller
 {
+    use ComputesNextOccurrence;
     use DetectsCurrentAcademicYear;
     use HandlesSorting;
     public function __invoke(Request $request)
@@ -115,6 +117,25 @@ class AgendaController extends Controller
         $groupOptions = $lessons->map(fn ($l) => $l->group->grade.$l->group->name)->unique()->sort()->values();
         $schoolOptions = $lessons->map(fn ($l) => $l->group->school->name)->unique()->sort()->values();
 
+        $multipleSchools = $lessons->map(fn ($l) => $l->group->school_id)->unique()->count() > 1;
+
+        $lessonOptions = $lessons->map(function ($lesson) use ($multipleSchools) {
+            $label = $lesson->subjectLabel().' · '.$lesson->group->grade.$lesson->group->name;
+            if ($multipleSchools) {
+                $label .= ' ('.$lesson->group->school->name.')';
+            }
+
+            return [
+                'id'                   => $lesson->id,
+                'label'                => $label,
+                'schedule_pattern'     => $lesson->scheduleEntries->map(fn ($e) => [
+                    'day_of_week' => $e->day_of_week,
+                    'slot_label'  => $e->scheduleSlot?->label ?? '',
+                ])->values(),
+                'next_assignment_date' => $this->nextOccurrence($lesson),
+            ];
+        })->sortBy('label')->values();
+
         $isAdmin = $user->schools()->wherePivot('role', 'admin')->exists();
 
         return Inertia::render('Agenda', [
@@ -125,6 +146,7 @@ class AgendaController extends Controller
             'groupOptions' => $groupOptions,
             'schoolOptions' => $schoolOptions,
             'academicYears' => $academicYears,
+            'lessonOptions' => $lessonOptions,
             'filters' => [
                 'search' => $search,
                 'group' => $group,

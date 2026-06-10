@@ -11,9 +11,11 @@ import DateField from '@/components/widgets/DateField.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SidebarLayout from '@/components/widgets/SidebarLayout.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
 import { useCurrentSlot } from '@/composables/useCurrentSlot';
 import { useHiddenIds } from '@/composables/useHiddenIds';
 import { setPageTitle } from '@/composables/usePageTitle';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { dashboard, agenda, attendances } from '@/routes';
 import { update as updateAssignment, destroy as destroyAssignment } from '@/routes/assignments';
 import { show as showClasslist } from '@/routes/classlist';
@@ -146,6 +148,12 @@ return;
         },
     });
 }
+
+useSaveShortcut(() => {
+    if (editingAssignment.value) {
+        submitEdit();
+    }
+});
 
 function requestDelete(id: number) {
     const a = upcomingAssignments.find((x) => x.id === id);
@@ -367,7 +375,9 @@ return;
 
                 <div class="flex justify-end gap-2 pt-1">
                     <Button type="button" variant="ghost" size="sm" @click="editModalRef?.close()">Annuler</Button>
-                    <Button type="submit" variant="primary" size="sm" :loading="editForm.processing">Enregistrer</Button>
+                    <Button type="submit" variant="primary" size="sm" :loading="editForm.processing">
+                        Enregistrer <KbdShortcut keys="⌘S" />
+                    </Button>
                 </div>
             </form>
         </div>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { store } from '@/routes/attendances';
 import AttendanceStatusButton from '@/components/widgets/AttendanceStatusButton.vue';
 import Button from '@/components/widgets/Button.vue';
 import EmptyState from '@/components/widgets/EmptyState.vue';
@@ -10,12 +9,16 @@ import SearchInput from '@/components/widgets/SearchInput.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
 import SortTh from '@/components/widgets/SortTh.vue';
 import StudentCount from '@/components/widgets/StudentCount.vue';
-import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
 import UserAvatar from '@/components/widgets/UserAvatar.vue';
-import { attendanceStatusClasses, type AttendanceStatus, type PaginationLink } from '@/types';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
+import { useStudentSort, studentRowNumber } from '@/composables/useStudentSort';
+import { store } from '@/routes/attendances';
+import type { AttendanceStatus, PaginationLink } from '@/types';
+import { attendanceStatusClasses } from '@/types';
 
 const emit = defineEmits<{
-    'update:localStatuses': [statuses: Record<number, AttendanceStatus | null>]
+    'update:localStatuses': [statuses: Record<number, AttendanceStatus | null>];
 }>();
 
 interface Student { id: number; lastname: string; firstname: string; picture?: string | null }
@@ -34,10 +37,12 @@ const props = defineProps<{
 const isEditable = computed(() => props.date <= new Date().toISOString().slice(0, 10));
 
 const initialStatuses: Record<number, AttendanceStatus | null> = {};
+
 for (const s of props.students) {
     const found = props.statuses.find((st) => st.student_id === s.id);
     initialStatuses[s.id] = (found?.type as AttendanceStatus) ?? null;
 }
+
 const localStatuses = ref<Record<number, AttendanceStatus | null>>(initialStatuses);
 
 watch(localStatuses, (val) => emit('update:localStatuses', { ...val }), { deep: true });
@@ -67,7 +72,10 @@ function setAllPresent() {
 
 function save() {
     const entry = props.entries.find((e) => e.creneau === props.selectedEntry);
-    if (!entry) return;
+
+    if (!entry) {
+        return;
+    }
 
     const statuses = Object.entries(localStatuses.value)
         .filter(([, type]) => type !== null)
@@ -79,6 +87,12 @@ function save() {
         statuses,
     })).post(store.url(), { preserveScroll: true });
 }
+
+useSaveShortcut(() => {
+    if (isEditable.value && props.selectedEntry) {
+        save();
+    }
+});
 
 const search = ref('');
 const filterStatus = ref('');
@@ -108,6 +122,7 @@ const filteredStudents = computed(() => {
     const secondary = primary === 'lastname' ? 'firstname' : 'lastname';
     list.sort((a, b) => {
         const cmp = a[primary].localeCompare(b[primary], 'fr') || a[secondary].localeCompare(b[secondary], 'fr');
+
         return sortDir.value === 'desc' ? -cmp : cmp;
     });
 
@@ -117,7 +132,9 @@ const filteredStudents = computed(() => {
 const PAGE_SIZE = 10;
 const currentPage = ref(1);
 
-watch([search, filterStatus, sortCol, sortDir], () => { currentPage.value = 1; });
+watch([search, filterStatus, sortCol, sortDir], () => {
+    currentPage.value = 1;
+});
 
 const totalPages  = computed(() => Math.ceil(filteredStudents.value.length / PAGE_SIZE));
 const pageStudents = computed(() =>
@@ -162,7 +179,9 @@ const signalCount = computed(() => Object.values(localStatuses.value).filter((v)
                     </span>
                     <template v-if="isEditable">
                         <Button variant="ghost" size="sm" @click="setAllPresent">Tous présents</Button>
-                        <Button variant="primary" size="sm" :loading="form.processing" @click="save">Valider</Button>
+                        <Button variant="primary" size="sm" :loading="form.processing" @click="save">
+                            Valider <KbdShortcut keys="⌘S" />
+                        </Button>
                     </template>
                     <span v-else class="text-xs font-bold text-stone-400">Lecture seule</span>
                 </div>

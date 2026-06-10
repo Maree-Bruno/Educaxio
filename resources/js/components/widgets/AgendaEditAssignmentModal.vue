@@ -6,6 +6,8 @@ import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import DateField from '@/components/widgets/DateField.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { update as updateAssignment } from '@/routes/assignments';
 import { useToasterStore } from '@/stores/toaster';
 
@@ -47,6 +49,12 @@ function submit() {
         },
     });
 }
+
+useSaveShortcut(() => {
+    if (editing.value) {
+        submit();
+    }
+});
 
 defineExpose({ open });
 </script>
@@ -105,7 +113,9 @@ defineExpose({ open });
 
                 <div class="flex justify-end gap-2 pt-1">
                     <Button type="button" variant="ghost" size="sm" @click="modalRef?.close()">Annuler</Button>
-                    <Button type="submit" variant="primary" size="sm" :loading="form.processing">Enregistrer</Button>
+                    <Button type="submit" variant="primary" size="sm" :loading="form.processing">
+                        Enregistrer <KbdShortcut keys="⌘S" />
+                    </Button>
                 </div>
             </form>
         </div>

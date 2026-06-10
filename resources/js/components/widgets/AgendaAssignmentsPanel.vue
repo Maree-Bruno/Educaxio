@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import AgendaAssignmentRow from '@/components/widgets/AgendaAssignmentRow.vue';
 import type { AgendaAssignment } from '@/components/widgets/AgendaAssignmentRow.vue';
-import EmptyState from '@/components/widgets/EmptyState.vue';
+import Button from '@/components/widgets/Button.vue';
 import Pagination from '@/components/widgets/Pagination.vue';
 import type { Paginator } from '@/types';
 
@@ -17,19 +17,14 @@ defineProps<{
 const emit = defineEmits<{
     edit:   [id: number];
     delete: [id: number];
+    create: [];
 }>();
 
 const showPast = ref(false);
 </script>
 
 <template>
-    <EmptyState
-        v-if="upcomingAssignments.total + pastAssignments.total === 0"
-        :message="hasActiveFilters ? 'Aucun résultat pour ces filtres' : 'Aucun devoir ni interrogation'"
-        class="rounded-2xl bg-white"
-    />
-
-    <div v-else class="overflow-hidden rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10">
+    <div class="overflow-hidden rounded-2xl bg-white shadow-sm outline -outline-offset-1 outline-neutral-300/10">
         <div class="flex items-center justify-between border-b border-neutral-300/10 px-6 py-4">
             <h2 class="text-xl font-bold text-text-base">
                 {{ showPast ? 'Passés' : 'À venir' }}
@@ -37,6 +32,8 @@ const showPast = ref(false);
                     ({{ showPast ? pastAssignments.total : upcomingAssignments.total }})
                 </span>
             </h2>
+            <div class="flex items-center gap-2">
+            <Button variant="secondary" size="sm" @click="emit('create')">Ajouter</Button>
             <div class="flex gap-1 rounded-xl bg-stone-100 p-1">
                 <button
                     type="button"
@@ -57,9 +54,17 @@ const showPast = ref(false);
                     <span class="ml-1 font-normal text-stone-400">{{ pastAssignments.total }}</span>
                 </button>
             </div>
+            </div>
         </div>
 
-        <template v-if="!showPast">
+        <p
+            v-if="upcomingAssignments.total + pastAssignments.total === 0"
+            class="px-6 py-12 text-center text-sm font-bold text-border-figma"
+        >
+            {{ hasActiveFilters ? 'Aucun résultat pour ces filtres' : 'Aucun devoir ni interrogation' }}
+        </p>
+
+        <template v-else-if="!showPast">
             <ul class="divide-y divide-neutral-100">
                 <AgendaAssignmentRow
                     v-for="a in visibleUpcoming"
@@ -78,7 +83,7 @@ const showPast = ref(false);
             </div>
         </template>
 
-        <template v-else>
+        <template v-else-if="showPast">
             <p v-if="pastAssignments.total === 0" class="px-6 py-8 text-center text-sm text-stone-400">
                 Aucun devoir ni interrogation passé
             </p>

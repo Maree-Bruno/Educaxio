@@ -5,6 +5,7 @@ import ProfileSection from '@/components/settings/ProfileSection.vue';
 import Button from '@/components/widgets/Button.vue';
 import DateField from '@/components/widgets/DateField.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
 import { setPageTitle } from '@/composables/usePageTitle';
 import { store, update } from '@/routes/admin/academic-years';
 import { useToasterStore } from '@/stores/toaster';
@@ -169,7 +170,7 @@ function submitNewYear() {
                                 :disabled="year.is_archived"
                                 class="shrink-0"
                             >
-                                Enregistrer
+                                Enregistrer <KbdShortcut keys="⌘S" />
                             </Button>
                         </div>
                     </form>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { computed, nextTick, ref } from 'vue';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
 import SearchInput from '@/components/widgets/SearchInput.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 import { resolveSubjectLabel } from '@/composables/useSubjectLabel';
 import { sync as syncLessonTeachers } from '@/routes/admin/lessons/teachers';
 import { useToasterStore } from '@/stores/toaster';
@@ -69,6 +71,12 @@ function save() {
     });
 }
 
+useSaveShortcut(() => {
+    if (editingLesson.value) {
+        save();
+    }
+});
+
 defineExpose({ open });
 </script>
 
@@ -105,7 +113,9 @@ defineExpose({ open });
             </div>
 
             <div class="flex gap-3">
-                <Button type="submit" variant="primary" size="sm" label="Enregistrer" class="flex-1" :loading="form.processing" />
+                <Button type="submit" variant="primary" size="sm" class="flex-1" :loading="form.processing">
+                    Enregistrer <KbdShortcut keys="⌘S" />
+                </Button>
                 <Button type="button" variant="danger" size="sm" label="Annuler" class="flex-1" @click="close" />
             </div>
         </form>

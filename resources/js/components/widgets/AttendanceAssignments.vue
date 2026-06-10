@@ -9,10 +9,12 @@ import {
 } from '@/routes/assignments';
 import BaseModal from '@/components/widgets/BaseModal.vue';
 import Button from '@/components/widgets/Button.vue';
+import KbdShortcut from '@/components/widgets/KbdShortcut.vue';
 import Trash from '@/components/widgets/svg/Trash.vue';
 import DateField from '@/components/widgets/DateField.vue';
 import InputLabel from '@/components/widgets/form/InputLabel.vue';
 import SelectField from '@/components/widgets/SelectField.vue';
+import { useSaveShortcut } from '@/composables/useSaveShortcut';
 
 export interface Assignment {
     id: number;
@@ -22,7 +24,6 @@ export interface Assignment {
     slot_label: string | null;
     description: string | null;
 }
-
 
 interface ScheduleEntry {
     day_of_week: number;
@@ -42,6 +43,7 @@ const props = defineProps<{
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const modalMode = ref<'create' | 'edit'>('create');
 const editingId = ref<number | null>(null);
+const isOpen = ref(false);
 
 const form = useForm({
     lesson_id: null as number | null,
@@ -108,7 +110,6 @@ function formatDate(dateStr: string): string {
     });
 }
 
-
 const selectedSlot = ref('');
 
 function onDateChange(val: string) {
@@ -118,16 +119,20 @@ function onDateChange(val: string) {
 
 // ── Actions ───────────────────────────────────────────────────────────────
 function openCreate() {
+    isOpen.value = true;
     modalMode.value = 'create';
     editingId.value = null;
     form.reset();
     form.lesson_id = props.lessonId;
     form.scheduled_date = props.nextAssignmentDate ?? '';
-    selectedSlot.value = form.scheduled_date ? firstSlotForDate(form.scheduled_date) : '';
+    selectedSlot.value = form.scheduled_date
+        ? firstSlotForDate(form.scheduled_date)
+        : '';
     modalRef.value?.open();
 }
 
 function openEdit(a: Assignment) {
+    isOpen.value = true;
     modalMode.value = 'edit';
     editingId.value = a.id;
     form.reset();
@@ -139,12 +144,17 @@ function openEdit(a: Assignment) {
     modalRef.value?.open();
 }
 
+function closeModal() {
+    isOpen.value = false;
+    modalRef.value?.close();
+}
+
 function submit() {
     if (modalMode.value === 'create') {
         form.post(store.url(), {
             preserveScroll: true,
             onSuccess: () => {
-                modalRef.value?.close();
+                closeModal();
                 toaster.success('Devoir créé');
             },
         });
@@ -156,12 +166,18 @@ function submit() {
         form.patch(updateAssignment.url({ assignment: editingId.value }), {
             preserveScroll: true,
             onSuccess: () => {
-                modalRef.value?.close();
+                closeModal();
                 toaster.success('Devoir modifié');
             },
         });
     }
 }
+
+useSaveShortcut(() => {
+    if (isOpen.value) {
+        submit();
+    }
+});
 
 function requestDelete(a: Assignment) {
     pendingDelete.value = { id: a.id, title: a.title };
@@ -246,7 +262,9 @@ function confirmDelete() {
                         <time :datetime="a.scheduled_date">{{
                             formatDate(a.scheduled_date)
                         }}</time>
-                        <template v-if="a.slot_label"> · {{ a.slot_label }}</template>
+                        <template v-if="a.slot_label">
+                            · {{ a.slot_label }}</template
+                        >
                     </p>
                 </div>
                 <button
@@ -265,7 +283,11 @@ function confirmDelete() {
         <div class="flex flex-col gap-5">
             <div>
                 <h2 class="text-base font-bold text-stone-900">
-                    {{ modalMode === 'create' ? 'Nouveau devoir / interro' : 'Modifier' }}
+                    {{
+                        modalMode === 'create'
+                            ? 'Nouveau devoir / interro'
+                            : 'Modifier'
+                    }}
                 </h2>
                 <p v-if="groupName" class="mt-0.5 text-xs text-stone-400">
                     {{ groupName }}
@@ -274,44 +296,24 @@ function confirmDelete() {
 
             <form class="flex flex-col gap-4" @submit.prevent="submit">
                 <div class="flex flex-col gap-1.5">
-                    <span
-                        class="font-manrope text-xs leading-4 font-bold tracking-widest text-border-figma uppercase"
-                        >Type</span
-                    >
+                    <span class="font-manrope text-xs leading-4 font-bold tracking-widest text-border-figma uppercase">Type</span>
                     <div class="flex gap-2">
                         <label
                             class="flex flex-1 cursor-pointer items-center justify-center rounded-2xl border py-2.5 font-manrope text-sm font-bold transition-all duration-150"
-                            :class="
-                                form.type === 'homework'
-                                    ? 'border-blue bg-blue/5 text-blue ring-2 ring-blue/20'
-                                    : 'border-border-figma bg-white text-text-base'
-                            "
+                            :class="form.type === 'homework' ? 'border-blue bg-blue/5 text-blue ring-2 ring-blue/20' : 'border-border-figma bg-white text-text-base'"
                         >
-                            <input
-                                v-model="form.type"
-                                type="radio"
-                                value="homework"
-                                class="sr-only"
-                            />
+                            <input v-model="form.type" type="radio" value="homework" class="sr-only" />
                             Devoir
                         </label>
                         <label
                             class="flex flex-1 cursor-pointer items-center justify-center rounded-2xl border py-2.5 font-manrope text-sm font-bold transition-all duration-150"
-                            :class="
-                                form.type === 'test'
-                                    ? 'border-blue bg-blue/5 text-blue ring-2 ring-blue/20'
-                                    : 'border-border-figma bg-white text-text-base'
-                            "
+                            :class="form.type === 'test' ? 'border-blue bg-blue/5 text-blue ring-2 ring-blue/20' : 'border-border-figma bg-white text-text-base'"
                         >
-                            <input
-                                v-model="form.type"
-                                type="radio"
-                                value="test"
-                                class="sr-only"
-                            />
+                            <input v-model="form.type" type="radio" value="test" class="sr-only" />
                             Interrogation
                         </label>
                     </div>
+                    <p v-if="form.errors.type" class="font-manrope text-sm font-medium text-pink">{{ form.errors.type }}</p>
                 </div>
 
                 <div class="flex flex-col gap-1">
@@ -320,10 +322,10 @@ function confirmDelete() {
                         label="Titre"
                         placeholder="Ex : Chapitre 3 – exercices"
                         required
+                        :error="form.errors.title"
                     />
-                    <p class="text-xs text-stone-400">
-                        Décrivez brièvement le travail demandé ou la matière
-                        évaluée.
+                    <p v-if="!form.errors.title" class="text-xs text-stone-400">
+                        Décrivez brièvement le travail demandé ou la matière évaluée.
                     </p>
                 </div>
 
@@ -334,16 +336,12 @@ function confirmDelete() {
                         :min="modalMode === 'create' ? new Date().toISOString().slice(0, 10) : undefined"
                         @update:model-value="onDateChange"
                     />
-                    <p
-                        v-if="modalMode === 'create' && form.scheduled_date && !isDateValid"
-                        class="text-xs text-red-500"
-                    >
+                    <p v-if="form.errors.scheduled_date" class="font-manrope text-sm font-medium text-pink">{{ form.errors.scheduled_date }}</p>
+                    <p v-else-if="modalMode === 'create' && form.scheduled_date && !isDateValid" class="text-xs text-red-500">
                         Pas de cours ce jour-là.
                     </p>
                     <p v-else class="text-xs text-stone-400">
-                        La date du prochain cours est déjà présélectionner.
-                        Seuls les jours où vous avez cours avec cette classe
-                        sont valides.
+                        La date du prochain cours est déjà présélectionnée. Seuls les jours où vous avez cours avec cette classe sont valides.
                     </p>
                 </div>
 
@@ -375,21 +373,18 @@ function confirmDelete() {
                 </template>
 
                 <div class="flex flex-col gap-1.5">
-                    <label
-                        class="font-manrope text-xs leading-4 font-bold tracking-widest text-border-figma uppercase"
-                    >
-                        Description
-                        <span class="font-normal normal-case">(optionnel)</span>
+                    <label class="font-manrope text-xs leading-4 font-bold tracking-widest text-border-figma uppercase">
+                        Description <span class="font-normal normal-case">(optionnel)</span>
                     </label>
                     <textarea
                         v-model="form.description"
                         rows="3"
                         placeholder="Précisions…"
-                        class="w-full resize-none rounded-2xl border border-border-figma bg-white px-3 py-3 font-manrope text-sm text-text-base transition-all duration-150 outline-none placeholder:font-normal placeholder:text-gray-400 focus:border-blue focus:ring-2 focus:ring-blue/20"
+                        class="w-full resize-none rounded-2xl border bg-white px-3 py-3 font-manrope text-sm text-text-base transition-all duration-150 outline-none placeholder:font-normal placeholder:text-gray-400"
+                        :class="form.errors.description ? 'border-border-figma focus:border-pink focus:ring-2 focus:ring-pink/20' : 'border-border-figma focus:border-blue focus:ring-2 focus:ring-blue/20'"
                     />
-                    <p class="text-xs text-stone-400">
-                        Visible dans l'agenda de la classe.
-                    </p>
+                    <p v-if="form.errors.description" class="font-manrope text-sm font-medium text-pink">{{ form.errors.description }}</p>
+                    <p v-else class="text-xs text-stone-400">Visible dans l'agenda de la classe.</p>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-1">
@@ -397,7 +392,7 @@ function confirmDelete() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        @click="modalRef?.close()"
+                        @click="closeModal"
                         >Annuler</Button
                     >
                     <Button
@@ -406,8 +401,11 @@ function confirmDelete() {
                         size="sm"
                         :disabled="modalMode === 'create' && !isDateValid"
                         :loading="form.processing"
-                        >{{ modalMode === 'create' ? 'Enregistrer' : 'Modifier' }}</Button
-                    >
+                        >{{
+                            modalMode === 'create' ? 'Enregistrer' : 'Modifier'
+                        }}
+                        <KbdShortcut keys="⌘S"
+                    /></Button>
                 </div>
             </form>
         </div>
