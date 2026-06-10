@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class ScheduleEntryController extends Controller
 {
-    /**
-     * @throws \Throwable
-     */
     public function store(Request $request)
     {
         $user = auth()->user();

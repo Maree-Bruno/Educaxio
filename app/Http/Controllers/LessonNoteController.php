@@ -19,13 +19,10 @@ class LessonNoteController extends Controller
         $date = Carbon::parse($data['date'])->toDateString();
         $notes = $data['notes'] ?? '';
 
-        $note = LessonNote::where('lesson_id', $data['lesson_id'])
-            ->whereDate('date', $date)
-            ->first();
-
-        $note
-            ? $note->update(['notes' => $notes])
-            : LessonNote::create(['lesson_id' => $data['lesson_id'], 'date' => $date, 'notes' => $notes]);
+        LessonNote::updateOrCreate(
+            ['lesson_id' => $data['lesson_id'], 'date' => $date],
+            ['notes' => $notes],
+        );
 
         return back();
     }
