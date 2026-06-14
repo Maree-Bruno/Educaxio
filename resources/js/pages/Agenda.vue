@@ -53,12 +53,10 @@ const props = defineProps<{
     };
 }>();
 
-// ── Tabs ─────────────────────────────────────────────────────────────────────
 type Tab = 'journal' | 'assignments';
 const initialTab = new URLSearchParams(usePage().url.split('?')[1] ?? '').get('tab');
 const activeTab = ref<Tab>(initialTab === 'assignments' ? 'assignments' : 'journal');
 
-// ── Filtres serveur ───────────────────────────────────────────────────────────
 const search       = ref(props.filters.search);
 const filterGroup  = ref(props.filters.group);
 const filterSchool = ref(props.filters.school);
@@ -73,7 +71,6 @@ const yearOptions = props.academicYears.map((y) => ({
           : y.year,
 }));
 
-// ── Filtres client (type + tri sur les devoirs) ───────────────────────────────
 const filterType = ref<'' | 'homework' | 'test'>(props.filters.assignment_type);
 const sortField  = ref<'date' | 'group' | 'subject'>(props.filters.sort_field);
 const sortDir    = ref<'asc' | 'desc'>(props.filters.sort_dir);
@@ -154,17 +151,14 @@ watch(search, () => {
 watch([filterGroup, filterSchool, filterType, filterYear], applyServerFilters);
 watch([sortField, sortDir], applyServerFilters);
 
-// ── Suppression optimiste ─────────────────────────────────────────────────────
 const hiddenIds = ref(new Set<number>());
 
 const visibleUpcoming = computed(() => props.upcomingAssignments.data.filter((a) => !hiddenIds.value.has(a.id)));
 const visiblePast     = computed(() => props.pastAssignments.data.filter((a) => !hiddenIds.value.has(a.id)));
 
-// ── Création ─────────────────────────────────────────────────────────────────
 const createAssignmentRef = ref<InstanceType<typeof AgendaCreateAssignmentModal> | null>(null);
 const createJournalRef    = ref<InstanceType<typeof AgendaCreateJournalModal> | null>(null);
 
-// ── Édition ───────────────────────────────────────────────────────────────────
 const editModalRef = ref<InstanceType<typeof AgendaEditAssignmentModal> | null>(null);
 
 function openEdit(id: number) {
@@ -175,7 +169,6 @@ function openEdit(id: number) {
     }
 }
 
-// ── Suppression ───────────────────────────────────────────────────────────────
 const toaster       = useToasterStore();
 const pendingDelete = ref<{ id: number; title: string } | null>(null);
 

@@ -105,10 +105,15 @@ const { slotTimeForms, slotTimeErrors, saveSlotTimes } = useSlotTimeForms(
 useSaveShortcut(() => submitProfileWithUndo());
 
 const showDeleteModal = ref(false);
-const deleteForm = useForm({});
+const deleteForm = useForm({ password: '' });
 
 function confirmDelete() {
-    deleteForm.delete('/settings/profile');
+    deleteForm.delete('/settings/profile', {
+        preserveScroll: true,
+        onError: () => {
+            showDeleteModal.value = true;
+        },
+    });
 }
 </script>
 
@@ -367,7 +372,19 @@ function confirmDelete() {
         title="Supprimer mon compte"
         message="Cette action est irréversible. Toutes vos données seront définitivement supprimées."
         confirm-label="Supprimer mon compte"
+        :loading="deleteForm.processing"
         @confirm="confirmDelete"
-        @cancel="showDeleteModal = false"
-    />
+        @cancel="showDeleteModal = false; deleteForm.reset()"
+    >
+        <div class="flex flex-col gap-1.5">
+            <InputLabel
+                v-model="deleteForm.password"
+                type="password"
+                label="Confirmez votre mot de passe"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                :error="deleteForm.errors.password"
+            />
+        </div>
+    </ConfirmModal>
 </template>
