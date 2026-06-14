@@ -40,7 +40,6 @@ function defaultDates(year: string): { start_date: string; end_date: string } | 
     return { start_date: `${match[1]}-09-01`, end_date: `${match[2]}-06-30` };
 }
 
-// ── Edit existing years ─────────────────────────────────────────────────────
 
 interface EditState {
     start_date: string;
@@ -77,7 +76,6 @@ function saveYear(year: AcademicYear) {
     );
 }
 
-// ── Add new year ────────────────────────────────────────────────────────────
 
 const newYear = reactive({ year: '', start_date: '', end_date: '' });
 const newYearProcessing = ref(false);

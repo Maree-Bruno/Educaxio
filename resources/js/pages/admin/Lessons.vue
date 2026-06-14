@@ -62,7 +62,6 @@ const props = defineProps<{
 
 setPageTitle(`Attribution des cours`);
 
-// ── Filtres ───────────────────────────────────────────────────────────────
 const search        = ref('');
 const filterSubject = ref('');
 const filterTeacher = ref('');
@@ -78,7 +77,6 @@ const activeCount = computed(() =>
     [search.value.trim(), filterSubject.value, filterTeacher.value].filter(Boolean).length,
 );
 
-// ── Données groupées + filtrées ───────────────────────────────────────────
 const { hide, show, isHidden } = useHiddenIds();
 
 const groupedLessons = computed(() => {
@@ -109,7 +107,6 @@ const groupedLessons = computed(() => {
         .filter(({ lessons }) => !filtering || lessons.length > 0);
 });
 
-// ── Accordéon ─────────────────────────────────────────────────────────────
 const openGroupIds = ref<Set<number>>(new Set());
 
 function toggleGroup(id: number) {
@@ -124,7 +121,6 @@ function isGroupOpen(id: number): boolean {
     return openGroupIds.value.has(id) || hasActiveFilter.value;
 }
 
-// ── Modals ────────────────────────────────────────────────────────────────
 const teachersModal = ref<InstanceType<typeof LessonTeachersModal> | null>(null);
 const addModal      = ref<InstanceType<typeof AddLessonModal> | null>(null);
 
@@ -133,7 +129,6 @@ function hasAvailableSubjects(group: Group): boolean {
     return props.subjects.some((s) => !assigned.includes(s.id));
 }
 
-// ── Mise à jour inline du niveau LM ──────────────────────────────────────
 function updateLmLevel(lesson: Lesson, lmLevel: string) {
     router.patch(
         adminLessonsDestroy.url({ school: props.school.slug, lesson: lesson.id }),
@@ -142,7 +137,6 @@ function updateLmLevel(lesson: Lesson, lmLevel: string) {
     );
 }
 
-// ── Suppression ───────────────────────────────────────────────────────────
 const toaster       = useToasterStore();
 const pendingDelete = ref<Lesson | null>(null);
 

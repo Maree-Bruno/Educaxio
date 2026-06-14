@@ -258,6 +258,7 @@ watch(
         </div>
 
         <select
+            v-if="visibleSchoolCount > 0"
             v-model="form.school_ids"
             multiple
             :size="selectSize"
@@ -273,8 +274,31 @@ watch(
             </option>
         </select>
 
+        <div
+            v-else-if="schoolSearch.trim()"
+            class="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border-figma bg-bg-primary px-4 py-6 text-center"
+        >
+            <p class="text-sm font-medium text-text-base">
+                Aucun établissement trouvé pour « {{ schoolSearch }} »
+            </p>
+            <p class="text-xs text-stone-400">
+                Votre école n'est peut-être pas encore sur Educaxio, ou son nom est légèrement différent.
+            </p>
+            <a
+                href="mailto:support@educaxio.be?subject=Demande d'ajout d'établissement"
+                class="mt-1 text-xs font-medium text-blue hover:underline"
+            >
+                Contacter le support →
+            </a>
+        </div>
+
         <p v-if="form.errors.school_ids" class="text-sm font-medium text-pink">
             {{ form.errors.school_ids }}
+        </p>
+
+        <p class="rounded-xl bg-blue/5 px-3 py-2.5 text-xs text-stone-500">
+            <span class="font-semibold text-text-base">Vous ne savez pas quelle école choisir ?</span>
+            Rejoignez l'établissement où vous enseignez. Si votre école n'est pas encore sur Educaxio ou si vous devez en être l'administrateur, <a href="mailto:support@educaxio.be" class="font-medium text-blue hover:underline">contactez-nous</a>.
         </p>
 
         <div class="flex gap-3">

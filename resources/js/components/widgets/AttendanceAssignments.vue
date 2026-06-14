@@ -39,7 +39,6 @@ const props = defineProps<{
     selectedEntry: string | null;
 }>();
 
-// ── Modal ─────────────────────────────────────────────────────────────────
 const modalRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const modalMode = ref<'create' | 'edit'>('create');
 const editingId = ref<number | null>(null);
@@ -53,13 +52,11 @@ const form = useForm({
     description: '',
 });
 
-// ── Suppression ───────────────────────────────────────────────────────────
 const confirmDeleteRef = ref<InstanceType<typeof BaseModal> | null>(null);
 const pendingDelete = ref<{ id: number; title: string } | null>(null);
 const hiddenIds = ref(new Set<number>());
 const toaster = useToasterStore();
 
-// ── Helpers ───────────────────────────────────────────────────────────────
 function isoDow(dateStr: string): number {
     const [y, m, d] = dateStr.split('-').map(Number);
 
@@ -117,7 +114,6 @@ function onDateChange(val: string) {
     selectedSlot.value = val ? firstSlotForDate(val) : '';
 }
 
-// ── Actions ───────────────────────────────────────────────────────────────
 function openCreate() {
     isOpen.value = true;
     modalMode.value = 'create';

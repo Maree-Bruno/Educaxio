@@ -71,11 +71,13 @@ function onCancel(event: Event) {
         <h2 class="mb-2 text-xl font-bold text-text-base">
             {{ title }}
         </h2>
-        <p class="mb-8 text-sm font-medium text-border-figma">
+        <p class="mb-4 text-sm font-medium text-border-figma">
             {{ message }}
         </p>
 
-        <div class="flex items-center justify-end gap-3">
+        <slot />
+
+        <div class="flex items-center justify-end gap-3 mt-6">
             <Button
                 variant="secondary"
                 size="sm"
