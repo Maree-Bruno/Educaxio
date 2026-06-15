@@ -25,7 +25,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class DemoSeeder extends Seeder
+class DatabaseSeeder extends Seeder
 {
     // ── Static data ────────────────────────────────────────────────────────────
 
