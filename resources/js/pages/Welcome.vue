@@ -141,7 +141,7 @@ const testimonials: Testimonial[] = [
                 class="peer/menu sr-only"
                 @change="menuOpen = ($event.target as HTMLInputElement).checked"
             />
-            <nav class="flex items-center justify-between p-6">
+            <nav class="flex items-center justify-between p-6 max-w-[90rem] mx-auto">
                 <h2 class="sr-only">Navigation de haut de page</h2>
                 <AppLogoIcon />
 
@@ -272,7 +272,7 @@ const testimonials: Testimonial[] = [
         </header>
 
         <main class="flex flex-col gap-8 pt-24">
-            <section id="accueil" class="scroll-mt-24 px-8 py-16 lg:pl-32">
+            <section id="accueil" class="scroll-mt-24 px-8 py-16 lg:pl-32 max-w-[90rem] mx-auto">
                 <div class="flex flex-col items-center gap-8 lg:flex-row">
                     <div class="flex flex-1 flex-col gap-6 lg:max-w-3/5">
                         <h2
@@ -336,7 +336,7 @@ const testimonials: Testimonial[] = [
                 id="fonctionnalites"
                 class="scroll-mt-24 bg-white pt-8 pb-16"
             >
-                <div class="px-8">
+                <div class="px-8 max-w-[90rem] mx-auto">
                     <h2
                         class="mb-6 text-2xl font-extrabold text-text-base lg:text-3xl"
                     >
@@ -365,7 +365,7 @@ const testimonials: Testimonial[] = [
                 </div>
             </section>
 
-            <section id="avis" class="scroll-mt-24 px-8 py-16">
+            <section id="avis" class="scroll-mt-24 px-8 py-16 max-w-[90rem] mx-auto">
                 <h2 class="mb-6 text-2xl font-extrabold text-text-base lg:text-3xl">
                     Ils nous font confiance
                 </h2>
@@ -416,7 +416,7 @@ const testimonials: Testimonial[] = [
             class="bg-white py-6 shadow-[0px_-2px_60px_0px_rgba(0,0,0,0.10)]"
         >
             <h2 class="sr-only">Pied de page</h2>
-            <div class="flex flex-col gap-6 px-6">
+            <div class="flex flex-col gap-6 px-6 max-w-[90rem] mx-auto">
                 <div
                     class="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center"
                 >

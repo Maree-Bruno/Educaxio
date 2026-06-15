@@ -77,7 +77,7 @@
     <header class="fixed inset-x-0 top-0 z-50 bg-white shadow-sm">
         <input id="mobile-menu-toggle" type="checkbox" class="peer/menu sr-only" aria-hidden="true">
 
-        <nav class="flex items-center justify-between p-6">
+        <nav class="flex items-center justify-between p-6 max-w-[90rem] mx-auto">
             <h2 class="sr-only">Navigation de haut de page</h2>
 
             <a href="{{ url('/') }}" title="Accueil Educaxio" class="flex items-center gap-1">
@@ -137,7 +137,7 @@
     </header>
     <main class="flex flex-col gap-8 pt-24">
 
-        <section id="accueil" class="scroll-mt-24 px-8 py-16 lg:pl-32">
+        <section id="accueil" class="scroll-mt-24 px-8 py-16 lg:pl-32 max-w-[90rem] mx-auto">
             <div class="flex flex-col items-center gap-8 lg:flex-row">
                 <div class="flex flex-1 flex-col gap-6 lg:max-w-3/5">
                     <h2 class="text-4xl font-extrabold leading-tight text-text-base lg:text-5xl lg:leading-tight">
@@ -170,7 +170,7 @@
         </section>
 
         <section id="fonctionnalites" class="scroll-mt-24 bg-white pb-16 pt-8">
-            <div class="px-8">
+            <div class="px-8 max-w-[90rem] mx-auto">
                 <h2 class="mb-6 text-2xl font-extrabold text-text-base lg:text-3xl">Toutes les fonctionnalités dont vous avez besoin</h2>
                 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
@@ -226,7 +226,7 @@
             </div>
         </section>
 
-        <section id="avis" class="scroll-mt-24 px-8 py-16">
+        <section id="avis" class="scroll-mt-24 px-8 py-16 max-w-[90rem] mx-auto">
             <h2 class="mb-6 text-2xl font-extrabold text-text-base lg:text-3xl">Ils nous font confiance</h2>
             <div class="flex flex-col gap-8 lg:flex-row">
 
@@ -298,7 +298,7 @@
     </main>
     <footer class="bg-white py-6 shadow-[0px_-2px_60px_0px_rgba(0,0,0,0.10)]">
         <h2 class="sr-only">Pied de page</h2>
-        <div class="flex flex-col gap-6 px-6">
+        <div class="flex flex-col gap-6 px-6 max-w-[90rem] mx-auto">
             <div class="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                 <a href="{{ url('/') }}" class="flex items-center gap-1">
                     <div class="inline-flex h-9 w-9 items-center justify-center gap-2.5 rounded-2xl bg-blue p-2.5">
