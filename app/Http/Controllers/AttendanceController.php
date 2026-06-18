@@ -148,7 +148,7 @@ class AttendanceController extends Controller
             'title' => $a->title,
             'scheduled_date' => $a->scheduled_date->toDateString(),
             'slot_label' => isset($lesson) ? $lesson->scheduleEntries
-                ->first(fn ($e) => $e->day_of_week === \Carbon\Carbon::parse($a->scheduled_date)->dayOfWeekIso)
+                ->first(fn ($e) => $e->day_of_week === Carbon::parse($a->scheduled_date)->dayOfWeekIso)
                 ?->scheduleSlot?->label : null,
             'description' => $a->description,
         ]);

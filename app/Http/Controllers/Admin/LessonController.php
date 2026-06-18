@@ -23,10 +23,10 @@ class LessonController extends Controller
             ->when($currentYearId, fn ($g) => $g->where('academic_year_id', $currentYearId)),
         )
             ->with([
-            'group:id,grade,name',
-            'subject:id,name,is_language',
-            'users:id,name',
-        ])
+                'group:id,grade,name',
+                'subject:id,name,is_language',
+                'users:id,name',
+            ])
             ->get(['id', 'group_id', 'subject_id', 'lm_level']);
 
         $groups = $school->groups()

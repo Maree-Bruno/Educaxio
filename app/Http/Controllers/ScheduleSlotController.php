@@ -19,17 +19,17 @@ class ScheduleSlotController extends Controller
 
         $validated = $request->validate([
             'start_time' => ['nullable', 'date_format:H:i'],
-            'end_time'   => ['nullable', 'date_format:H:i', 'after:start_time'],
+            'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
         ]);
 
         $position = (ScheduleSlot::max('position') ?? 0) + 1;
 
         ScheduleSlot::create([
-            'position'   => $position,
-            'label'      => (string) $position,
-            'type'       => ScheduleSlotType::Slot,
+            'position' => $position,
+            'label' => (string) $position,
+            'type' => ScheduleSlotType::Slot,
             'start_time' => $validated['start_time'] ?? null,
-            'end_time'   => $validated['end_time'] ?? null,
+            'end_time' => $validated['end_time'] ?? null,
         ]);
 
         return to_route('schedules');

@@ -41,12 +41,15 @@ class StudentController extends Controller
                 ->when($selectedYearId, fn ($g) => $g->where('academic_year_id', $selectedYearId))
                 ->select('groups.id', 'grade', 'name', 'slug'),
             ])
-            ->when($selectedYearId, fn ($q) => $q->whereHas('groups', fn ($g) => $g->where('academic_year_id', $selectedYearId)));
+            ->when($selectedYearId, fn ($q) => $q->where(fn ($sub) => $sub
+                ->whereDoesntHave('groups')
+                ->orWhereHas('groups', fn ($g) => $g->where('academic_year_id', $selectedYearId))
+            ));
 
         if ($sort === 'group') {
             $groupSort = DB::table('group_student')
                 ->join('groups', 'groups.id', '=', 'group_student.group_id')
-                ->select('group_student.student_id', DB::raw("MIN(grade || name) as group_sort"))
+                ->select('group_student.student_id', DB::raw('MIN(grade || name) as group_sort'))
                 ->when($selectedYearId, fn ($q) => $q->where('groups.academic_year_id', $selectedYearId))
                 ->groupBy('group_student.student_id');
 

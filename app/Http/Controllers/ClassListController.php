@@ -1,7 +1,8 @@
-<?php
+<?php /** @noinspection D */
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
 use App\Http\Controllers\Concerns\HandlesSorting;
 use App\Models\AcademicYear;
 use App\Models\Attendance;
@@ -20,8 +21,9 @@ use Inertia\Inertia;
 
 class ClassListController extends Controller
 {
-    use \App\Http\Controllers\Concerns\DetectsCurrentAcademicYear;
+    use DetectsCurrentAcademicYear;
     use HandlesSorting;
+
     private function scopedGroupQuery(Collection $adminSchoolIds, Collection $teacherSchoolIds): Builder
     {
         if ($adminSchoolIds->isEmpty() && $teacherSchoolIds->isEmpty()) {
@@ -81,8 +83,7 @@ class ClassListController extends Controller
         if ($selectedYearId) {
             $query->where('academic_year_id', $selectedYearId);
         } else {
-            $query->whereHas('academicYear.schools', fn ($q) =>
-                $q->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
+            $query->whereHas('academicYear.schools', fn ($q) => $q->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
             );
         }
 
@@ -125,11 +126,11 @@ class ClassListController extends Controller
         );
 
         return Inertia::render('ClassList', [
-            'groups'        => $groups,
-            'schools'       => $userSchools,
+            'groups' => $groups,
+            'schools' => $userSchools,
             'academicYears' => $academicYears,
-            'classes'       => $classes,
-            'filters'       => $filters,
+            'classes' => $classes,
+            'filters' => $filters,
         ]);
     }
 
@@ -235,15 +236,18 @@ class ClassListController extends Controller
             ->paginate(10);
         $group->students_count = $students->total();
 
+        $currentYearId = $this->currentAcademicYearId($schoolIds);
+
         $schoolStudents = $canManage
             ? Student::where('school_id', $group->school_id)
                 ->whereNotIn('id', $group->students()->pluck('students.id'))
-                ->with('groups:id,grade,name')
+                ->with(['groups' => fn ($q) => $q
+                    ->when($currentYearId, fn ($q) => $q->where('academic_year_id', $currentYearId))
+                    ->select('groups.id', 'groups.grade', 'groups.name'),
+                ])
                 ->orderBy('lastname')
                 ->get(['id', 'lastname', 'firstname'])
             : [];
-
-        $currentYearId = $this->currentAcademicYearId($schoolIds);
         $dateRange = null;
         if ($currentYearId) {
             $ay = AcademicYear::find($currentYearId);
@@ -252,7 +256,7 @@ class ClassListController extends Controller
                 $defaults = AcademicYear::defaultDates($ay->year);
                 $dateRange = [
                     $pivot?->start_date ?? $defaults['start_date'],
-                    $pivot?->end_date   ?? $defaults['end_date'],
+                    $pivot?->end_date ?? $defaults['end_date'],
                 ];
             }
         }
@@ -265,13 +269,13 @@ class ClassListController extends Controller
             ->orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('ClassListShow', [
-            'group'          => $group,
-            'students'       => $students,
-            'canManage'      => $canManage,
-            'isTeacher'      => $isTeacher,
-            'academicYears'  => $academicYears,
-            'subjects'       => $subjects,
-            'filters'        => $request->only(['sort', 'dir', 'search']),
+            'group' => $group,
+            'students' => $students,
+            'canManage' => $canManage,
+            'isTeacher' => $isTeacher,
+            'academicYears' => $academicYears,
+            'subjects' => $subjects,
+            'filters' => $request->only(['sort', 'dir', 'search']),
             'schoolStudents' => $schoolStudents,
             'attendanceStats' => $attendanceStats,
         ]);
@@ -312,6 +316,7 @@ class ClassListController extends Controller
     {
         $this->authorize('detachStudent', $group);
         $group->students()->detach($student->id);
+
         return to_route('classlist.show', $group);
     }
 
@@ -325,9 +330,9 @@ class ClassListController extends Controller
         $sessionIds = ClassSession::whereIn('lesson_id', $lessonIds)
             ->when($dateRange, fn ($q) => $q->whereBetween('date', $dateRange))
             ->pluck('id');
-        $studentIds   = $group->students()->pluck('students.id');
-        $sessions     = $sessionIds->count();
-        $totalSlots   = $sessions * $studentIds->count();
+        $studentIds = $group->students()->pluck('students.id');
+        $sessions = $sessionIds->count();
+        $totalSlots = $sessions * $studentIds->count();
 
         if ($totalSlots === 0) {
             return ['sessions' => 0, 'absences' => 0, 'lates' => 0, 'exclusions' => 0, 'rate' => null];
@@ -340,16 +345,16 @@ class ClassListController extends Controller
             ->groupBy('type')
             ->pluck('cnt', 'type');
 
-        $absences   = (int) $counts->get('Absent', 0);
-        $lates      = (int) $counts->get('Late', 0);
+        $absences = (int) $counts->get('Absent', 0);
+        $lates = (int) $counts->get('Late', 0);
         $exclusions = (int) $counts->get('Excluded', 0);
 
         return [
-            'sessions'   => $sessions,
-            'absences'   => $absences,
-            'lates'      => $lates,
+            'sessions' => $sessions,
+            'absences' => $absences,
+            'lates' => $lates,
             'exclusions' => $exclusions,
-            'rate'       => round(($totalSlots - $absences) / $totalSlots * 100, 1),
+            'rate' => round(($totalSlots - $absences) / $totalSlots * 100, 1),
         ];
     }
 
