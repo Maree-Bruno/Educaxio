@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { ref, watch } from 'vue';
 import SaveSplitButton from '@/components/widgets/SaveSplitButton.vue';
 import type { AfterSave } from '@/components/widgets/SaveSplitButton.vue';
+import { agenda } from '@/routes';
 import { store } from '@/routes/lesson-notes';
 
 const props = defineProps<{
@@ -45,7 +46,13 @@ function doSave(afterSave: AfterSave = 'stay') {
     form.post(store.url(), {
         preserveState: afterSave === 'stay',
         preserveScroll: afterSave === 'stay',
-        onSuccess: () => emit('saved', afterSave),
+        onSuccess: () => {
+            if (afterSave === 'journal') {
+                router.get(agenda.url());
+            } else {
+                emit('saved', afterSave);
+            }
+        },
     });
 }
 

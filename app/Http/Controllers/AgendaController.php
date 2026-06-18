@@ -18,6 +18,7 @@ class AgendaController extends Controller
     use ComputesNextOccurrence;
     use DetectsCurrentAcademicYear;
     use HandlesSorting;
+
     public function __invoke(Request $request)
     {
         $user = auth()->user();
@@ -43,8 +44,7 @@ class AgendaController extends Controller
             ->when(
                 $selectedYearId,
                 fn ($q) => $q->whereHas('group', fn ($g) => $g->where('academic_year_id', $selectedYearId)),
-                fn ($q) => $q->whereHas('group', fn ($g) => $g->whereHas('academicYear.schools', fn ($s) =>
-                    $s->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
+                fn ($q) => $q->whereHas('group', fn ($g) => $g->whereHas('academicYear.schools', fn ($s) => $s->whereIn('schools.id', $schoolIds)->whereNull('academic_year_school.archived_at')
                 )),
             )
             ->get()
@@ -94,7 +94,7 @@ class AgendaController extends Controller
 
                 return [
                     'id' => $n->id,
-                    'date' => $n->date->toDateString(),
+                    'date' => $n->date,
                     'notes' => $n->notes,
                     'group' => $lesson->group->grade.$lesson->group->name,
                     'group_slug' => $lesson->group->slug,
@@ -126,11 +126,11 @@ class AgendaController extends Controller
             }
 
             return [
-                'id'                   => $lesson->id,
-                'label'                => $label,
-                'schedule_pattern'     => $lesson->scheduleEntries->map(fn ($e) => [
+                'id' => $lesson->id,
+                'label' => $label,
+                'schedule_pattern' => $lesson->scheduleEntries->map(fn ($e) => [
                     'day_of_week' => $e->day_of_week,
-                    'slot_label'  => $e->scheduleSlot?->label ?? '',
+                    'slot_label' => $e->scheduleSlot?->label ?? '',
                 ])->values(),
                 'next_assignment_date' => $this->nextOccurrence($lesson),
             ];

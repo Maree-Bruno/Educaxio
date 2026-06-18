@@ -40,8 +40,8 @@ class StudentController extends Controller
             ->orderByDesc('year')
             ->get(['id', 'year'])
             ->map(fn ($y) => [
-                'id'         => $y->id,
-                'year'       => $y->year,
+                'id' => $y->id,
+                'year' => $y->year,
                 'is_current' => $y->id === $currentYearId,
                 'is_archived' => false,
             ]);
@@ -82,8 +82,7 @@ class StudentController extends Controller
 
         if ($isAdmin) {
             $absenceHistory = $student->attendanceStatuses()
-                ->whereHas('attendance.classsession.lesson', fn ($q) =>
-                    $q->whereIn('group_id', $groupIds)
+                ->whereHas('attendance.classsession.lesson', fn ($q) => $q->whereIn('group_id', $groupIds)
                 )
                 ->with($eagerLoads)
                 ->get()
